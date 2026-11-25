@@ -38,7 +38,7 @@ Anonymous installations can reset credentials, reinstall or change network addre
 
 A dropped client connection invalidates the pending result. A provider call already dispatched is allowed to reach its deadline to capture billing information. When the server cannot establish the bill, it retains the entire reservation against the period's caps. Abandoned in-flight requests release concurrency and success slots after their lease while retaining spending reservations. An in-flight provider call can accrue costs after shutdown. Delays, missing billing data and upstream changes can affect reconciliation. Unexpected usage above a reserved bound is recorded and the output is withheld.
 
-Automated tests cover session lifecycle, strict UTF-16 validation, rate and quota enforcement, durable reservation and settlement, idempotency under concurrency, restrictive database role grants, UTC reset boundaries, refusal handling and the OpenRouter request and response shapes using fixtures.
+Automated tests cover session lifecycle, strict UTF-16 validation, rate and quota enforcement, durable reservation and settlement, idempotency under concurrency, restrictive database role grants, UTC reset boundaries, a client disconnect during a live HTTP exchange with a synthetic provider followed by a new action, refusal handling and the OpenRouter request and response shapes using fixtures.
 
 ## Benchmark the API
 
@@ -50,7 +50,7 @@ AI_PROVIDER=mock AI_DAILY_LIMIT=114 AI_INSTALL_REQUESTS_PER_MINUTE=114 node scri
 node ../intelligence/evaluate.ts ../artifacts/mock-run.json
 ```
 
-For an authorized live benchmark, use a dedicated environment configuration for the run with the live provider, the normal private PostgreSQL ledger, approved price ceilings, global caps, a sufficient benchmark session allowance and rate limits. Configure BENCHMARK_MAX_USD to the approved total for the run. The script requires the explicit --live option and checks the worst-case sum of reservations. If a request fails, it writes the completed synthetic observations and stops. Costs use the same reported-or-estimated accounting as the backend. Credentials and private user drafts are excluded from the benchmark file.
+For an authorized live benchmark, use a dedicated environment configuration for the run with the live provider, the normal private PostgreSQL ledger, approved price ceilings, global caps, a sufficient benchmark session allowance and rate limits. Configure BENCHMARK_MAX_USD to the approved total for the run. The script requires the explicit --live option and checks the worst-case sum of reservations. If a request fails, it writes the completed synthetic observations and stops. With the same source revision, fixture selection, model and provider configuration, pass a new output path and `--resume-from PREVIOUS.json` to copy the completed prefix and retry only unfinished cases. Keep the original global caps and include the failed attempt when reconciling total costs. Costs use the same reported-or-estimated accounting as the backend. Credentials and private user drafts are excluded from the benchmark file. Add `--regression` to run the fixed 18-case language and reply check from `intelligence/reply-language-regression.json`. The same explicit live flag, shared spending caps and preflight budget check apply.
 
 ## Deploy the service
 

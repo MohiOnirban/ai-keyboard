@@ -1,0 +1,78 @@
+{
+  "repeatIds": [
+    "h015",
+    "h017",
+    "h037",
+    "h049",
+    "h051",
+    "h053",
+    "h059",
+    "h087",
+    "h088",
+    "h089",
+    "h100",
+    "h111"
+  ],
+  "freshCases": [
+    {
+      "id": "r01",
+      "request": {
+        "mode": "reply",
+        "text": "Did my blue envelope turn up in your mailbox?",
+        "language": "en",
+        "style": "respectful"
+      },
+      "review": "Avoid asserting the envelope arrived or is missing."
+    },
+    {
+      "id": "r02",
+      "request": {
+        "mode": "reply",
+        "text": "আপনি কি কুরিয়ারের বাকি ৩৫০ টাকা পেয়েছেন?",
+        "language": "bn",
+        "style": "respectful"
+      },
+      "review": "Avoid asserting receipt or nonreceipt of ৩৫০ টাকা."
+    },
+    {
+      "id": "r03",
+      "request": {
+        "mode": "reply",
+        "text": "Apnar inbox e signed roster ta ashche?",
+        "language": "banglish",
+        "style": "respectful"
+      },
+      "review": "Offer to check in Latin-script Banglish without claiming receipt."
+    },
+    {
+      "id": "r04",
+      "request": {
+        "mode": "reply",
+        "text": "Apu, ajke rehearsal e gechilam, gaan ta bhule gesilam.",
+        "language": "auto",
+        "style": "respectful"
+      },
+      "review": "Acknowledge the sender’s rehearsal story in Romanized Banglish."
+    },
+    {
+      "id": "r05",
+      "request": {
+        "mode": "reply",
+        "text": "I saw the last ferry leave this morning.",
+        "language": "en",
+        "style": "respectful"
+      },
+      "review": "Keep the ferry experience with the sender."
+    },
+    {
+      "id": "r06",
+      "request": {
+        "mode": "reply",
+        "text": "I feel awkward about introducing myself at orientation.",
+        "language": "auto",
+        "style": "respectful"
+      },
+      "review": "Acknowledge the feeling in English."
+    }
+  ]
+}

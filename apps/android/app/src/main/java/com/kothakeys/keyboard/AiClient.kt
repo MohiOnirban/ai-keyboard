@@ -172,7 +172,7 @@ internal class AiClient private constructor(context: Context) {
         try {
             connection.requestMethod = method
             connection.connectTimeout = 6000
-            connection.readTimeout = 24000
+            connection.readTimeout = 55_000
             connection.instanceFollowRedirects = false
             connection.useCaches = false
             connection.setRequestProperty("Accept", "application/json")

@@ -73,3 +73,17 @@ test("Bangladeshi English vocabulary alone cannot select Banglish for auto repli
   assert.equal(result,"Let me check before I answer.");
   assert.equal(mockSuggestion({mode:"reply",text:"Tumi kothay?",language:"auto"}),"Ektu dekhe niye janai?");
 });
+
+test("the output language is a trusted instruction even when the source is in another script", () => {
+  const base = {mode: "reply", text: "PRIVATE_MESSAGE"} as const;
+  assert.match(buildPrompt({...base, language: "bn"}).instructions, /in Bengali script/);
+  assert.match(buildPrompt({...base, language: "en"}).instructions, /in conversational English/);
+  assert.match(buildPrompt({...base, language: "banglish"}).instructions, /Romanized Banglish/);
+  assert.match(buildPrompt(base).instructions, /Use Latin script throughout/);
+  assert.match(buildPrompt({...base, text: "I am bringing the green folder."}).instructions, /in conversational English/);
+  assert.match(buildPrompt({...base, text: "Tumi ajke green folder ta anba?"}).instructions, /Romanized Banglish/);
+  const bn = buildPrompt({...base, text: "কেমন আছো?"}).instructions;
+  assert.match(bn, /Mirror the original Bengali script/);
+  assert.match(bn, /say you need to check/);
+  assert.doesNotMatch(buildPrompt(base).instructions, /PRIVATE_MESSAGE/);
+});

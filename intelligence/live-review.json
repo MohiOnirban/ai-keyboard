@@ -1,0 +1,200 @@
+[
+  {
+    "id": "h002",
+    "output": "রিপোর্টটা ৪টার আগে পাঠানো সম্ভব হবে না।",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 2,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The colleague hears a clear cutoff without a promise to deliver at four. The rewrite changes little beyond adding হবে."
+  },
+  {
+    "id": "h010",
+    "output": "তোমার সময় হলে ছাদের গাছগুলো দেখাতে চাই—দেখতে ইচ্ছে হলে জানিও।",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 4
+    },
+    "basis": "The rooftop invitation gives the recipient a graceful way to decline. Asking both whether they have time and whether they feel like seeing the plants makes the line a little repetitive."
+  },
+  {
+    "id": "h013",
+    "output": "খারাপ লাগারই কথা। তুমি চেষ্টা করেছিলে—চাইলে কী হয়েছে আমাকে বলতে পারো, আমি শুনছি।",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 4,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "খারাপ লাগারই কথা validates the disappointment straight away. The offer to listen leaves the friend free to talk and makes no prediction about the team."
+  },
+  {
+    "id": "h014",
+    "output": "অবশ্যই, আপনার অনুমতি ছাড়া আপনার ছবি কোথাও দেব না।",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "আপনার fits a stranger, and the speaker explicitly promises to withhold the photo everywhere without permission."
+  },
+  {
+    "id": "h025",
+    "output": "ম্যাম, মঙ্গলবারের ক্লাসটা কোন তলায় হবে জানাবেন, দয়া করে?",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "ম্যাম and জানাবেন fit a student addressing a teacher. The question keeps Tuesday and asks for the floor, though the trailing দয়া করে sounds slightly stiff."
+  },
+  {
+    "id": "h027",
+    "output": "তোর ছাতাটা ফেরত দিতে ভুলে গেছি, সত্যিই সরি।",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 4,
+      "intention": 5,
+      "culturalFit": 4
+    },
+    "basis": "The speaker owns forgetting to return the umbrella, and সত্যিই সরি sounds heartfelt. তোর assumes the friends already use that intimate form."
+  },
+  {
+    "id": "h039",
+    "output": "Notun juta pore ajke pa duita emon andolon kortese, mone hocche meeting-er agenda te juta khola rakha chilo!",
+    "scores": {
+      "naturalness": 3,
+      "creativity": 4,
+      "intention": 4,
+      "culturalFit": 4
+    },
+    "basis": "The meeting agenda extends the feet-on-strike joke without inventing an injury. The wording makes it hard to tell whether removing the shoes was a demand or an agenda item."
+  },
+  {
+    "id": "h055",
+    "output": "Thik ache, tomar space ta respect korchi. Tumi ready hole janio.",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 3,
+      "intention": 4,
+      "culturalFit": 4
+    },
+    "basis": "The reply accepts the request for space and leaves the timing with the partner. It leaves the no-call request implicit and asks the partner to signal readiness."
+  },
+  {
+    "id": "h058",
+    "output": "Kon shomoyer jonno seat-er availability jante chacchen?",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The polite chacchen suits a stranger. Asking which time they mean moves the conversation forward without claiming any seats are available."
+  },
+  {
+    "id": "h063",
+    "output": "Tor jonno drumstick ante bhule gechi, sorry re. Amar khub kharap lagche—eta amar bhul.",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 3,
+      "intention": 4,
+      "culturalFit": 4
+    },
+    "basis": "The speaker says sorry directly and owns the mistake. Tor jonno makes the drumstick sound intended for the friend, losing the original wording about the friend’s drumstick."
+  },
+  {
+    "id": "h075",
+    "output": "My suitcase zipper is carrying this whole trip harder than I carry a grocery bag.",
+    "scores": {
+      "naturalness": 3,
+      "creativity": 3,
+      "intention": 4,
+      "culturalFit": 4
+    },
+    "basis": "The zipper carrying the trip is a playful image. The comparison “harder than I carry a grocery bag” is awkward and weakens the punchline."
+  },
+  {
+    "id": "h084",
+    "output": "Please include case ID TK-04 in the subject line.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 2,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The courteous one-line request keeps case ID, TK-04 and subject line exactly where they matter. Swapping “put” for “include” adds little stylistic change."
+  },
+  {
+    "id": "h090",
+    "output": "Understood. I’ll give you space and won’t text for now.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The answer explicitly accepts the pause in texting. “For now” reflects the friend’s time frame and asks nothing in return."
+  },
+  {
+    "id": "h096",
+    "output": "Absolutely—unless the cracks are so dramatic it needs to be counted as a papad family.",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 5,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The imagined “papad family” turns the broken pieces into the punchline and answers the serving question playfully. The lead-in is a little wordy."
+  },
+  {
+    "id": "h097",
+    "output": "Would you be able to sign the library slip on Thursday, please?",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "A polite direct question gives the teacher the exact day and item to sign, with no added reason or deadline."
+  },
+  {
+    "id": "h105",
+    "output": "Could you leave “adda” untranslated?",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The short question speaks directly to the colleague, preserves “adda” and avoids glossing a familiar term."
+  },
+  {
+    "id": "h110",
+    "output": "Of course, I won’t post your video.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The English reply acknowledges the Bengali refusal and explicitly commits to keeping the recipient’s video off the page."
+  },
+  {
+    "id": "h113",
+    "output": "I’m not comfortable sharing my address, so I won’t be sending it.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 4,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "Natural first-person English states the address-sharing boundary plainly and firmly, without giving the friend a reason to negotiate."
+  }
+]

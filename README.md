@@ -2,6 +2,8 @@
 
 Kotha Keys is the working name for a free Bangladesh-first keyboard. Both native apps offer English, raw Banglish, Bangla phonetic and a direct Bangla layout. Phonetic typing and local suggestions work offline. The on-demand AI panel offers Rewrite, Reply and Express. Users choose whether to apply the result and send the message themselves.
 
+The installable Android APK and Apple Silicon simulator ZIP are in the local artifacts directory. [Install the development builds](docs/delivery.md)
+
 ## Run a development build
 
 From the repository root, start the shared mock service.
@@ -16,7 +18,7 @@ The server listens on loopback port 4000. Android emulators use the host alias 1
 
 - **Android** uses Kotlin InputMethodService and Jetpack Compose. Build the debug APK, install it, enable Kotha Keys in system settings, and select it as the current keyboard. [Android build and activation](apps/android/README.md)
 - **iOS** uses SwiftUI and a UIKit keyboard extension. Run the KothaKeys scheme on an iPhone simulator. Add Kotha Keys in Settings → General → Keyboard → Keyboards. Switch keyboards with the globe. [iOS build, activation and signing](apps/ios/README.md)
-- **AI** uses a Fastify TypeScript API, anonymous bearer sessions and a private PostgreSQL ledger. Live requests go through OpenRouter Responses with a configurable model. The intended model is openai/gpt-6-luna. [Backend configuration](backend/README.md)
+- **AI** uses a Fastify TypeScript API, anonymous bearer sessions and a private PostgreSQL ledger. Live requests go through OpenRouter Responses with a configurable model. The model verified on both mobile platforms is `openai/gpt-6-luna`. [Backend configuration](backend/README.md)
 - **Communication** includes versioned writing examples, a separate evaluation set and reproducible benchmark commands. [Communication evaluation](intelligence/README.md)
 - **Typing** shares Avro grammar and a project-owned dictionary of common Banglish spellings. [Offline phonetic design and checks](docs/offline-typing.md)
 

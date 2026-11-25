@@ -31,6 +31,19 @@ After the live test, the default mock build was reinstalled. The Full Access off
 
 The host phonetic checks passed 26 cases and 150 dictionary entries, including uppercase Avro distinctions.
 
+### Safari and draft safety
+
+Both follow-up UI checks passed in `artifacts/ios-safari-and-draft.xcresult`.
+
+- The real extension typed `আমি ` into a local Safari textarea in dark landscape mode with Full Access off.
+- A mock preview stayed safe after the draft changed to `meeting x`. Tapping Insert preserved the edited text. Cancel closed the preview, and the test restored Full Access to off.
+
+To run the Safari fixture test, serve the fixture from the repository root before starting the simulator tests. The test skips when the fixture page is unavailable.
+
+```sh
+python3 -m http.server 4100 --bind 127.0.0.1 --directory apps/ios/Tests
+```
+
 ## Device signing and release
 
 On a physical iPhone, register the containing app and extension bundle identifiers for your team, enable the identical App Group on both, configure signing, and select the connected device. The App Group also identifies the shared Keychain access group. If you use a different group, update both the entitlement and Settings.group. Set the KEYBOARD_API_BASE build setting to the HTTPS backend on both targets. Enable Developer Mode when prompted, run the containing app, and follow the activation steps. The locally built simulator .app targets the simulator and requires a separate signed device build for an iPhone.

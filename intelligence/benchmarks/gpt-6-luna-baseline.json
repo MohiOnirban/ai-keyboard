@@ -1,0 +1,1028 @@
+[
+  {
+    "id": "h001",
+    "suggestion": "ম্যাম, ১৮ তারিখে ফিল্ডওয়ার্কের ফর্মটা জমা দিতে পারি কি?",
+    "latencyMs": 12052.013041000002,
+    "providerMs": 2628.608540999998,
+    "inputTokens": 352,
+    "outputTokens": 40,
+    "costUsd": 0.000056
+  },
+  {
+    "id": "h002",
+    "suggestion": "রিপোর্টটা ৪টার আগে পাঠানো সম্ভব হবে না।",
+    "latencyMs": 11774.21975,
+    "providerMs": 2260.831291999999,
+    "inputTokens": 342,
+    "outputTokens": 28,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h003",
+    "suggestion": "আলমারি থেকে মোজার একটা পাটি এমন নিয়ম করে হারায়, মনে হয় ওরও আলাদা কোথাও যাওয়ার প্ল্যান আছে।",
+    "latencyMs": 13920.593625000001,
+    "providerMs": 4912.403457999993,
+    "inputTokens": 345,
+    "outputTokens": 47,
+    "costUsd": 0.000058
+  },
+  {
+    "id": "h004",
+    "suggestion": "তোমার হাতের লেখা দেখলে মায়া লাগে, খুব আপন মনে হয়।",
+    "latencyMs": 12581.131291999998,
+    "providerMs": 3217.0713749999995,
+    "inputTokens": 343,
+    "outputTokens": 32,
+    "costUsd": 0.000051
+  },
+  {
+    "id": "h005",
+    "suggestion": "দয়া করে আমার নম্বরটা কাউকে দেবেন না।",
+    "latencyMs": 11532.666082999996,
+    "providerMs": 2207.4997090000106,
+    "inputTokens": 335,
+    "outputTokens": 27,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h006",
+    "suggestion": "খালা, আপনার সঙ্গে পিঠা বানানোর সেই সময়গুলো খুব মনে পড়ে—স্মৃতিটা আমার কাছে ভীষণ প্রিয়।",
+    "latencyMs": 12062.218250000005,
+    "providerMs": 2633.7672080000048,
+    "inputTokens": 355,
+    "outputTokens": 46,
+    "costUsd": 0.000059
+  },
+  {
+    "id": "h007",
+    "suggestion": "বোর্ড গেমের নিয়ম পড়তে পড়তেই সন্ধ্যা নামে—খেলা শুরু হওয়ার আগেই প্রথম রাউন্ড: সময়ের কাছে হার।",
+    "latencyMs": 11585.708375000002,
+    "providerMs": 2348.5213749999966,
+    "inputTokens": 340,
+    "outputTokens": 46,
+    "costUsd": 0.000057
+  },
+  {
+    "id": "h008",
+    "suggestion": "একসঙ্গে দুটো কাজ নেওয়া আমার পক্ষে সম্ভব হচ্ছে না। আপাতত একটি কাজই নিতে পারব।",
+    "latencyMs": 12007.901999999987,
+    "providerMs": 2678.9697499999893,
+    "inputTokens": 342,
+    "outputTokens": 39,
+    "costUsd": 0.000054
+  },
+  {
+    "id": "h009",
+    "suggestion": "আজ সবার সামনে ডাকনামটা না বললেই ভালো হয়।",
+    "latencyMs": 14162.176791000005,
+    "providerMs": 2332.5572079999984,
+    "inputTokens": 331,
+    "outputTokens": 29,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h010",
+    "suggestion": "তোমার সময় হলে ছাদের গাছগুলো দেখাতে চাই—দেখতে ইচ্ছে হলে জানিও।",
+    "latencyMs": 12086.592875000002,
+    "providerMs": 2655.9438749999827,
+    "inputTokens": 352,
+    "outputTokens": 38,
+    "costUsd": 0.000055
+  },
+  {
+    "id": "h011",
+    "suggestion": "বিকেলে সবাই মিলে উঠানে বসে একটু গল্প করতে চাই।",
+    "latencyMs": 14810.142167000013,
+    "providerMs": 5629.863499999978,
+    "inputTokens": 349,
+    "outputTokens": 29,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h012",
+    "suggestion": "খসড়াটা ফেরত দিন—চূড়ান্ত কপি এখনও লাগবে না।",
+    "latencyMs": 11888.576333000005,
+    "providerMs": 2659.6314999999886,
+    "inputTokens": 373,
+    "outputTokens": 33,
+    "costUsd": 0.000054
+  },
+  {
+    "id": "h013",
+    "suggestion": "খারাপ লাগারই কথা। তুমি চেষ্টা করেছিলে—চাইলে কী হয়েছে আমাকে বলতে পারো, আমি শুনছি।",
+    "latencyMs": 12140.229125000013,
+    "providerMs": 2913.340415999992,
+    "inputTokens": 346,
+    "outputTokens": 42,
+    "costUsd": 0.000056
+  },
+  {
+    "id": "h014",
+    "suggestion": "অবশ্যই, আপনার অনুমতি ছাড়া আপনার ছবি কোথাও দেব না।",
+    "latencyMs": 11456.249833000009,
+    "providerMs": 2205.1960410000174,
+    "inputTokens": 338,
+    "outputTokens": 30,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h015",
+    "suggestion": "স্যার, প্রেজেন্টেশনে কোন উদাহরণটি ব্যবহার করবেন?",
+    "latencyMs": 11535.108500000002,
+    "providerMs": 2095.352749999991,
+    "inputTokens": 348,
+    "outputTokens": 30,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h016",
+    "suggestion": "বাসা বদলের আগে দুশ্চিন্তা হওয়াটা স্বাভাবিক। কী নিয়ে সবচেয়ে বেশি ভাবছ?",
+    "latencyMs": 11655.675749999995,
+    "providerMs": 2427.300958000007,
+    "inputTokens": 350,
+    "outputTokens": 39,
+    "costUsd": 0.000055
+  },
+  {
+    "id": "h017",
+    "suggestion": "এখনও মিলিয়ে দেখা হয়নি। একটু দেখে আপনাকে জানাচ্ছি।",
+    "latencyMs": 12988.805458000017,
+    "providerMs": 3840.9746250000026,
+    "inputTokens": 347,
+    "outputTokens": 32,
+    "costUsd": 0.000051
+  },
+  {
+    "id": "h018",
+    "suggestion": "ঠিক আছে, সময় নাও। কথা বলতে ইচ্ছে হলে আমি আছি।",
+    "latencyMs": 11720.456417000009,
+    "providerMs": 2503.9142089999805,
+    "inputTokens": 330,
+    "outputTokens": 31,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h019",
+    "suggestion": "ঠিক আছে, তোমার সিদ্ধান্তকে সম্মান করছি। আপাতত এ নিয়ে আর কথা বাড়াব না।",
+    "latencyMs": 11911.798416999984,
+    "providerMs": 2880.0829170000216,
+    "inputTokens": 349,
+    "outputTokens": 36,
+    "costUsd": 0.000053
+  },
+  {
+    "id": "h020",
+    "suggestion": "কোনো সমস্যা নেই, জানিয়ে দেওয়ার জন্য ধন্যবাদ।",
+    "latencyMs": 11502.466125000006,
+    "providerMs": 2340.7165000000095,
+    "inputTokens": 345,
+    "outputTokens": 29,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h021",
+    "suggestion": "নাটক শুরু হতেই পর্দার এমন এন্ট্রি—ওকে কি প্রধান চরিত্র বানাব?",
+    "latencyMs": 11561.63162499998,
+    "providerMs": 2362.287042000011,
+    "inputTokens": 348,
+    "outputTokens": 37,
+    "costUsd": 0.000054
+  },
+  {
+    "id": "h022",
+    "suggestion": "আপনি কোন তারিখের এবং কোন রুটের টিকিট খুঁজছেন জানালে দেখে বলতে পারব।",
+    "latencyMs": 11554.432207999984,
+    "providerMs": 2305.5389159999904,
+    "inputTokens": 339,
+    "outputTokens": 38,
+    "costUsd": 0.000053
+  },
+  {
+    "id": "h023",
+    "suggestion": "স্কুলের প্রথম দিনটা নিশ্চয়ই তোমার জন্য অনেক আবেগের। ওর জন্য অনেক শুভকামনা—মনটা কেমন লাগছে এখন?",
+    "latencyMs": 11985.300541999983,
+    "providerMs": 2628.4521659999737,
+    "inputTokens": 346,
+    "outputTokens": 48,
+    "costUsd": 0.000059
+  },
+  {
+    "id": "h024",
+    "suggestion": "ভোট হবে, তবে গণনা করবে কে? বিরিয়ানির আলু নিয়ে কারচুপি চলবে না—প্রতি প্লেটে একটা করে!",
+    "latencyMs": 12058.88512500003,
+    "providerMs": 2815.5434999999707,
+    "inputTokens": 349,
+    "outputTokens": 46,
+    "costUsd": 0.000058
+  },
+  {
+    "id": "h025",
+    "suggestion": "ম্যাম, মঙ্গলবারের ক্লাসটা কোন তলায় হবে জানাবেন, দয়া করে?",
+    "latencyMs": 11591.000958000019,
+    "providerMs": 2389.044500000018,
+    "inputTokens": 341,
+    "outputTokens": 36,
+    "costUsd": 0.000053
+  },
+  {
+    "id": "h026",
+    "suggestion": "জানাতে চাই, ৯:১৫-এর আগে আমি কল নিতে পারব না।",
+    "latencyMs": 11723.869209000026,
+    "providerMs": 2518.210625000007,
+    "inputTokens": 349,
+    "outputTokens": 32,
+    "costUsd": 0.000051
+  },
+  {
+    "id": "h027",
+    "suggestion": "তোর ছাতাটা ফেরত দিতে ভুলে গেছি, সত্যিই সরি।",
+    "latencyMs": 14435.254040999978,
+    "providerMs": 2273.616209,
+    "inputTokens": 344,
+    "outputTokens": 32,
+    "costUsd": 0.000051
+  },
+  {
+    "id": "h028",
+    "suggestion": "তারাভরা কোনো রাতে তোমার পাশে চুপচাপ বসে থাকতে ইচ্ছে করে।",
+    "latencyMs": 12054.552416999999,
+    "providerMs": 2735.7835409999825,
+    "inputTokens": 342,
+    "outputTokens": 34,
+    "costUsd": 0.000052
+  },
+  {
+    "id": "h029",
+    "suggestion": "দাদু, বিকেলের নাশতায় লবণটা একটু কম দিও, প্লিজ।",
+    "latencyMs": 11595.235125000007,
+    "providerMs": 2389.6000829999684,
+    "inputTokens": 353,
+    "outputTokens": 36,
+    "costUsd": 0.000054
+  },
+  {
+    "id": "h030",
+    "suggestion": "দুঃখিত, আজ ধার দিতে পারব না। আশা করি বুঝবে।",
+    "latencyMs": 11577.363458000007,
+    "providerMs": 2417.8458329999703,
+    "inputTokens": 338,
+    "outputTokens": 32,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h031",
+    "suggestion": "তোমার আঁকা নিয়ে একটু কথা বলতে চাই—তোমারও আগ্রহ থাকলে জানিও।",
+    "latencyMs": 11433.344374999986,
+    "providerMs": 2268.731458000024,
+    "inputTokens": 346,
+    "outputTokens": 37,
+    "costUsd": 0.000054
+  },
+  {
+    "id": "h032",
+    "suggestion": "আমাদের এক মিনিটের বিরতিটা আধা ঘণ্টা হয়ে যায়—সময়ের হিসাবটা বেশ সুবিধামতো চলে দেখি!",
+    "latencyMs": 12595.739833,
+    "providerMs": 3158.457582999952,
+    "inputTokens": 347,
+    "outputTokens": 42,
+    "costUsd": 0.000056
+  },
+  {
+    "id": "h033",
+    "suggestion": "আজকের review-টা বাংলায় করি, অনুরোধ করছি।",
+    "latencyMs": 11573.824167000013,
+    "providerMs": 2366.457000000053,
+    "inputTokens": 353,
+    "outputTokens": 28,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h034",
+    "suggestion": "দয়া করে সারিতে আমার জায়গাটা ধরে রাখবেন।",
+    "latencyMs": 11498.170042000012,
+    "providerMs": 2321.0214999999735,
+    "inputTokens": 339,
+    "outputTokens": 28,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h035",
+    "suggestion": "নতুন সাইকেল শিখতে একটু সময় লাগতেই পারে, ভাই। ধীরে ধীরে চেষ্টা করো—নার্ভাস লাগলেও সেটা একদম স্বাভাবিক।",
+    "latencyMs": 12567.610125000007,
+    "providerMs": 3181.049291000003,
+    "inputTokens": 355,
+    "outputTokens": 51,
+    "costUsd": 0.000061
+  },
+  {
+    "id": "h036",
+    "suggestion": "তোর ব্যাগে এত কাগজ, প্রিন্টারও দেখে বলবে—ভাই, একটু কমাও!",
+    "latencyMs": 11580.546875,
+    "providerMs": 2353.315082999994,
+    "inputTokens": 346,
+    "outputTokens": 40,
+    "costUsd": 0.000055
+  },
+  {
+    "id": "h037",
+    "suggestion": "Miss, মঙ্গলবারের কুইজটি কি B2 রুমে হবে?",
+    "latencyMs": 12020.853291000007,
+    "providerMs": 2650.121833000041,
+    "inputTokens": 345,
+    "outputTokens": 30,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h038",
+    "suggestion": "5:40-er train dhorte hobe, tai tar agei ber hobo.",
+    "latencyMs": 12053.67191699997,
+    "providerMs": 2537.8729579999927,
+    "inputTokens": 338,
+    "outputTokens": 32,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h039",
+    "suggestion": "Notun juta pore ajke pa duita emon andolon kortese, mone hocche meeting-er agenda te juta khola rakha chilo!",
+    "latencyMs": 11729.020625000005,
+    "providerMs": 2485.6790829999954,
+    "inputTokens": 333,
+    "outputTokens": 46,
+    "costUsd": 0.000057
+  },
+  {
+    "id": "h040",
+    "suggestion": "Tomar hater lekha chithi pele amar khub bhalo lage.",
+    "latencyMs": 11340.102707999991,
+    "providerMs": 2165.729915999982,
+    "inputTokens": 329,
+    "outputTokens": 30,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h041",
+    "suggestion": "Please amar voice note-ta karo shathe share korben na.",
+    "latencyMs": 11655.716832999955,
+    "providerMs": 2420.905167000019,
+    "inputTokens": 330,
+    "outputTokens": 27,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h042",
+    "suggestion": "Apu, tomar purono ranna-r khatar kotha khub mone pore—otar shathe koto smriti joriye ache.",
+    "latencyMs": 11532.219917000039,
+    "providerMs": 2429.780583999993,
+    "inputTokens": 339,
+    "outputTokens": 45,
+    "costUsd": 0.000057
+  },
+  {
+    "id": "h043",
+    "suggestion": "Poster lagate giye tape-ta-i khuje pai na—poster ready, tape missing!",
+    "latencyMs": 11938.667750000022,
+    "providerMs": 2835.276957999973,
+    "inputTokens": 323,
+    "outputTokens": 33,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h044",
+    "suggestion": "Duita deadline ek dine thakay amar jonno manage kora ektu kothin hobe.",
+    "latencyMs": 11534.030541999964,
+    "providerMs": 2109.3569170000264,
+    "inputTokens": 338,
+    "outputTokens": 35,
+    "costUsd": 0.000052
+  },
+  {
+    "id": "h045",
+    "suggestion": "Aj please oi nickname-ta diye dakish na.",
+    "latencyMs": 11692.157583000022,
+    "providerMs": 2475.5836250000866,
+    "inputTokens": 330,
+    "outputTokens": 24,
+    "costUsd": 0.000045
+  },
+  {
+    "id": "h046",
+    "suggestion": "Ichcha hole amar camera diye chhobi tule dekhte paro 😊",
+    "latencyMs": 11460.83837500005,
+    "providerMs": 2400.6113749999786,
+    "inputTokens": 342,
+    "outputTokens": 29,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h047",
+    "suggestion": "Cholo, kal shondhay chhade boshe cha khai.",
+    "latencyMs": 11576.841124999919,
+    "providerMs": 2446.5375830000266,
+    "inputTokens": 351,
+    "outputTokens": 29,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h048",
+    "suggestion": "Budget sheet-ta chai, receipt ekhon lagbe na.",
+    "latencyMs": 11467.434000000008,
+    "providerMs": 2355.9239589999197,
+    "inputTokens": 348,
+    "outputTokens": 26,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h049",
+    "suggestion": "আহা রে, অডিশন দিয়ে সিলেক্ট না হওয়াটা নিশ্চয়ই খারাপ লাগছে।",
+    "latencyMs": 12000.06712500006,
+    "providerMs": 2823.1111670000246,
+    "inputTokens": 336,
+    "outputTokens": 42,
+    "costUsd": 0.000055
+  },
+  {
+    "id": "h050",
+    "suggestion": "Bujhte perechi. Apnake ar kono promo message pathabo na.",
+    "latencyMs": 11536.896041000029,
+    "providerMs": 2276.861707999953,
+    "inputTokens": 338,
+    "outputTokens": 31,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h051",
+    "suggestion": "স্যার/ম্যাম, কোন প্রশ্নটি নিয়ে কাজ করব জানালে শুরু করতে পারি।",
+    "latencyMs": 12163.106458000024,
+    "providerMs": 2901.3956250000047,
+    "inputTokens": 337,
+    "outputTokens": 35,
+    "costUsd": 0.000052
+  },
+  {
+    "id": "h052",
+    "suggestion": "Bujhte parchi, interview er age tension howa shabhabik. Ektu dhire shash nao—tumi ja paro, shetai korlei hobe.",
+    "latencyMs": 11953.911625000066,
+    "providerMs": 2717.0819589999737,
+    "inputTokens": 347,
+    "outputTokens": 51,
+    "costUsd": 0.000061
+  },
+  {
+    "id": "h053",
+    "suggestion": "হ্যাঁ, পেয়েছি। ধন্যবাদ।",
+    "latencyMs": 11530.061915999977,
+    "providerMs": 2102.3232919999864,
+    "inputTokens": 342,
+    "outputTokens": 26,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h054",
+    "suggestion": "Thik ache, jokhon bolte ichchha korbe ami achhi.",
+    "latencyMs": 12061.524958000053,
+    "providerMs": 2628.15541700006,
+    "inputTokens": 330,
+    "outputTokens": 31,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h055",
+    "suggestion": "Thik ache, tomar space ta respect korchi. Tumi ready hole janio.",
+    "latencyMs": 12060.19383299991,
+    "providerMs": 2629.2633749999804,
+    "inputTokens": 337,
+    "outputTokens": 32,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h056",
+    "suggestion": "Bujhte parchi, kholakhuli bolar jonno thanks. Kono pressure nei—tomar decision-ke respect kori.",
+    "latencyMs": 12059.98541600001,
+    "providerMs": 2719.0314999999246,
+    "inputTokens": 340,
+    "outputTokens": 41,
+    "costUsd": 0.000055
+  },
+  {
+    "id": "h057",
+    "suggestion": "Gof ta character-er agei nijer role shesh kore dilo! Pore pin diye naamate hobe 😄",
+    "latencyMs": 12061.025707999943,
+    "providerMs": 2716.2224579999456,
+    "inputTokens": 342,
+    "outputTokens": 39,
+    "costUsd": 0.000054
+  },
+  {
+    "id": "h058",
+    "suggestion": "Kon shomoyer jonno seat-er availability jante chacchen?",
+    "latencyMs": 11747.727124999976,
+    "providerMs": 2362.5514170000097,
+    "inputTokens": 338,
+    "outputTokens": 28,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h059",
+    "suggestion": "Aj purano bari ta sheshbarer moto dekhe mon ta khub kharap hoye gelo. Onek smriti joriye chhilo.",
+    "latencyMs": 11846.622124999994,
+    "providerMs": 2723.8663749999832,
+    "inputTokens": 345,
+    "outputTokens": 46,
+    "costUsd": 0.000058
+  },
+  {
+    "id": "h060",
+    "suggestion": "Singara’r shathe ketchup? Eta debate na, bondhutto porikkha—tui kon dike?",
+    "latencyMs": 12068.484208000009,
+    "providerMs": 2493.896999999997,
+    "inputTokens": 339,
+    "outputTokens": 38,
+    "costUsd": 0.000053
+  },
+  {
+    "id": "h061",
+    "suggestion": "Sir, lab access-er niyomta ki ektu janaben?",
+    "latencyMs": 12238.012999999919,
+    "providerMs": 3022.6620419999817,
+    "inputTokens": 351,
+    "outputTokens": 29,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h062",
+    "suggestion": "3:25-er age file-ta khulte parbo na—eta janacchi.",
+    "latencyMs": 11325.923625000054,
+    "providerMs": 2200.1805830000667,
+    "inputTokens": 352,
+    "outputTokens": 32,
+    "costUsd": 0.000052
+  },
+  {
+    "id": "h063",
+    "suggestion": "Tor jonno drumstick ante bhule gechi, sorry re. Amar khub kharap lagche—eta amar bhul.",
+    "latencyMs": 11742.572167000035,
+    "providerMs": 2474.517082999926,
+    "inputTokens": 333,
+    "outputTokens": 41,
+    "costUsd": 0.000054
+  },
+  {
+    "id": "h064",
+    "suggestion": "Brishtir por tomar shathe math-er pashe ektu boshte chai, jodi tomar-o ichchha hoy.",
+    "latencyMs": 11852.032958999975,
+    "providerMs": 2432.68529100006,
+    "inputTokens": 348,
+    "outputTokens": 40,
+    "costUsd": 0.000055
+  },
+  {
+    "id": "h065",
+    "suggestion": "Khala, cha-e chini-ta ektu kom dio, please.",
+    "latencyMs": 11530.706624999992,
+    "providerMs": 2184.669542000047,
+    "inputTokens": 344,
+    "outputTokens": 28,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h066",
+    "suggestion": "Ebar amar cycle-ta dhar dite parbo na—ei bar ta na boltei hocche. Bujhar jonno dhonnobad.",
+    "latencyMs": 12075.627457999974,
+    "providerMs": 2710.6711249999935,
+    "inputTokens": 334,
+    "outputTokens": 45,
+    "costUsd": 0.000056
+  },
+  {
+    "id": "h067",
+    "suggestion": "Tumi chaile, tomar chhobi tolar golpota shunte chai.",
+    "latencyMs": 11632.03375000006,
+    "providerMs": 2416.1664159999928,
+    "inputTokens": 336,
+    "outputTokens": 32,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h068",
+    "suggestion": "Chhoto revision korte boshe pura raat-i chole gelo—ekhon group-e moja korar pala, karon porashona toh shesh hobar na 😅",
+    "latencyMs": 12088.265792000107,
+    "providerMs": 2939.034624999971,
+    "inputTokens": 339,
+    "outputTokens": 51,
+    "costUsd": 0.00006
+  },
+  {
+    "id": "h069",
+    "suggestion": "Ajker standup-ta Banglish-e kori?",
+    "latencyMs": 11457.376124999952,
+    "providerMs": 2383.2235830000136,
+    "inputTokens": 349,
+    "outputTokens": 24,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h070",
+    "suggestion": "Excuse me, counter-er line-ta kothay, bolben?",
+    "latencyMs": 11471.185500000021,
+    "providerMs": 2293.5236250000307,
+    "inputTokens": 345,
+    "outputTokens": 29,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h071",
+    "suggestion": "Notun hostel-e maniye nite ektu shomoy lagtei pare, bon. Kemon lagche tomar? Chaile amar sathe share korte paro.",
+    "latencyMs": 12054.784290999989,
+    "providerMs": 2625.4491670000134,
+    "inputTokens": 349,
+    "outputTokens": 48,
+    "costUsd": 0.000059
+  },
+  {
+    "id": "h072",
+    "suggestion": "Tor pencil box-e pencil chara shob ache—pencil-ta bodhoy box-er sathe break-up koreche.",
+    "latencyMs": 12059.550249999971,
+    "providerMs": 2630.172125000041,
+    "inputTokens": 337,
+    "outputTokens": 40,
+    "costUsd": 0.000054
+  },
+  {
+    "id": "h073",
+    "suggestion": "Sir, would it be alright if I cited the 2018 edition in my essay?",
+    "latencyMs": 11576.91041599994,
+    "providerMs": 2370.550750000053,
+    "inputTokens": 333,
+    "outputTokens": 32,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h074",
+    "suggestion": "Could you please send page 12 only, not the entire contract?",
+    "latencyMs": 11490.730457999976,
+    "providerMs": 2090.869459000067,
+    "inputTokens": 328,
+    "outputTokens": 28,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h075",
+    "suggestion": "My suitcase zipper is carrying this whole trip harder than I carry a grocery bag.",
+    "latencyMs": 11538.941708000028,
+    "providerMs": 2099.339500000002,
+    "inputTokens": 327,
+    "outputTokens": 30,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h076",
+    "suggestion": "I love that little pause before you laugh—it always makes me smile.",
+    "latencyMs": 11217.694957999978,
+    "providerMs": 1987.0557910000207,
+    "inputTokens": 325,
+    "outputTokens": 28,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h077",
+    "suggestion": "Please blur my face before uploading the photo.",
+    "latencyMs": 11325.700375000015,
+    "providerMs": 2184.4696660001064,
+    "inputTokens": 327,
+    "outputTokens": 23,
+    "costUsd": 0.000045
+  },
+  {
+    "id": "h078",
+    "suggestion": "Aunty, I still use the mug you gave me, and it always reminds me how much your thoughtfulness means to me.",
+    "latencyMs": 11710.358166999999,
+    "providerMs": 2474.1165830000537,
+    "inputTokens": 334,
+    "outputTokens": 44,
+    "costUsd": 0.000056
+  },
+  {
+    "id": "h079",
+    "suggestion": "Ten seconds of video, nineteen takes to get there.",
+    "latencyMs": 11883.794416000019,
+    "providerMs": 2627.0620839999756,
+    "inputTokens": 324,
+    "outputTokens": 25,
+    "costUsd": 0.000045
+  },
+  {
+    "id": "h080",
+    "suggestion": "I’d rather share an honest price range than guess at a single price.",
+    "latencyMs": 11535.421624999959,
+    "providerMs": 2234.573958999943,
+    "inputTokens": 324,
+    "outputTokens": 29,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h081",
+    "suggestion": "Please leave me untagged in the picnic album.",
+    "latencyMs": 12052.446874999907,
+    "providerMs": 2123.4623339999234,
+    "inputTokens": 328,
+    "outputTokens": 25,
+    "costUsd": 0.000046
+  },
+  {
+    "id": "h082",
+    "suggestion": "I'd love to swap playlists sometime, if you're up for it.",
+    "latencyMs": 16255.285125000053,
+    "providerMs": 2160.9584160000086,
+    "inputTokens": 330,
+    "outputTokens": 27,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h083",
+    "suggestion": "Let’s call Nani after iftar, once she’s had a chance to eat.",
+    "latencyMs": 12061.090291999979,
+    "providerMs": 2791.766125000082,
+    "inputTokens": 341,
+    "outputTokens": 32,
+    "costUsd": 0.000051
+  },
+  {
+    "id": "h084",
+    "suggestion": "Please include case ID TK-04 in the subject line.",
+    "latencyMs": 11533.243999999948,
+    "providerMs": 2161.583665999933,
+    "inputTokens": 349,
+    "outputTokens": 26,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h085",
+    "suggestion": "I’m sorry—that’s disappointing, especially after putting yourself out there. It’s okay to feel let down.",
+    "latencyMs": 11569.94550000003,
+    "providerMs": 2258.889582999982,
+    "inputTokens": 335,
+    "outputTokens": 36,
+    "costUsd": 0.000052
+  },
+  {
+    "id": "h086",
+    "suggestion": "Understood. I’ll take you off the guest list. Thanks for letting me know.",
+    "latencyMs": 11501.227084000013,
+    "providerMs": 2258.498249999946,
+    "inputTokens": 334,
+    "outputTokens": 32,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h087",
+    "suggestion": "I haven’t confirmed that yet. Could you please let me know how I should submit the signed consent form?",
+    "latencyMs": 11533.457584000076,
+    "providerMs": 2156.685541999992,
+    "inputTokens": 334,
+    "outputTokens": 36,
+    "costUsd": 0.000052
+  },
+  {
+    "id": "h088",
+    "suggestion": "প্রথমবার একা ভ্রমণ করতে গেলে নার্ভাস লাগাটা স্বাভাবিক। তোমার এমন লাগছে বুঝতে পারছি।",
+    "latencyMs": 11571.22333399998,
+    "providerMs": 2359.996250000084,
+    "inputTokens": 336,
+    "outputTokens": 43,
+    "costUsd": 0.000056
+  },
+  {
+    "id": "h089",
+    "suggestion": "I’m checking on the final count for table seven. Could you please share it when you have a moment?",
+    "latencyMs": 12022.159125000006,
+    "providerMs": 2518.0295829998795,
+    "inputTokens": 332,
+    "outputTokens": 36,
+    "costUsd": 0.000052
+  },
+  {
+    "id": "h090",
+    "suggestion": "Understood. I’ll give you space and won’t text for now.",
+    "latencyMs": 12051.52254200005,
+    "providerMs": 2676.267332999967,
+    "inputTokens": 331,
+    "outputTokens": 29,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h091",
+    "suggestion": "Of course. We can leave it here for now and talk later if you’d like.",
+    "latencyMs": 11563.189708000049,
+    "providerMs": 2352.900333000114,
+    "inputTokens": 335,
+    "outputTokens": 32,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h092",
+    "suggestion": "Thanks for being honest with me. I respect that, and I’m happy to keep things as friends.",
+    "latencyMs": 11597.552332999883,
+    "providerMs": 2409.7912920000963,
+    "inputTokens": 335,
+    "outputTokens": 35,
+    "costUsd": 0.000051
+  },
+  {
+    "id": "h093",
+    "suggestion": "So much for keeping things quiet—the mic had other plans!",
+    "latencyMs": 11446.267833000049,
+    "providerMs": 2201.2842909998726,
+    "inputTokens": 329,
+    "outputTokens": 26,
+    "costUsd": 0.000046
+  },
+  {
+    "id": "h094",
+    "suggestion": "I’m not sure—please check with the archive directly for its second-Saturday hours.",
+    "latencyMs": 12076.942166999914,
+    "providerMs": 2697.321624999866,
+    "inputTokens": 335,
+    "outputTokens": 32,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h095",
+    "suggestion": "I bet it feels strange seeing that familiar spot without the swing.",
+    "latencyMs": 12044.845082999906,
+    "providerMs": 2622.4719589999877,
+    "inputTokens": 330,
+    "outputTokens": 27,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h096",
+    "suggestion": "Absolutely—unless the cracks are so dramatic it needs to be counted as a papad family.",
+    "latencyMs": 11697.559124999912,
+    "providerMs": 2492.143791000126,
+    "inputTokens": 331,
+    "outputTokens": 33,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h097",
+    "suggestion": "Would you be able to sign the library slip on Thursday, please?",
+    "latencyMs": 11373.106124999933,
+    "providerMs": 2097.7817090000026,
+    "inputTokens": 330,
+    "outputTokens": 28,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h098",
+    "suggestion": "I won’t be able to review file QA-19 before lunch.",
+    "latencyMs": 11532.928208000027,
+    "providerMs": 2207.6596250000875,
+    "inputTokens": 327,
+    "outputTokens": 28,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h099",
+    "suggestion": "I’m really sorry I skipped your turn in the game. That wasn’t fair to you.",
+    "latencyMs": 11658.158874999965,
+    "providerMs": 2452.486082999967,
+    "inputTokens": 331,
+    "outputTokens": 33,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "h100",
+    "suggestion": "তোমার সঙ্গে বারান্দার আলো গুনে সন্ধেটা কাটাতে খুব ভালো লাগবে।",
+    "latencyMs": 11558.094042000128,
+    "providerMs": 2457.6037920000963,
+    "inputTokens": 328,
+    "outputTokens": 36,
+    "costUsd": 0.000051
+  },
+  {
+    "id": "h101",
+    "suggestion": "Uncle, could you please save me a seat near the aisle?",
+    "latencyMs": 13483.760416999925,
+    "providerMs": 4285.324500000104,
+    "inputTokens": 325,
+    "outputTokens": 28,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h102",
+    "suggestion": "I can’t lend you my headphones this week. Hope you understand.",
+    "latencyMs": 11675.481875000056,
+    "providerMs": 2389.9845000000205,
+    "inputTokens": 325,
+    "outputTokens": 28,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h103",
+    "suggestion": "Would you like to browse the stationery shop together sometime?",
+    "latencyMs": 11392.78649999993,
+    "providerMs": 2100.826166999992,
+    "inputTokens": 332,
+    "outputTokens": 25,
+    "costUsd": 0.000046
+  },
+  {
+    "id": "h104",
+    "suggestion": "We really spent two hours debating a logo colour—good thing the future of the company was at stake.",
+    "latencyMs": 11600.84424999985,
+    "providerMs": 2364.3231250001118,
+    "inputTokens": 339,
+    "outputTokens": 35,
+    "costUsd": 0.000052
+  },
+  {
+    "id": "h105",
+    "suggestion": "Could you leave “adda” untranslated?",
+    "latencyMs": 11470.951583000133,
+    "providerMs": 1985.026291999966,
+    "inputTokens": 343,
+    "outputTokens": 22,
+    "costUsd": 0.000046
+  },
+  {
+    "id": "h106",
+    "suggestion": "Excuse me, where does the queue for parcel pickup start?",
+    "latencyMs": 11552.998374999966,
+    "providerMs": 2352.0430000000633,
+    "inputTokens": 329,
+    "outputTokens": 27,
+    "costUsd": 0.000047
+  },
+  {
+    "id": "h107",
+    "suggestion": "It’s okay if learning the harmonium feels slow. I know it can take time, so be kind to yourself and go at your own pace.",
+    "latencyMs": 11636.426041999832,
+    "providerMs": 2435.3912499998696,
+    "inputTokens": 332,
+    "outputTokens": 44,
+    "costUsd": 0.000056
+  },
+  {
+    "id": "h108",
+    "suggestion": "This printer has a real talent for turning perfectly good paper into a magic trick.",
+    "latencyMs": 11941.462374999886,
+    "providerMs": 2622.631042000139,
+    "inputTokens": 335,
+    "outputTokens": 30,
+    "costUsd": 0.000049
+  },
+  {
+    "id": "h109",
+    "suggestion": "Uff, trip-er por eto klanto lagata shabhabik. Ektu rest nao.",
+    "latencyMs": 11533.21245799982,
+    "providerMs": 2303.664958999958,
+    "inputTokens": 334,
+    "outputTokens": 35,
+    "costUsd": 0.000051
+  },
+  {
+    "id": "h110",
+    "suggestion": "Of course, I won’t post your video.",
+    "latencyMs": 11543.76512500015,
+    "providerMs": 2090.155000000028,
+    "inputTokens": 329,
+    "outputTokens": 24,
+    "costUsd": 0.000045
+  },
+  {
+    "id": "h111",
+    "suggestion": "রুম A17 খালি আছে কি না নিশ্চিত করে জানাবেন?",
+    "latencyMs": 11530.416458999971,
+    "providerMs": 2049.587249999866,
+    "inputTokens": 328,
+    "outputTokens": 29,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h112",
+    "suggestion": "Aaj 2:30-er age call nite parbo na.",
+    "latencyMs": 11607.03058299981,
+    "providerMs": 2396.750957999844,
+    "inputTokens": 334,
+    "outputTokens": 29,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h113",
+    "suggestion": "I’m not comfortable sharing my address, so I won’t be sending it.",
+    "latencyMs": 11458.667833000189,
+    "providerMs": 2289.598999999929,
+    "inputTokens": 326,
+    "outputTokens": 30,
+    "costUsd": 0.000048
+  },
+  {
+    "id": "h114",
+    "suggestion": "তারিখটা 04/12 ঠিক এভাবেই রেখো, দয়া করে।",
+    "latencyMs": 11680.72262500017,
+    "providerMs": 2467.9974170001224,
+    "inputTokens": 335,
+    "outputTokens": 32,
+    "costUsd": 0.00005
+  }
+]

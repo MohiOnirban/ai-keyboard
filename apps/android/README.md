@@ -36,7 +36,7 @@ Use a configured HTTPS service when testing away from the development machine.
 
 Tap **AI**, choose Rewrite, Reply, or Express, then tap **Generate**. Rewrite uses an active selection, or on Android 14 and newer a short draft ending at the cursor when the keyboard can reliably determine the editor’s selection and draft bounds. Reply and Express use text explicitly pasted or typed into the panel. Press **Replace** or **Insert** only after reviewing the result. If the editor has changed, the preview offers safe insertion and copying. Private fields and specialized address and numeric fields do not expose the assistant. Android applications can withhold editor context or refuse editing operations.
 
-Pressing Generate is the network action. Closing the keyboard or changing focused fields clears its pending request and preview. A request that already reached the service can finish there. A successful provider response can count toward the installation's allowance even if the keyboard was closed. Session credentials are encrypted with an Android Keystore AES-GCM key. The companion can revoke the current session and clear local preferences separately.
+Pressing Generate is the network action. Closing the keyboard or changing focused fields clears its pending request and preview. A request that already reached the service can finish there. A successful provider response can count toward the installation's allowance even if the keyboard was closed. Session credentials are encrypted with an Android Keystore AES-GCM key and bound to the backend scheme, host, and effective port. Changing to a different backend origin starts a new installation session. Upgrading discards the former credential entry whose origin was unspecified. The companion can revoke the current session and clear local preferences separately.
 
 ## Validation
 
@@ -58,6 +58,12 @@ adb -s emulator-5554 shell am instrument -w -e kothaMock true \
 ```
 
 See [Verification results](VERIFICATION.md) for device and workflow coverage.
+
+## Opt-in real-provider smoke test
+
+The regular Android test suite uses the mock backend. The optional `-PkothaLiveSmoke=true` build adds a separate `com.kothakeys.keyboard.livesmoke` package and a synthetic test. Use it on an isolated emulator with an explicitly authorized, budgeted local service. Set `kothaBackendUrl=http://127.0.0.1:4012` for the live APK and use `adb reverse tcp:4012 tcp:4012`. Verify that the mapped health route responds before the run.
+
+The smoke method requires both `kothaLiveSmoke=true` and `kothaSmokeProvider=live` as instrumentation arguments and uses a single Generate action. It reads the synthetic host draft before acceptance and checks that Replace applies exactly the returned preview. The same scenario can be exercised against the mock by building with `http://10.0.2.2:4000` and passing `kothaSmokeProvider=mock`. Restore the regular mock IME and remove the temporary smoke package and 4012 mapping after a live run.
 
 ## Release build
 

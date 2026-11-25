@@ -1,0 +1,200 @@
+{
+  "source": "captured fictional outputs",
+  "exampleFamilies": 100,
+  "authoredExamples": 500,
+  "scenarios": 114,
+  "passAllMechanicalChecks": 101,
+  "checkFailures": {
+    "format": 0,
+    "script": 6,
+    "anchors": 9,
+    "prohibited phrase": 0,
+    "planning language": 0
+  },
+  "unchangedByMode": {
+    "rewrite": 0,
+    "reply": 0,
+    "express": 0
+  },
+  "distinctOutputs": 114,
+  "mostRepeatedOutputCount": 1,
+  "medianCharacters": 60,
+  "p95Characters": 106,
+  "latencyMs": {
+    "measured": 114,
+    "median": 11658.1589,
+    "p95": 13483.7604
+  },
+  "costUsd": 0.005835,
+  "providerMs": {
+    "measured": 114,
+    "median": 2417.8458,
+    "p95": 3181.0493
+  },
+  "inputTokens": 38610,
+  "outputTokens": 3854,
+  "scoredSample": 18,
+  "editorialSampleMeans": {
+    "naturalness": 4.44,
+    "creativity": 3.22,
+    "intention": 4.78,
+    "culturalFit": 4.67
+  },
+  "failed": [
+    {
+      "id": "h015",
+      "reasons": [
+        "anchors"
+      ],
+      "missing": [
+        [
+          "দেখে",
+          "জানাব",
+          "ভাবছি",
+          "ঠিক করে"
+        ]
+      ],
+      "prohibited": []
+    },
+    {
+      "id": "h037",
+      "reasons": [
+        "script",
+        "anchors"
+      ],
+      "missing": [
+        [
+          "quiz"
+        ]
+      ],
+      "prohibited": []
+    },
+    {
+      "id": "h049",
+      "reasons": [
+        "script"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h051",
+      "reasons": [
+        "script"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h053",
+      "reasons": [
+        "script"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h056",
+      "reasons": [
+        "anchors"
+      ],
+      "missing": [
+        [
+          "thik ache",
+          "shomman",
+          "bujhlam"
+        ]
+      ],
+      "prohibited": []
+    },
+    {
+      "id": "h068",
+      "reasons": [
+        "anchors"
+      ],
+      "missing": [
+        [
+          "rat"
+        ]
+      ],
+      "prohibited": []
+    },
+    {
+      "id": "h079",
+      "reasons": [
+        "anchors"
+      ],
+      "missing": [
+        [
+          "outtake"
+        ]
+      ],
+      "prohibited": []
+    },
+    {
+      "id": "h081",
+      "reasons": [
+        "anchors"
+      ],
+      "missing": [
+        [
+          "don't",
+          "do not",
+          "skip",
+          "avoid"
+        ]
+      ],
+      "prohibited": []
+    },
+    {
+      "id": "h088",
+      "reasons": [
+        "script"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h098",
+      "reasons": [
+        "anchors"
+      ],
+      "missing": [
+        [
+          "can't",
+          "cannot"
+        ]
+      ],
+      "prohibited": []
+    },
+    {
+      "id": "h100",
+      "reasons": [
+        "script",
+        "anchors"
+      ],
+      "missing": [
+        [
+          "balcony"
+        ],
+        [
+          "light"
+        ]
+      ],
+      "prohibited": []
+    },
+    {
+      "id": "h102",
+      "reasons": [
+        "anchors"
+      ],
+      "missing": [
+        [
+          "won't",
+          "will not"
+        ]
+      ],
+      "prohibited": []
+    }
+  ]
+}

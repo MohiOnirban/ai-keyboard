@@ -1,0 +1,164 @@
+[
+  {
+    "id": "h015",
+    "suggestion": "স্যার, কোন উদাহরণটি ব্যবহার করব তা এখনো নিশ্চিত নই—একটু দেখে আপনাকে জানাচ্ছি।",
+    "latencyMs": 12767.132625,
+    "providerMs": 3575.189207999998,
+    "inputTokens": 425,
+    "outputTokens": 42,
+    "costUsd": 0.000064
+  },
+  {
+    "id": "h017",
+    "suggestion": "আমি হিসাবটা দেখে নিশ্চিত হয়ে জানাচ্ছি।",
+    "latencyMs": 10912.811832999996,
+    "providerMs": 2249.8577079999995,
+    "inputTokens": 424,
+    "outputTokens": 26,
+    "costUsd": 0.000056
+  },
+  {
+    "id": "h037",
+    "suggestion": "Miss, Tuesday-er quiz ki Room B2-te hobe?",
+    "latencyMs": 10901.268917000001,
+    "providerMs": 2238.1646670000046,
+    "inputTokens": 367,
+    "outputTokens": 27,
+    "costUsd": 0.000051
+  },
+  {
+    "id": "h049",
+    "suggestion": "Aww re, kharap lagar-i kotha. Audition-e select na holeo, tomar cheshtata kintu onek boro.",
+    "latencyMs": 11301.283875000001,
+    "providerMs": 2479.7098750000005,
+    "inputTokens": 415,
+    "outputTokens": 46,
+    "costUsd": 0.000065
+  },
+  {
+    "id": "h051",
+    "suggestion": "Kon project question-ta niye kaj korbo, sir/ma’am? Ektu janale shei onujayi agabo.",
+    "latencyMs": 11424.184792000007,
+    "providerMs": 2361.6768340000053,
+    "inputTokens": 421,
+    "outputTokens": 41,
+    "costUsd": 0.000063
+  },
+  {
+    "id": "h053",
+    "suggestion": "Eta check kore apnake janacchi.",
+    "latencyMs": 11571.635791000008,
+    "providerMs": 2342.178874999998,
+    "inputTokens": 426,
+    "outputTokens": 23,
+    "costUsd": 0.000055
+  },
+  {
+    "id": "h059",
+    "suggestion": "Bari ta shesh bar dekhar kotha shune mon ta khub kharap hoye gelo. Onek smriti joriye chhilo, tai na?",
+    "latencyMs": 12582.245250000007,
+    "providerMs": 2963.219874999995,
+    "inputTokens": 429,
+    "outputTokens": 50,
+    "costUsd": 0.000068
+  },
+  {
+    "id": "h087",
+    "suggestion": "I’ll need to check whether I’ve submitted the signed consent form.",
+    "latencyMs": 12064.991707999987,
+    "providerMs": 2620.25,
+    "inputTokens": 402,
+    "outputTokens": 28,
+    "costUsd": 0.000055
+  },
+  {
+    "id": "h088",
+    "suggestion": "First time travelling alone can feel a bit nerve-racking. It makes sense to feel that way.",
+    "latencyMs": 11529.913,
+    "providerMs": 2132.6580410000024,
+    "inputTokens": 415,
+    "outputTokens": 34,
+    "costUsd": 0.000059
+  },
+  {
+    "id": "h089",
+    "suggestion": "I’ll check the final count for table seven and get back to you.",
+    "latencyMs": 11606.572125000006,
+    "providerMs": 2411.761707999991,
+    "inputTokens": 400,
+    "outputTokens": 29,
+    "costUsd": 0.000055
+  },
+  {
+    "id": "h100",
+    "suggestion": "Tomar shathe balcony-r alo gulo gunte parle khub bhalo lagto.",
+    "latencyMs": 11987.587124999991,
+    "providerMs": 2632.0943330000155,
+    "inputTokens": 350,
+    "outputTokens": 35,
+    "costUsd": 0.000053
+  },
+  {
+    "id": "h111",
+    "suggestion": "রুম A17 খালি আছে কি না, তা দেখে নিশ্চিত করে জানাচ্ছি।",
+    "latencyMs": 11548.26337499998,
+    "providerMs": 2366.7941669999855,
+    "inputTokens": 405,
+    "outputTokens": 33,
+    "costUsd": 0.000057
+  },
+  {
+    "id": "r01",
+    "suggestion": "I’ll check and let you know.",
+    "latencyMs": 11728.187458,
+    "providerMs": 2389.3513749999984,
+    "inputTokens": 390,
+    "outputTokens": 22,
+    "costUsd": 0.00005
+  },
+  {
+    "id": "r02",
+    "suggestion": "বিষয়টা দেখে জানাচ্ছি।",
+    "latencyMs": 11327.157000000007,
+    "providerMs": 2102.422583000007,
+    "inputTokens": 409,
+    "outputTokens": 24,
+    "costUsd": 0.000053
+  },
+  {
+    "id": "r03",
+    "suggestion": "Eta check kore apnake janacchi.",
+    "latencyMs": 11531.423417000013,
+    "providerMs": 2099.0135829999927,
+    "inputTokens": 414,
+    "outputTokens": 23,
+    "costUsd": 0.000053
+  },
+  {
+    "id": "r04",
+    "suggestion": "Oh, bujhte parchi apu. Rehearsal kemon holo?",
+    "latencyMs": 11556.463625000004,
+    "providerMs": 2331.292084000015,
+    "inputTokens": 416,
+    "outputTokens": 32,
+    "costUsd": 0.000058
+  },
+  {
+    "id": "r05",
+    "suggestion": "That must have been disappointing. I’m sorry you missed it.",
+    "latencyMs": 12039.892124999984,
+    "providerMs": 2773.6019579999847,
+    "inputTokens": 389,
+    "outputTokens": 27,
+    "costUsd": 0.000053
+  },
+  {
+    "id": "r06",
+    "suggestion": "Orientation-e nijer porichoy dite awkward lagte pare. Asha kori shob thikthak hobe.",
+    "latencyMs": 11531.518083000003,
+    "providerMs": 2151.4540419999976,
+    "inputTokens": 400,
+    "outputTokens": 39,
+    "costUsd": 0.00006
+  }
+]

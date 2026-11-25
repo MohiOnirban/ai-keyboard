@@ -10,8 +10,13 @@ import android.os.SystemClock
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import android.widget.EditText
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -23,6 +28,7 @@ open class KeyboardJourneyTest {
 
     private val shiftKey = "Shift. Double tap for caps lock."
     protected val instrumentation: Instrumentation get() = InstrumentationRegistry.getInstrumentation()
+    private lateinit var activity: MainActivity
     private val automation get() = instrumentation.uiAutomation
 
     @Test fun localKeyboardAndDictionaryWorkOffline() {
@@ -37,25 +43,25 @@ open class KeyboardJourneyTest {
             editedText("the ")
             clear()
             selectLayout(TypingLanguage.Bangla)
-            tap("ক", keyboard = true)
-            tap("◌্", keyboard = true)
-            tap("More Bangla letters", keyboard = true)
-            tap("ষ", keyboard = true)
+            clickKeyboardControl("ক")
+            clickKeyboardControl("◌্")
+            clickKeyboardControl("More Bangla letters")
+            clickKeyboardControl("ষ")
             editedText("ক্ষ")
-            tap("Backspace", keyboard = true)
+            clickKeyboardControl("Backspace")
             editedText("")
 
             selectLayout(TypingLanguage.Banglish)
             type("ami")
             editedText("ami")
             clear()
-            tap("Toggle emoji keyboard", keyboard = true)
-            tap("🇧🇩", keyboard = true)
-            tap("👨‍👩‍👧", keyboard = true)
+            clickKeyboardControl("Toggle emoji keyboard")
+            clickKeyboardControl("🇧🇩")
+            clickKeyboardControl("👨‍👩‍👧")
             editedText("🇧🇩👨‍👩‍👧")
-            tap("Backspace", keyboard = true)
+            clickKeyboardControl("Backspace")
             editedText("🇧🇩")
-            tap("Backspace", keyboard = true)
+            clickKeyboardControl("Backspace")
             editedText("")
         } finally {
             command("svc wifi enable")
@@ -71,17 +77,16 @@ open class KeyboardJourneyTest {
         try {
             focusPracticeField()
             selectLayout(TypingLanguage.Phonetic)
-            tap(shiftKey, keyboard = true)
+            touchKey(shiftKey)
             waitFor("A", keyboard = true)
             editedText("")
-            tap("A", keyboard = true)
+            touchKey("A")
             waitFor("a", keyboard = true)
-            type("mi", "Space")
-            type("tomak")
-            waitFor("তোমাকে", keyboard = true)
-            tap("তোমাকে", keyboard = true)
-            type("", "Space")
-            type("bhalobashi", "Space")
+            type("mi", "Space", physical = true)
+            type("tomak", physical = true)
+            touchKey("তোমাকে")
+            touchKey("Space")
+            type("bhalobashi", "Space", physical = true)
             editedText("আমি তোমাকে ভালোবাসি ")
         } finally {
             command("svc wifi enable")
@@ -99,29 +104,29 @@ open class KeyboardJourneyTest {
         focusPracticeField()
         selectLayout(TypingLanguage.English)
         type("hello")
-        tap("Open AI assistant", keyboard = true)
-        tap("Generate", keyboard = true)
+        clickKeyboardControl("Open AI assistant")
+        clickKeyboardControl("Generate")
         waitFor("Replace", keyboard = true)
         val suggestion = previewText()
-        tap("Replace", keyboard = true)
+        clickKeyboardControl("Replace")
         editedText(suggestion)
 
-        tap("Editing tools", keyboard = true)
-        tap("Select all", keyboard = true)
-        tap("Editing tools", keyboard = true)
-        tap("Open AI assistant", keyboard = true)
-        tap("Generate", keyboard = true)
+        clickKeyboardControl("Editing tools")
+        selectAll()
+        clickKeyboardControl("Editing tools")
+        clickKeyboardControl("Open AI assistant")
+        clickKeyboardControl("Generate")
         waitFor("Replace", keyboard = true)
         type("", "Space")
         type("x")
-        tap("Replace", keyboard = true)
+        clickKeyboardControl("Replace")
         waitFor("Insert safely", keyboard = true)
-        tap("Close AI panel", keyboard = true)
+        clickKeyboardControl("Close AI panel")
         editedText(" x")
         instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
     }
 
-    protected fun setupKeyboard(): MainActivity {
+    protected fun setupKeyboard() {
         assumeTrue("requires an isolated Android 35 emulator", Build.HARDWARE.contains("ranchu") && Build.VERSION.SDK_INT >= 35)
         val flags = automation.serviceInfo
         flags.flags = flags.flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
@@ -135,10 +140,9 @@ open class KeyboardJourneyTest {
         command("ime set $component")
         val launch = Intent(instrumentation.targetContext, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        val activity = instrumentation.startActivitySync(launch) as MainActivity
+        activity = instrumentation.startActivitySync(launch) as MainActivity
         val appName = instrumentation.targetContext.getString(R.string.app_name)
         waitFor("$appName is your active keyboard.")
-        return activity
     }
 
     protected fun selectEnglishLayout() = selectLayout(TypingLanguage.English)
@@ -150,9 +154,35 @@ open class KeyboardJourneyTest {
     }
 
     protected fun focusPracticeField() {
-        tap("Try typing here")
+        eventually("practice editor window focus") {
+            var focused = false
+            instrumentation.runOnMainSync {
+                val field = activity.window.decorView.practiceField()
+                if (field?.hasWindowFocus() == true && field.requestFocus()) {
+                    WindowCompat.getInsetsController(activity.window, field).show(WindowInsetsCompat.Type.ime())
+                    focused = true
+                }
+            }
+            true.takeIf { focused }
+        }
         waitFor("Open AI assistant", keyboard = true)
         startingLanguage?.let { waitFor(it.label, keyboard = true) }
+    }
+
+    protected fun practiceText(): String {
+        var value: String? = null
+        instrumentation.runOnMainSync {
+            value = activity.window.decorView.practiceField()?.text?.toString()
+        }
+        return checkNotNull(value) { "Practice field was unavailable" }
+    }
+
+    private fun View.practiceField(): EditText? {
+        if (this is EditText) return this
+        if (this is ViewGroup) {
+            for (index in 0 until childCount) getChildAt(index).practiceField()?.let { return it }
+        }
+        return null
     }
 
     private fun selectLayout(desired: TypingLanguage) {
@@ -165,7 +195,7 @@ open class KeyboardJourneyTest {
                 return
             }
             val expected = TypingLanguage.entries[(current.ordinal + 1) % TypingLanguage.entries.size]
-            tap("Change typing language", keyboard = true)
+            clickKeyboardControl("Change typing language")
             waitFor(expected.label, keyboard = true)
             current = expected
         }
@@ -177,16 +207,29 @@ open class KeyboardJourneyTest {
         ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).use { it.readBytes() }
     }
 
-    private fun type(letters: String, suffix: String? = null) {
-        letters.forEach { tap(it.toString(), keyboard = true) }
-        suffix?.let { tap(it, keyboard = true) }
+    private fun type(letters: String, suffix: String? = null, physical: Boolean = false) {
+        val keys = letters.map(Char::toString) + listOfNotNull(suffix)
+        keys.forEach { label -> if (physical) touchKey(label) else clickKeyboardControl(label) }
+    }
+
+    private fun selectAll() {
+        clickKeyboardControl("Select all")
+        eventually("entire draft selected") {
+            visibleRoots(false).firstNotNullOfOrNull { root ->
+                root.first(includeHidden = true) { node ->
+                    val length = node.text?.length ?: 0
+                    node.className == "android.widget.EditText" && length > 0 &&
+                        node.textSelectionStart == 0 && node.textSelectionEnd == length
+                }
+            }
+        }
     }
 
     private fun clear() {
-        tap("Editing tools", keyboard = true)
-        tap("Select all", keyboard = true)
-        tap("Backspace", keyboard = true)
-        tap("Editing tools", keyboard = true)
+        clickKeyboardControl("Editing tools")
+        selectAll()
+        clickKeyboardControl("Backspace")
+        clickKeyboardControl("Editing tools")
         editedText("")
     }
 
@@ -200,12 +243,9 @@ open class KeyboardJourneyTest {
         }
     }
 
-    protected fun tap(label: String, keyboard: Boolean = false) {
-        val needsSettledBounds = keyboard && label in setOf(
-            "Change typing language", shiftKey, "More Bangla letters", "Toggle emoji keyboard",
-            "Editing tools", "Open AI assistant", "Close AI panel", "Replace"
-        )
-        val rect = if (needsSettledBounds) settledKeyBounds(label) else bounds(waitFor(label, keyboard))
+    protected fun touchKey(label: String) = touch(label, settledKeyBounds(label))
+
+    private fun touch(label: String, rect: Rect) {
         assertTrue("empty control bounds for $label", !rect.isEmpty)
         val now = SystemClock.uptimeMillis()
         for (action in listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP)) {
@@ -215,8 +255,13 @@ open class KeyboardJourneyTest {
                 finally { event.recycle() }
             }
         }
-        val changesHeight = label in setOf("Change typing language", "Toggle emoji keyboard", "Editing tools", "Open AI assistant", "Replace")
-        SystemClock.sleep(if (changesHeight) 550 else 120)
+        SystemClock.sleep(150)
+    }
+
+    protected fun clickKeyboardControl(label: String) {
+        val button = waitFor(label, keyboard = true)
+        assertTrue("activated keyboard control $label", button.performAction(AccessibilityNodeInfo.ACTION_CLICK))
+        SystemClock.sleep(150)
     }
 
     private fun settledKeyBounds(label: String): Rect {

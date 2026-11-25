@@ -1,0 +1,6 @@
+{
+  "prefixes": ["", "a", "k", "o", "r", "!"],
+  "suffixes": ["", "e", "i", "sh", "!"],
+  "uniqueInputs": 8472,
+  "sha256": "c41459ee8b9f7c1033b1d37cff090212c910caeaeaa181b0f2908d026e716c6e"
+}

@@ -8,7 +8,7 @@ type Scenario = {
   id: string; request: GenerationRequest; expectedLanguage: "en" | "bn" | "banglish";
   required: string[][]; forbidden: string[]; review: string;
 };
-type Observation = { id: string; suggestion: string; latencyMs?: number; costUsd?: number };
+type Observation = { id: string; suggestion: string; latencyMs?: number; costUsd?: number; providerMs?: number; inputTokens?: number; outputTokens?: number };
 const scenarios: Scenario[] = JSON.parse(readFileSync(new URL("./scenarios.json", import.meta.url), "utf8"));
 const suppliedFile = process.argv[2];
 const supplied: Observation[] | null = suppliedFile ? JSON.parse(readFileSync(suppliedFile, "utf8")) : null;
@@ -31,7 +31,9 @@ const scriptMatches = (text: string, language: string) => {
 };
 const reviewedAxes = ["naturalness", "creativity", "intention", "culturalFit"] as const;
 type Review = { id: string; basis: string; scores: Record<typeof reviewedAxes[number], number>; output: string };
-const reviews: Review[] = !supplied ? JSON.parse(readFileSync(new URL("./mock-review.json", import.meta.url), "utf8")) : [];
+const reviewFile = process.argv[3] ?? (!supplied ? new URL("./mock-review.json", import.meta.url) : null);
+const reviews: Review[] = reviewFile ? JSON.parse(readFileSync(reviewFile, "utf8")) : [];
+if (new Set(reviews.map(review => review.id)).size !== reviews.length) throw new Error("Duplicate editorial review.");
 const rows = scenarios.map(s => {
   let suggestion: string;
   let latencyMs: number | undefined;
@@ -84,6 +86,11 @@ for (const review of reviews) {
   }
 }
 const latency = rows.flatMap(row => row.latencyMs === undefined ? [] : [row.latencyMs]);
+const providerTimes = supplied?.flatMap(row => row.providerMs === undefined ? [] : [row.providerMs]) ?? [];
+const tokenTotal = (key: "inputTokens" | "outputTokens") => {
+  if (!supplied?.every(row => Number.isSafeInteger(row[key]) && row[key]! >= 0)) return null;
+  return supplied.reduce((sum, row) => sum + row[key]!, 0);
+};
 const costs = rows.flatMap(row => row.costUsd === undefined ? [] : [row.costUsd]);
 const checks = ["format","script","anchors","prohibited phrase","planning language"];
 const lengths = rows.map(row => [...row.suggestion].length);
@@ -95,7 +102,9 @@ const report = {
   unchangedByMode, distinctOutputs: byOutput.size, mostRepeatedOutputCount: Math.max(...byOutput.values()),
   medianCharacters: percentile(lengths,0.5), p95Characters:percentile(lengths,0.95),
   latencyMs: { measured:latency.length, median:percentile(latency,0.5), p95:percentile(latency,0.95) },
-  costUsd: costs.length === rows.length ? costs.reduce((sum,amount) => sum+amount,0) : null,
+  costUsd: costs.length === rows.length ? Number(costs.reduce((sum,amount) => sum+amount,0).toFixed(6)) : null,
+  ...(providerTimes.length ? {providerMs: {measured:providerTimes.length, median:percentile(providerTimes,0.5), p95:percentile(providerTimes,0.95)}} : {}),
+  ...(supplied ? {inputTokens:tokenTotal("inputTokens"), outputTokens:tokenTotal("outputTokens")} : {}),
   scoredSample: reviews.length,
   editorialSampleMeans: reviews.length ? Object.fromEntries(reviewedAxes.map(axis => [axis,Number((reviewTotals[axis]/reviews.length).toFixed(2))])) : null,
   failed: failed.map(({id,reasons,missing,prohibited}) => ({id,reasons,missing,prohibited})),

@@ -39,3 +39,23 @@ Anonymous installations can reset credentials, reinstall or change network addre
 A dropped client connection invalidates the pending result. A provider call already dispatched is allowed to reach its deadline to capture billing information. When the server cannot establish the bill, it retains the entire reservation against the period's caps. Abandoned in-flight requests release concurrency and success slots after their lease while retaining spending reservations. An in-flight provider call can accrue costs after shutdown. Delays, missing billing data and upstream changes can affect reconciliation. Unexpected usage above a reserved bound is recorded and the output is withheld.
 
 Automated tests cover session lifecycle, strict UTF-16 validation, rate and quota enforcement, durable reservation and settlement, idempotency under concurrency, restrictive database role grants, UTC reset boundaries, refusal handling and the OpenRouter request and response shapes using fixtures.
+
+## Benchmark the API
+
+From backend/, run the checked-in fictional scenarios against an isolated local instance of the API. The output path must be new. The evaluator reports the observed end-to-end latency for the in-process Fastify request, including database work. This excludes the mobile network round trip.
+
+```sh
+mkdir -p ../artifacts
+AI_PROVIDER=mock AI_DAILY_LIMIT=114 AI_INSTALL_REQUESTS_PER_MINUTE=114 node scripts/benchmark.mjs ../artifacts/mock-run.json
+node ../intelligence/evaluate.ts ../artifacts/mock-run.json
+```
+
+For an authorized live benchmark, use a dedicated environment configuration for the run with the live provider, the normal private PostgreSQL ledger, approved price ceilings, global caps, a sufficient benchmark session allowance and rate limits. Configure BENCHMARK_MAX_USD to the approved total for the run. The script requires the explicit --live option and checks the worst-case sum of reservations. If a request fails, it writes the completed synthetic observations and stops. Costs use the same reported-or-estimated accounting as the backend. Credentials and private user drafts are excluded from the benchmark file.
+
+## Deploy the service
+
+Use a private build workspace with Node 22.18+ and the repository layout intact. From backend/, run `npm ci`, `npm run build` and `npm test`. Deploy the resulting dist directory together with package.json and package-lock.json. Run `npm ci --omit=dev` beside those files on the runtime host.
+
+Set NODE_ENV=production, DATABASE_URL, DATABASE_TLS=true, DATABASE_CA_FILE when needed, RATE_LIMIT_SECRET, HOST and PORT in the server environment. Start with AI_PROVIDER=mock for the installation check. Put TLS termination in front of the API, restrict direct access to its internal listener, and set TRUST_PROXY_CIDRS only for the actual ingress addresses. Run `npm start` under the host's process supervisor. A GET to /health should return HTTP 200 and an ok status from the compiled service and its database.
+
+Use the HTTPS origin when building the device clients. Once the account, model, eligible route, retention settings and spending caps are configured, the same mobile builds can use the live provider by changing the server environment and restarting the service. Changing AI_ENABLED to false and restarting disables generation while offline typing remains available. To roll back a service version, redeploy the previous compatible server artifact using the same ledger.

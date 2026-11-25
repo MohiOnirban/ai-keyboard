@@ -93,3 +93,53 @@ test("session creation throttles the socket address and shutdown denies generati
   assert.equal(second.headers["retry-after"], "60");
   assert.equal((await app.inject(generation(first.json().token))).statusCode, 503);
 });
+
+test("a disconnected client keeps its allowance and can explicitly generate after reconnecting", { timeout: 30_000 }, async (t) => {
+  const started = Promise.withResolvers<void>();
+  const disconnected = Promise.withResolvers<void>();
+  const resume = Promise.withResolvers<void>();
+  const originalId = randomUUID();
+  let calls = 0;
+  const app = await buildApp(readConfig({ AI_DAILY_LIMIT: "1" }), async () => {
+    calls++;
+    if (calls === 1) {
+      started.resolve();
+      await resume.promise;
+    }
+    return { kind: "suggestion", text: "A synthetic suggestion.", billedMicros: 0, inputTokens: 1, outputTokens: 1 };
+  });
+  t.after(() => app.close());
+  app.addHook("onRequest", async (request, reply) => {
+    if (request.headers["idempotency-key"] === originalId) reply.raw.once("close", disconnected.resolve);
+  });
+  const address = await app.listen({ host: "127.0.0.1", port: 0 });
+  const created = await app.inject({ method: "POST", url: "/v1/sessions", payload: {} });
+  const { token } = created.json<{token: string}>();
+  const original = generation(token, undefined, originalId);
+  const controller = new AbortController();
+  const response = fetch(address + original.url, {
+    method: original.method,
+    headers: { ...original.headers, "content-type": "application/json" },
+    body: JSON.stringify(original.payload),
+    signal: controller.signal,
+  });
+  try {
+    await started.promise;
+    controller.abort();
+    await assert.rejects(response, { name: "AbortError" });
+    await disconnected.promise;
+  } finally {
+    resume.resolve();
+  }
+  let next;
+  const newAction = generation(token);
+  for (let attempt = 0; attempt < 12; attempt++) {
+    next = await app.inject(newAction);
+    if (next.statusCode !== 429) break;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  assert.equal(next?.statusCode, 200);
+  assert.equal(next.json().used, 1);
+  assert.equal((await app.inject(original)).statusCode, 409);
+  assert.equal(calls, 2);
+});

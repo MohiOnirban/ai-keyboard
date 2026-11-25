@@ -1,3 +1,3 @@
 jsAvroPhonetic by Rifat Nabi. Copyright OmicronLab.
 Upstream https://github.com/torifat/jsAvroPhonetic/tree/8d869e796c965d48e058c44e296e21233eb0d69e
-The included avro-lib.js is the unmodified source. grammar.json serializes that source's data object. Avro.kt is a Kotlin port written for Kotha Keys. All three files are available in source form in this distribution under the included Mozilla Public License 1.1. This notice and license accompany mobile distributions. The project-authored common-word overrides are separate.
+The included avro-lib.js is the unmodified source. The iOS keyboard executes this file locally. The Android distribution also includes grammar.json (the upstream data object) and Avro.kt (the project's Kotlin port). These files are distributed in source form under the included Mozilla Public License 1.1. The project-authored common-word overrides are separate.

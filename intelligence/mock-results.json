@@ -1,0 +1,193 @@
+{
+  "source": "local deterministic mock",
+  "exampleFamilies": 100,
+  "authoredExamples": 500,
+  "scenarios": 114,
+  "passAllMechanicalChecks": 96,
+  "checkFailures": {
+    "format": 0,
+    "script": 2,
+    "anchors": 1,
+    "prohibited phrase": 0,
+    "planning language": 15
+  },
+  "unchangedByMode": {
+    "rewrite": 36,
+    "reply": 0,
+    "express": 1
+  },
+  "distinctOutputs": 93,
+  "mostRepeatedOutputCount": 5,
+  "medianCharacters": 42,
+  "p95Characters": 58,
+  "latencyMs": {
+    "measured": 114,
+    "median": 0.0359,
+    "p95": 0.613
+  },
+  "costUsd": 0,
+  "scoredSample": 18,
+  "editorialSampleMeans": {
+    "naturalness": 4.11,
+    "creativity": 1.89,
+    "intention": 4.28,
+    "culturalFit": 4.17
+  },
+  "failed": [
+    {
+      "id": "h025",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h029",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h032",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h033",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h035",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h036",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h061",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h065",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h068",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h069",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h070",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h071",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h072",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h104",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h108",
+      "reasons": [
+        "planning language"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h112",
+      "reasons": [
+        "script"
+      ],
+      "missing": [],
+      "prohibited": []
+    },
+    {
+      "id": "h113",
+      "reasons": [
+        "anchors"
+      ],
+      "missing": [
+        [
+          "don't",
+          "won't",
+          "do not",
+          "will not",
+          "rather",
+          "private",
+          "prefer",
+          "not comfortable"
+        ]
+      ],
+      "prohibited": []
+    },
+    {
+      "id": "h114",
+      "reasons": [
+        "script"
+      ],
+      "missing": [],
+      "prohibited": []
+    }
+  ]
+}

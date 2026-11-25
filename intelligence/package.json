@@ -1,0 +1,6 @@
+{
+  "name": "kotha-communication",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test prompt.test.ts", "evaluate": "node evaluate.ts" }
+}

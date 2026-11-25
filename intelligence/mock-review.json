@@ -1,0 +1,200 @@
+[
+  {
+    "id": "h002",
+    "output": "রিপোর্টটা ৪টার আগে পাঠানো সম্ভব না।",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 1,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "A natural workplace constraint with the right deadline. It reproduces the draft word for word."
+  },
+  {
+    "id": "h010",
+    "output": "তোমার যদি সময় হয়, ছাদের গাছগুলো দেখাতে চাই।",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 1,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The original invitation stays optional and locally idiomatic. No flirtier phrasing was added."
+  },
+  {
+    "id": "h013",
+    "output": "শুনে খারাপ লাগল। ইচ্ছে হলে আরেকটু বলবে? আমি শুনছি।",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 2,
+      "intention": 4,
+      "culturalFit": 4
+    },
+    "basis": "A gentle offer to listen, but the debate-team disappointment could have been acknowledged more specifically."
+  },
+  {
+    "id": "h014",
+    "output": "ঠিক আছে। আপনার সিদ্ধান্তকে সম্মান করি।",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 2,
+      "intention": 4,
+      "culturalFit": 4
+    },
+    "basis": "The respectful answer accepts the decision. Explicitly mentioning the photo would be clearer."
+  },
+  {
+    "id": "h025",
+    "output": "ম্যামের কাছে মঙ্গলবারের ক্লাসরুমটা কোন তলায় জানতে চাই।",
+    "scores": {
+      "naturalness": 2,
+      "creativity": 1,
+      "intention": 2,
+      "culturalFit": 3
+    },
+    "basis": "Refers to the teacher in the third person and remains a planning note, although it preserves the day and location question."
+  },
+  {
+    "id": "h027",
+    "output": "তোমার ছাতা ফেরত দিতে ভুলেছি। দুঃখিত।",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 4
+    },
+    "basis": "Turns the umbrella note into a direct apology. The formal apology word is slightly stiff between friends."
+  },
+  {
+    "id": "h039",
+    "output": "Notun juta pore ajke pa duita andolon kortese.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 1,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The original Banglish personification works. The mock simply repeats the existing joke."
+  },
+  {
+    "id": "h055",
+    "output": "Thik ache. Tomar shiddhanto-ke shomman kori.",
+    "scores": {
+      "naturalness": 3,
+      "creativity": 2,
+      "intention": 4,
+      "culturalFit": 3
+    },
+    "basis": "Accepts the pause; the formal decision-and-respect wording sounds stiff for a partner."
+  },
+  {
+    "id": "h058",
+    "output": "Ektu dekhe niye janai?",
+    "scores": {
+      "naturalness": 4,
+      "creativity": 2,
+      "intention": 4,
+      "culturalFit": 4
+    },
+    "basis": "Avoids inventing a seat count. A more specific offer to check availability would feel more helpful."
+  },
+  {
+    "id": "h063",
+    "output": "Tomar drumstick ante bhule gechi. Sorry.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "Turns a note about a borrowed drumstick into a short apology in familiar Banglish."
+  },
+  {
+    "id": "h075",
+    "output": "My suitcase zipper has a harder job than I do.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 1,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "The original zipper joke reads naturally. There is no creative rewrite."
+  },
+  {
+    "id": "h084",
+    "output": "Please put the case ID TK-04 in the subject line.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 1,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "Keeps the exact case identifier and request. The unchanged output offers little added value."
+  },
+  {
+    "id": "h090",
+    "output": "I understand. I'll respect that.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "A concise acknowledgement respects the request for space without inviting another exchange."
+  },
+  {
+    "id": "h096",
+    "output": "Let me check before I answer.",
+    "scores": {
+      "naturalness": 2,
+      "creativity": 1,
+      "intention": 1,
+      "culturalFit": 2
+    },
+    "basis": "Treats a playful papad question as an information request, missing the joke."
+  },
+  {
+    "id": "h097",
+    "output": "Could you please sign the library slip on Thursday?",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "Converts the English planning note into a courteous direct question and preserves Thursday."
+  },
+  {
+    "id": "h105",
+    "output": "Can you leave the word adda untranslated?",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 5
+    },
+    "basis": "Turns an intention into a direct question and keeps adda intact."
+  },
+  {
+    "id": "h110",
+    "output": "I understand. I'll respect that.",
+    "scores": {
+      "naturalness": 5,
+      "creativity": 3,
+      "intention": 5,
+      "culturalFit": 4
+    },
+    "basis": "Accepts the Bengali opt-out in natural English; referring to the video would improve specificity."
+  },
+  {
+    "id": "h113",
+    "output": "Ami nijer address share korte chai na.",
+    "scores": {
+      "naturalness": 1,
+      "creativity": 1,
+      "intention": 3,
+      "culturalFit": 2
+    },
+    "basis": "Preserves the boundary but leaves the output in Banglish despite an explicit English target."
+  }
+]

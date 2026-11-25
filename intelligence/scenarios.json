@@ -1,0 +1,2656 @@
+[
+  {
+    "id": "h001",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "teacher",
+      "style": "respectful",
+      "text": "ম্যাম, ১৮ তারিখে ফিল্ডওয়ার্কের ফর্মটা জমা দিতে পারব কি?",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "১৮"
+      ],
+      [
+        "ফর্ম"
+      ]
+    ],
+    "forbidden": [
+      "তুই"
+    ],
+    "review": "Ask permission, preserve the date and the form, and address the teacher respectfully."
+  },
+  {
+    "id": "h002",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "professional",
+      "text": "রিপোর্টটা ৪টার আগে পাঠানো সম্ভব না।",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "৪"
+      ],
+      [
+        "আগে"
+      ],
+      [
+        "না"
+      ]
+    ],
+    "forbidden": [
+      "পাঠিয়ে দিয়েছি"
+    ],
+    "review": "Communicate a limit without promising delivery at four."
+  },
+  {
+    "id": "h003",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "funny",
+      "text": "মোজার একটা পাটি সব সময় আলমারি থেকে হারায়।",
+      "language": "auto",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "মোজা",
+        "মোজার"
+      ],
+      [
+        "আলমারি"
+      ]
+    ],
+    "forbidden": [
+      "চোর"
+    ],
+    "review": "Make the missing sock funny without blaming anyone."
+  },
+  {
+    "id": "h004",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "partner",
+      "style": "romantic",
+      "text": "তোমার হাতের লেখা দেখে মায়া লাগে।",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "লেখা",
+        "অক্ষর"
+      ]
+    ],
+    "forbidden": [
+      "বিয়ে"
+    ],
+    "review": "Keep the handwriting detail and avoid escalating the relationship."
+  },
+  {
+    "id": "h005",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "stranger",
+      "style": "confident",
+      "text": "আমার নম্বরটা কাউকে দিবেন না, প্লিজ।",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "নম্বর"
+      ],
+      [
+        "না",
+        "গোপন"
+      ]
+    ],
+    "forbidden": [
+      "দিয়ে দিন"
+    ],
+    "review": "Retain the privacy boundary even with a gentle tone."
+  },
+  {
+    "id": "h006",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "family",
+      "style": "emotional",
+      "text": "খালা, আপনার সঙ্গে পিঠা বানানোর সময়টা মনে পড়ে।",
+      "language": "bn",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "খালা"
+      ],
+      [
+        "পিঠা"
+      ]
+    ],
+    "forbidden": [
+      "মারা"
+    ],
+    "review": "Keep the memory as stated, without implying bereavement."
+  },
+  {
+    "id": "h007",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "witty",
+      "text": "বোর্ড গেমের নিয়ম পড়তে পড়তেই সন্ধ্যা হয়ে যায়।",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "নিয়ম"
+      ],
+      [
+        "সন্ধ্যা"
+      ]
+    ],
+    "forbidden": [
+      "বোকা"
+    ],
+    "review": "Joke about the rules, not a player's intelligence."
+  },
+  {
+    "id": "h008",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "mature",
+      "text": "একসঙ্গে দুটো কাজ নেওয়া আমার পক্ষে সম্ভব হচ্ছে না।",
+      "language": "auto",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "দুটো",
+        "দুই"
+      ],
+      [
+        "না"
+      ]
+    ],
+    "forbidden": [
+      "অলস"
+    ],
+    "review": "State capacity without apologizing for a character flaw."
+  },
+  {
+    "id": "h009",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "subtle",
+      "text": "আজ সবার সামনে আমার ডাকনামটা বলিস না।",
+      "language": "bn",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "আজ"
+      ],
+      [
+        "ডাকনাম"
+      ],
+      [
+        "না"
+      ]
+    ],
+    "forbidden": [
+      "লজ্জার মানুষ"
+    ],
+    "review": "Keep the time window and informal register."
+  },
+  {
+    "id": "h010",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "crush",
+      "style": "flirty",
+      "text": "তোমার যদি সময় হয়, ছাদের গাছগুলো দেখাতে চাই।",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "সময়",
+        "সুবিধা"
+      ],
+      [
+        "গাছ"
+      ]
+    ],
+    "forbidden": [
+      "আসতেই হবে"
+    ],
+    "review": "Keep the invitation optional."
+  },
+  {
+    "id": "h011",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "family",
+      "style": "culturally inspired",
+      "text": "বিকেলে সবাই মিলে উঠানে বসতে চাই।",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "বিকেল"
+      ],
+      [
+        "উঠান"
+      ]
+    ],
+    "forbidden": [
+      "ঈদ",
+      "পূজা"
+    ],
+    "review": "Use the courtyard detail without inventing an occasion."
+  },
+  {
+    "id": "h012",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "custom",
+      "text": "খসড়াটা ফেরত দিন। চূড়ান্ত কপি এখনও চাই না।",
+      "language": "auto",
+      "intensity": "bold",
+      "preferences": {
+        "custom": "Keep it short, conversational, and preserve technical terms.",
+        "emoji": "none",
+        "length": "short"
+      }
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "খসড়া"
+      ],
+      [
+        "না"
+      ]
+    ],
+    "forbidden": [
+      "চূড়ান্ত কপি পাঠান"
+    ],
+    "review": "A short version must distinguish the draft from the final copy."
+  },
+  {
+    "id": "h013",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "comforting",
+      "text": "আমি ডিবেটের দলে সুযোগ পাইনি।",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [],
+    "forbidden": [
+      "তুই জিতবিই",
+      "নিশ্চিত জিতবে"
+    ],
+    "review": "Acknowledge disappointment without promising next year's outcome."
+  },
+  {
+    "id": "h014",
+    "request": {
+      "mode": "reply",
+      "relationship": "stranger",
+      "style": "respectful",
+      "text": "আমার ছবি আপনার পাতায় দেবেন না, প্লিজ।",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "সম্মান",
+        "ঠিক আছে",
+        "দেব না",
+        "দেবো না"
+      ]
+    ],
+    "forbidden": [
+      "কেন দেব না"
+    ],
+    "review": "Respect the explicit refusal to publish."
+  },
+  {
+    "id": "h015",
+    "request": {
+      "mode": "reply",
+      "relationship": "teacher",
+      "style": "professional",
+      "text": "প্রেজেন্টেশনে তুমি কোন উদাহরণ ব্যবহার করবে?",
+      "language": "bn",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "দেখে",
+        "জানাব",
+        "ভাবছি",
+        "ঠিক করে"
+      ]
+    ],
+    "forbidden": [],
+    "review": "Do not invent an example the sender has already chosen."
+  },
+  {
+    "id": "h016",
+    "request": {
+      "mode": "reply",
+      "relationship": "family",
+      "style": "comforting",
+      "text": "কাল বাসা বদল, খুব দুশ্চিন্তা হচ্ছে।",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [],
+    "forbidden": [
+      "সব নিশ্চিত",
+      "কোনো চিন্তা নেই"
+    ],
+    "review": "Acknowledge the move and uncertainty without a guarantee."
+  },
+  {
+    "id": "h017",
+    "request": {
+      "mode": "reply",
+      "relationship": "colleague",
+      "style": "respectful",
+      "text": "আপনি কি ৭২০ টাকার হিসাবটা মিলিয়েছেন?",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [],
+    "forbidden": [
+      "মিলিয়েছি",
+      "মিলে গেছে"
+    ],
+    "review": "Avoid confirming an unknown balance."
+  },
+  {
+    "id": "h018",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "subtle",
+      "text": "এখন একটু একা থাকতে চাই।",
+      "language": "bn",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "ঠিক আছে",
+        "সময় নে",
+        "বুঝলাম",
+        "সম্মান"
+      ]
+    ],
+    "forbidden": [
+      "কেন",
+      "এখনই বল"
+    ],
+    "review": "Give space without soliciting an explanation."
+  },
+  {
+    "id": "h019",
+    "request": {
+      "mode": "reply",
+      "relationship": "partner",
+      "style": "mature",
+      "text": "এই বিষয়ে আপাতত কথা বাড়াতে চাই না।",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "ঠিক আছে",
+        "সম্মান",
+        "পরে"
+      ]
+    ],
+    "forbidden": [
+      "বলতেই হবে"
+    ],
+    "review": "Respect a partner's pause without a follow-up question."
+  },
+  {
+    "id": "h020",
+    "request": {
+      "mode": "reply",
+      "relationship": "crush",
+      "style": "respectful",
+      "text": "কফি খেতে যাওয়ার আগ্রহ নেই আমার।",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [],
+    "forbidden": [
+      "একবার চেষ্টা",
+      "রাজি হতেই"
+    ],
+    "review": "Accept a declined invitation without bargaining."
+  },
+  {
+    "id": "h021",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "witty",
+      "text": "আমাদের নাটকে পর্দাটাই আগে মঞ্চে পড়ে গেল!",
+      "language": "bn",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [],
+    "forbidden": [
+      "বোকা",
+      "অপদার্থ"
+    ],
+    "review": "Respond to the stage mishap with affectionate wit."
+  },
+  {
+    "id": "h022",
+    "request": {
+      "mode": "reply",
+      "relationship": "stranger",
+      "style": "professional",
+      "text": "ফেরার ট্রেনের টিকিট কি ৩টা আছে?",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "দেখে",
+        "জানাই",
+        "যাচাই",
+        "খোঁজ"
+      ]
+    ],
+    "forbidden": [
+      "হ্যাঁ আছে",
+      "৩টা আছে"
+    ],
+    "review": "Do not assert inventory."
+  },
+  {
+    "id": "h023",
+    "request": {
+      "mode": "reply",
+      "relationship": "family",
+      "style": "emotional",
+      "text": "আজ ছেলেটার স্কুলের প্রথম দিন, মনটা কেমন করছে।",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [],
+    "forbidden": [
+      "কাঁদছে",
+      "অসুস্থ"
+    ],
+    "review": "Acknowledge the mixed feeling without inventing a problem."
+  },
+  {
+    "id": "h024",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "funny",
+      "text": "বিরিয়ানির আলু নিয়ে ভোট হবে নাকি?",
+      "language": "bn",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [],
+    "forbidden": [
+      "ধর্ম",
+      "গালি"
+    ],
+    "review": "Play along with a food debate without personal attacks."
+  },
+  {
+    "id": "h025",
+    "request": {
+      "mode": "express",
+      "relationship": "teacher",
+      "style": "respectful",
+      "text": "ম্যামের কাছে মঙ্গলবারের ক্লাসরুমটা কোন তলায় জানতে চাই",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "মঙ্গলবার"
+      ],
+      [
+        "তলা"
+      ]
+    ],
+    "forbidden": [
+      "তুই"
+    ],
+    "review": "Produce a direct question to the teacher about the floor."
+  },
+  {
+    "id": "h026",
+    "request": {
+      "mode": "express",
+      "relationship": "colleague",
+      "style": "professional",
+      "text": "৯:১৫-এর আগে কল নিতে পারব না, সেটা জানাই",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "৯:১৫"
+      ],
+      [
+        "আগে"
+      ],
+      [
+        "না"
+      ]
+    ],
+    "forbidden": [
+      "কল নেবই"
+    ],
+    "review": "State unavailability without making a later appointment."
+  },
+  {
+    "id": "h027",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "apologetic",
+      "text": "বন্ধুর ছাতা ফেরত দিতে ভুলেছি, সরি বলব",
+      "language": "bn",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "ছাতা"
+      ],
+      [
+        "সরি",
+        "দুঃখিত",
+        "ক্ষমা"
+      ]
+    ],
+    "forbidden": [
+      "ভেঙেছি"
+    ],
+    "review": "Apologize directly to the friend about returning the umbrella."
+  },
+  {
+    "id": "h028",
+    "request": {
+      "mode": "express",
+      "relationship": "partner",
+      "style": "poetic",
+      "text": "একটা তারাভরা রাতে তোমার পাশে বসার ইচ্ছে",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "তারাভরা",
+        "তারা",
+        "তারার"
+      ],
+      [
+        "পাশে"
+      ]
+    ],
+    "forbidden": [
+      "চিরদিন"
+    ],
+    "review": "Turn an intention into a warm invitation."
+  },
+  {
+    "id": "h029",
+    "request": {
+      "mode": "express",
+      "relationship": "family",
+      "style": "respectful",
+      "text": "দাদুকে জানাই বিকেলের নাশতায় লবণ কম চাই",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "লবণ"
+      ],
+      [
+        "কম"
+      ]
+    ],
+    "forbidden": [
+      "তুই"
+    ],
+    "review": "Communicate a preference without offering medical advice."
+  },
+  {
+    "id": "h030",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "bold",
+      "text": "আজ ধার দিতে পারব না বলতে চাই",
+      "language": "bn",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "আজ"
+      ],
+      [
+        "ধার"
+      ],
+      [
+        "না"
+      ]
+    ],
+    "forbidden": [
+      "কাল দিয়ে দেব"
+    ],
+    "review": "Set a money boundary without a new promise."
+  },
+  {
+    "id": "h031",
+    "request": {
+      "mode": "express",
+      "relationship": "crush",
+      "style": "subtle",
+      "text": "তার আঁকা নিয়ে কথা বলতে চাই, যদি আগ্রহ থাকে",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "আঁকা"
+      ],
+      [
+        "আগ্রহ",
+        "ইচ্ছে",
+        "চাইলে"
+      ]
+    ],
+    "forbidden": [
+      "ভালোবাসি"
+    ],
+    "review": "Refer to the recipient directly and leave an opening to decline."
+  },
+  {
+    "id": "h032",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "sarcastic",
+      "text": "আমাদের এক মিনিটের বিরতি আধা ঘণ্টা হয়, হালকা খোঁচা",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "মিনিট"
+      ],
+      [
+        "আধা",
+        "অর্ধ"
+      ]
+    ],
+    "forbidden": [
+      "অকর্মা"
+    ],
+    "review": "Tease the long break without belittling people."
+  },
+  {
+    "id": "h033",
+    "request": {
+      "mode": "express",
+      "relationship": "colleague",
+      "style": "custom",
+      "text": "আজকের review বাংলায় করতে অনুরোধ করব",
+      "language": "bn",
+      "intensity": "bold",
+      "preferences": {
+        "custom": "Keep it short, conversational, and preserve technical terms.",
+        "emoji": "none",
+        "length": "short"
+      }
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "review",
+        "রিভিউ"
+      ],
+      [
+        "বাংলায়"
+      ]
+    ],
+    "forbidden": [
+      "ইংরেজিতেই"
+    ],
+    "review": "Preserve the requested code-switch and turn the note into a direct request."
+  },
+  {
+    "id": "h034",
+    "request": {
+      "mode": "express",
+      "relationship": "stranger",
+      "style": "confident",
+      "text": "সারিতে আমার জায়গাটা রাখতে অনুরোধ",
+      "language": "bn",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "জায়গা",
+        "জায়গাটা",
+        "স্থান"
+      ],
+      [
+        "সারি",
+        "লাইন"
+      ]
+    ],
+    "forbidden": [
+      "ধাক্কা"
+    ],
+    "review": "Ask the person to keep a place in line courteously."
+  },
+  {
+    "id": "h035",
+    "request": {
+      "mode": "express",
+      "relationship": "family",
+      "style": "comforting",
+      "text": "ছোট ভাইকে বুঝাই নতুন সাইকেল শিখতে সময় লাগা স্বাভাবিক",
+      "language": "bn",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "সাইকেল"
+      ],
+      [
+        "সময়"
+      ]
+    ],
+    "forbidden": [
+      "আজই পারবে"
+    ],
+    "review": "Encourage the learner without promising instant success."
+  },
+  {
+    "id": "h036",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "savage",
+      "text": "বন্ধুর ব্যাগে এত কাগজ যে প্রিন্টারের মজা করতে চাই",
+      "language": "bn",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "কাগজ",
+        "প্রিন্টার"
+      ]
+    ],
+    "forbidden": [
+      "গাধা"
+    ],
+    "review": "Make the pile of paper the target of the joke."
+  },
+  {
+    "id": "h037",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "teacher",
+      "style": "respectful",
+      "text": "Miss, Tue er quiz ki room B2 te hobe?",
+      "language": "auto",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "b2"
+      ],
+      [
+        "quiz"
+      ]
+    ],
+    "forbidden": [
+      "tui"
+    ],
+    "review": "Keep the room identifier and the question."
+  },
+  {
+    "id": "h038",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "professional",
+      "text": "5:40 er train dhorte hobe, tar age ber hobo.",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "5:40"
+      ],
+      [
+        "train"
+      ],
+      [
+        "age"
+      ]
+    ],
+    "forbidden": [
+      "shondha 7"
+    ],
+    "review": "Keep the time, transport and early departure."
+  },
+  {
+    "id": "h039",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "funny",
+      "text": "Notun juta pore ajke pa duita andolon kortese.",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "juta"
+      ],
+      [
+        "pa"
+      ]
+    ],
+    "forbidden": [
+      "hospital"
+    ],
+    "review": "Make a joke without inventing an injury."
+  },
+  {
+    "id": "h040",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "partner",
+      "style": "romantic",
+      "text": "Tomar hater lekha chithi pele bhalo lage.",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "chithi"
+      ],
+      [
+        "lekha"
+      ]
+    ],
+    "forbidden": [
+      "biye"
+    ],
+    "review": "Express appreciation without a new memory."
+  },
+  {
+    "id": "h041",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "stranger",
+      "style": "confident",
+      "text": "Please amar voice note karo shathe share korben na.",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "voice note"
+      ],
+      [
+        "na"
+      ]
+    ],
+    "forbidden": [
+      "share korun"
+    ],
+    "review": "Keep the negative permission and polite address."
+  },
+  {
+    "id": "h042",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "family",
+      "style": "emotional",
+      "text": "Apu, tomar purano ranna khatar kotha mone pore.",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "apu"
+      ],
+      [
+        "khata"
+      ]
+    ],
+    "forbidden": [
+      "mara"
+    ],
+    "review": "Express nostalgia without asserting loss."
+  },
+  {
+    "id": "h043",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "witty",
+      "text": "Poster lagate giye tape tai khuje pai na.",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "poster"
+      ],
+      [
+        "tape"
+      ]
+    ],
+    "forbidden": [
+      "boka"
+    ],
+    "review": "Keep the lost-tape premise."
+  },
+  {
+    "id": "h044",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "mature",
+      "text": "Duita deadline ek dine rakha amar jonno kothin.",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "deadline"
+      ],
+      [
+        "dine"
+      ]
+    ],
+    "forbidden": [
+      "ami parboi"
+    ],
+    "review": "Communicate a difficulty without making a commitment."
+  },
+  {
+    "id": "h045",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "subtle",
+      "text": "Aj amake oi nickname e dakish na please.",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "nickname"
+      ],
+      [
+        "na"
+      ]
+    ],
+    "forbidden": [
+      "dakbi-i"
+    ],
+    "review": "Keep the boundary and familiar tone."
+  },
+  {
+    "id": "h046",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "crush",
+      "style": "flirty",
+      "text": "Jodi ichcha hoy amar camera diye chhobi tule dekho.",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "camera"
+      ],
+      [
+        "ichcha",
+        "chaile"
+      ]
+    ],
+    "forbidden": [
+      "kortei hobe"
+    ],
+    "review": "A light invitation must remain optional."
+  },
+  {
+    "id": "h047",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "family",
+      "style": "culturally inspired",
+      "text": "Kal shondhay chhade cha khete boshi cholo.",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "chhade"
+      ],
+      [
+        "cha"
+      ],
+      [
+        "kal"
+      ]
+    ],
+    "forbidden": [
+      "iftar",
+      "puja"
+    ],
+    "review": "Use the supplied details and avoid adding a religious occasion."
+  },
+  {
+    "id": "h048",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "custom",
+      "text": "Budget sheet ta chai, receipt ekhon chai na.",
+      "language": "banglish",
+      "intensity": "bold",
+      "preferences": {
+        "custom": "Keep it short, conversational, and preserve technical terms.",
+        "emoji": "none",
+        "length": "short"
+      }
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "budget"
+      ],
+      [
+        "receipt"
+      ],
+      [
+        "na"
+      ]
+    ],
+    "forbidden": [
+      "receipt dao"
+    ],
+    "review": "Preserve the distinction in a brief version."
+  },
+  {
+    "id": "h049",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "comforting",
+      "text": "Ganer audition diyechi, select hoini re.",
+      "language": "auto",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "porer bar jitei jabi"
+    ],
+    "review": "Respond to disappointment with sensitivity."
+  },
+  {
+    "id": "h050",
+    "request": {
+      "mode": "reply",
+      "relationship": "stranger",
+      "style": "respectful",
+      "text": "Amake ar promo message pathaben na.",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "arekbar pathabo",
+      "keno"
+    ],
+    "review": "Acknowledge an opt-out and avoid further pressure."
+  },
+  {
+    "id": "h051",
+    "request": {
+      "mode": "reply",
+      "relationship": "teacher",
+      "style": "professional",
+      "text": "Project er kon question ta niye tumi kaj korba?",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "ami already"
+    ],
+    "review": "Do not invent a chosen research question."
+  },
+  {
+    "id": "h052",
+    "request": {
+      "mode": "reply",
+      "relationship": "family",
+      "style": "comforting",
+      "text": "Interview er age pet e kemon kortese, tension lagche.",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "oshudh",
+      "medicine"
+    ],
+    "review": "Acknowledge nerves without medical advice."
+  },
+  {
+    "id": "h053",
+    "request": {
+      "mode": "reply",
+      "relationship": "colleague",
+      "style": "respectful",
+      "text": "Apni ki 840 taka ferot peyechhen?",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "peyechi",
+      "confirm peyechi"
+    ],
+    "review": "Do not claim receipt of money."
+  },
+  {
+    "id": "h054",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "subtle",
+      "text": "Ekhon kauke kichu bolte chai na.",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "thik ache",
+        "shomoy nao",
+        "shomman"
+      ]
+    ],
+    "forbidden": [
+      "keno bolo"
+    ],
+    "review": "Accept the person's choice to stay quiet."
+  },
+  {
+    "id": "h055",
+    "request": {
+      "mode": "reply",
+      "relationship": "partner",
+      "style": "mature",
+      "text": "Ektu space lagbe, call dio na ekhon.",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "call dibo",
+      "call korbo"
+    ],
+    "review": "Respect the boundary, including the request for no call."
+  },
+  {
+    "id": "h056",
+    "request": {
+      "mode": "reply",
+      "relationship": "crush",
+      "style": "respectful",
+      "text": "Thanks but ekhon date e jete chai na.",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "thik ache",
+        "shomman",
+        "bujhlam"
+      ]
+    ],
+    "forbidden": [
+      "arekbar bhebo"
+    ],
+    "review": "Do not interpret thanks as acceptance."
+  },
+  {
+    "id": "h057",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "witty",
+      "text": "Natok e amar nakol gof ta stage ei khule geche!",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "boka",
+      "opodartho"
+    ],
+    "review": "Make a light response about the prop mishap."
+  },
+  {
+    "id": "h058",
+    "request": {
+      "mode": "reply",
+      "relationship": "stranger",
+      "style": "professional",
+      "text": "Koyta seat faka ache?",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "duita khali",
+      "ekta khali"
+    ],
+    "review": "Avoid made-up seat inventory."
+  },
+  {
+    "id": "h059",
+    "request": {
+      "mode": "reply",
+      "relationship": "family",
+      "style": "emotional",
+      "text": "Aj purano bari ta shesh barer moto dekhlam.",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "ami chhilam"
+    ],
+    "review": "Respond with warmth without invented shared experience."
+  },
+  {
+    "id": "h060",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "funny",
+      "text": "Singara r shathe ketchup niye abar debate?",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [
+      "gadha"
+    ],
+    "review": "Play along with the snack debate."
+  },
+  {
+    "id": "h061",
+    "request": {
+      "mode": "express",
+      "relationship": "teacher",
+      "style": "respectful",
+      "text": "Sir ke lab er password na cheye access er niyom jiggesh korbo",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "access"
+      ],
+      [
+        "niyom"
+      ]
+    ],
+    "forbidden": [
+      "password den"
+    ],
+    "review": "Ask about the access process without soliciting credentials."
+  },
+  {
+    "id": "h062",
+    "request": {
+      "mode": "express",
+      "relationship": "colleague",
+      "style": "professional",
+      "text": "3:25 er age file khulte parbo na eta janai",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "3:25"
+      ],
+      [
+        "age"
+      ],
+      [
+        "na"
+      ]
+    ],
+    "forbidden": [
+      "khule felechi"
+    ],
+    "review": "Communicate the constraint while avoiding false completion."
+  },
+  {
+    "id": "h063",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "apologetic",
+      "text": "Bondhur drumstick ante bhule gechi, sorry bolbo",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "drumstick"
+      ],
+      [
+        "sorry",
+        "dukkhito"
+      ]
+    ],
+    "forbidden": [
+      "bhege"
+    ],
+    "review": "Produce an apology instead of narrating the intent."
+  },
+  {
+    "id": "h064",
+    "request": {
+      "mode": "express",
+      "relationship": "partner",
+      "style": "poetic",
+      "text": "Brishtir pore tomar shathe math er pashe boshte chai",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "brishti"
+      ],
+      [
+        "math"
+      ]
+    ],
+    "forbidden": [
+      "chirodin"
+    ],
+    "review": "Keep the rain and field without inventing a date."
+  },
+  {
+    "id": "h065",
+    "request": {
+      "mode": "express",
+      "relationship": "family",
+      "style": "respectful",
+      "text": "Khala ke bolbo cha e chini ektu kom dite",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "khala"
+      ],
+      [
+        "chini"
+      ],
+      [
+        "kom"
+      ]
+    ],
+    "forbidden": [
+      "diabetes"
+    ],
+    "review": "Keep a simple food preference free of medical claims."
+  },
+  {
+    "id": "h066",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "bold",
+      "text": "Ebar amar cycle dhar dite parbo na",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "cycle"
+      ],
+      [
+        "dhar"
+      ],
+      [
+        "na"
+      ]
+    ],
+    "forbidden": [
+      "kal dibo"
+    ],
+    "review": "Hold the boundary without blame."
+  },
+  {
+    "id": "h067",
+    "request": {
+      "mode": "express",
+      "relationship": "crush",
+      "style": "subtle",
+      "text": "Tar chhobi tolar golpo shunte chai jodi she chay",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "chhobi"
+      ],
+      [
+        "jodi",
+        "chaile",
+        "ichcha"
+      ]
+    ],
+    "forbidden": [
+      "bhalobashi"
+    ],
+    "review": "Address the recipient and preserve consent."
+  },
+  {
+    "id": "h068",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "sarcastic",
+      "text": "Chhoto revision korte boshe puro rat jay, group e moja korbo",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "revision"
+      ],
+      [
+        "rat"
+      ]
+    ],
+    "forbidden": [
+      "faltu"
+    ],
+    "review": "Make a light quip about time instead of people."
+  },
+  {
+    "id": "h069",
+    "request": {
+      "mode": "express",
+      "relationship": "colleague",
+      "style": "custom",
+      "text": "Ajker standup ta Banglish e korte boli",
+      "language": "banglish",
+      "intensity": "bold",
+      "preferences": {
+        "custom": "Keep it short, conversational, and preserve technical terms.",
+        "emoji": "none",
+        "length": "short"
+      }
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "standup"
+      ],
+      [
+        "banglish"
+      ]
+    ],
+    "forbidden": [
+      "english only"
+    ],
+    "review": "Use plain words while preserving the language choice."
+  },
+  {
+    "id": "h070",
+    "request": {
+      "mode": "express",
+      "relationship": "stranger",
+      "style": "confident",
+      "text": "Counter er line ta kothay jiggesh korbo",
+      "language": "banglish",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "counter"
+      ],
+      [
+        "line"
+      ]
+    ],
+    "forbidden": [
+      "dhakka"
+    ],
+    "review": "Ask the stranger a direct question."
+  },
+  {
+    "id": "h071",
+    "request": {
+      "mode": "express",
+      "relationship": "family",
+      "style": "comforting",
+      "text": "Bon ke boli notun hostel e time lagtei pare",
+      "language": "banglish",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "hostel"
+      ],
+      [
+        "time",
+        "shomoy"
+      ]
+    ],
+    "forbidden": [
+      "shob thik hoye jabei"
+    ],
+    "review": "Encourage adjustment without promising a timeline."
+  },
+  {
+    "id": "h072",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "savage",
+      "text": "Tor pencil box e pencil chara shob ache niye roast",
+      "language": "banglish",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "pencil"
+      ]
+    ],
+    "forbidden": [
+      "gadha"
+    ],
+    "review": "Roast the pencil box and keep the friend safe."
+  },
+  {
+    "id": "h073",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "teacher",
+      "style": "respectful",
+      "text": "Sir, could I cite the 2018 edition in my essay?",
+      "language": "en",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "2018"
+      ],
+      [
+        "edition"
+      ],
+      [
+        "essay"
+      ]
+    ],
+    "forbidden": [
+      "approved"
+    ],
+    "review": "Keep the question open and respectful."
+  },
+  {
+    "id": "h074",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "professional",
+      "text": "pls send page 12, not the whole contract.",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "12"
+      ],
+      [
+        "page"
+      ],
+      [
+        "not",
+        "only"
+      ]
+    ],
+    "forbidden": [
+      "page 21"
+    ],
+    "review": "Preserve the page and the limited scope."
+  },
+  {
+    "id": "h075",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "funny",
+      "text": "My suitcase zipper has a harder job than I do.",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "zip",
+        "zipper"
+      ],
+      [
+        "suitcase",
+        "bag"
+      ]
+    ],
+    "forbidden": [
+      "fat"
+    ],
+    "review": "Play with the overloaded suitcase without body shaming."
+  },
+  {
+    "id": "h076",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "partner",
+      "style": "romantic",
+      "text": "I love hearing the little pause before you laugh.",
+      "language": "en",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "pause"
+      ],
+      [
+        "laugh"
+      ]
+    ],
+    "forbidden": [
+      "marry"
+    ],
+    "review": "Retain the specific observation."
+  },
+  {
+    "id": "h077",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "stranger",
+      "style": "confident",
+      "text": "Please blur my face before you upload the photo.",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "blur"
+      ],
+      [
+        "face"
+      ],
+      [
+        "before"
+      ]
+    ],
+    "forbidden": [
+      "already blurred"
+    ],
+    "review": "Keep the requirement and its timing."
+  },
+  {
+    "id": "h078",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "family",
+      "style": "emotional",
+      "text": "Aunty, I still use the mug you gave me.",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "mug"
+      ],
+      [
+        "aunty",
+        "aunt"
+      ]
+    ],
+    "forbidden": [
+      "birthday"
+    ],
+    "review": "Keep the gift without inventing an occasion."
+  },
+  {
+    "id": "h079",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "witty",
+      "text": "Our ten-second video has nineteen outtakes.",
+      "language": "auto",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "ten",
+        "10"
+      ],
+      [
+        "nineteen",
+        "19"
+      ],
+      [
+        "outtake"
+      ]
+    ],
+    "forbidden": [
+      "idiot"
+    ],
+    "review": "Keep both numbers and direct the joke at the video."
+  },
+  {
+    "id": "h080",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "mature",
+      "text": "I'd rather give an honest range than guess one price.",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "range"
+      ],
+      [
+        "price"
+      ]
+    ],
+    "forbidden": [
+      "guarantee"
+    ],
+    "review": "Avoid inventing a quote or firm price."
+  },
+  {
+    "id": "h081",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "subtle",
+      "text": "Don't tag me in the picnic album please.",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "tag"
+      ],
+      [
+        "picnic"
+      ],
+      [
+        "don't",
+        "do not",
+        "skip",
+        "avoid"
+      ]
+    ],
+    "forbidden": [
+      "already tagged"
+    ],
+    "review": "Keep the opt-out without sounding hostile."
+  },
+  {
+    "id": "h082",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "crush",
+      "style": "flirty",
+      "text": "I'd like to swap playlists if you're up for it.",
+      "language": "en",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "playlist"
+      ],
+      [
+        "if",
+        "up for",
+        "feel like"
+      ]
+    ],
+    "forbidden": [
+      "have to"
+    ],
+    "review": "Leave the invitation optional."
+  },
+  {
+    "id": "h083",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "family",
+      "style": "culturally inspired",
+      "text": "Let's call Nani after iftar so she can eat first.",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "nani"
+      ],
+      [
+        "after"
+      ],
+      [
+        "iftar"
+      ]
+    ],
+    "forbidden": [
+      "before iftar"
+    ],
+    "review": "Keep the supplied family term and sequence."
+  },
+  {
+    "id": "h084",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "custom",
+      "text": "Please put the case ID TK-04 in the subject line.",
+      "language": "en",
+      "intensity": "bold",
+      "preferences": {
+        "custom": "Keep it short, conversational, and preserve technical terms.",
+        "emoji": "none",
+        "length": "short"
+      }
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "tk-04"
+      ],
+      [
+        "subject"
+      ]
+    ],
+    "forbidden": [
+      "tk-40"
+    ],
+    "review": "Preserve the identifier even when shortening."
+  },
+  {
+    "id": "h085",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "comforting",
+      "text": "I didn't get the campus radio slot I tried for.",
+      "language": "en",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "you'll definitely get",
+      "rigged"
+    ],
+    "review": "Listen without blame or guarantees."
+  },
+  {
+    "id": "h086",
+    "request": {
+      "mode": "reply",
+      "relationship": "stranger",
+      "style": "respectful",
+      "text": "Please take me off the guest list. I won't attend.",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "why not",
+      "try to come"
+    ],
+    "review": "Acknowledge the decision without pressuring for reasons."
+  },
+  {
+    "id": "h087",
+    "request": {
+      "mode": "reply",
+      "relationship": "teacher",
+      "style": "professional",
+      "text": "Have you already submitted your signed consent form?",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "yes, i have",
+      "i submitted"
+    ],
+    "review": "Do not assert a submission history."
+  },
+  {
+    "id": "h088",
+    "request": {
+      "mode": "reply",
+      "relationship": "family",
+      "style": "comforting",
+      "text": "I'm nervous about travelling on my own for the first time.",
+      "language": "auto",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "nothing can happen"
+    ],
+    "review": "Offer reassurance without a safety guarantee."
+  },
+  {
+    "id": "h089",
+    "request": {
+      "mode": "reply",
+      "relationship": "colleague",
+      "style": "respectful",
+      "text": "Do you have the final count for table seven?",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "there are seven",
+      "the count is"
+    ],
+    "review": "Do not mistake the table number for a count."
+  },
+  {
+    "id": "h090",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "subtle",
+      "text": "I need space after yesterday. Please stop texting for now.",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "respect",
+        "understand",
+        "space"
+      ]
+    ],
+    "forbidden": [
+      "why",
+      "call me"
+    ],
+    "review": "Accept the request without soliciting further contact."
+  },
+  {
+    "id": "h091",
+    "request": {
+      "mode": "reply",
+      "relationship": "partner",
+      "style": "mature",
+      "text": "I'd prefer to leave this conversation until later.",
+      "language": "en",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "talk now",
+      "why wait"
+    ],
+    "review": "Respect a pause."
+  },
+  {
+    "id": "h092",
+    "request": {
+      "mode": "reply",
+      "relationship": "crush",
+      "style": "respectful",
+      "text": "I like hanging out, but I only want to be friends.",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "change your mind",
+      "give me a chance"
+    ],
+    "review": "Accept the relationship boundary without bargaining."
+  },
+  {
+    "id": "h093",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "witty",
+      "text": "The mic squeaked every time I said quiet!",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "stupid"
+    ],
+    "review": "Play along with the irony of a noisy mic."
+  },
+  {
+    "id": "h094",
+    "request": {
+      "mode": "reply",
+      "relationship": "stranger",
+      "style": "professional",
+      "text": "Is the archive open on the second Saturday of the month?",
+      "language": "en",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "yes it is",
+      "it opens at"
+    ],
+    "review": "Do not invent opening hours."
+  },
+  {
+    "id": "h095",
+    "request": {
+      "mode": "reply",
+      "relationship": "family",
+      "style": "emotional",
+      "text": "We took down the old swing in the courtyard today.",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "i remember when"
+    ],
+    "review": "Acknowledge the change without fabricating a personal memory."
+  },
+  {
+    "id": "h096",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "funny",
+      "text": "Does a cracked papad still count as one serving?",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [],
+    "forbidden": [
+      "fat"
+    ],
+    "review": "Play along without commenting on anyone's body."
+  },
+  {
+    "id": "h097",
+    "request": {
+      "mode": "express",
+      "relationship": "teacher",
+      "style": "respectful",
+      "text": "Ask her if she can sign the library slip on Thursday",
+      "language": "en",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "thursday"
+      ],
+      [
+        "library"
+      ],
+      [
+        "slip"
+      ]
+    ],
+    "forbidden": [],
+    "review": "Turn the planning note into a respectful direct question."
+  },
+  {
+    "id": "h098",
+    "request": {
+      "mode": "express",
+      "relationship": "colleague",
+      "style": "professional",
+      "text": "Tell them I can't review file QA-19 before lunch",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "qa-19"
+      ],
+      [
+        "before"
+      ],
+      [
+        "can't",
+        "cannot"
+      ]
+    ],
+    "forbidden": [
+      "already reviewed"
+    ],
+    "review": "Preserve the identifier and time constraint in the sender's voice."
+  },
+  {
+    "id": "h099",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "apologetic",
+      "text": "Say that I'm sorry for skipping your turn in the game",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "sorry"
+      ],
+      [
+        "turn"
+      ]
+    ],
+    "forbidden": [
+      "cheated"
+    ],
+    "review": "Apologize for the stated action without escalating it."
+  },
+  {
+    "id": "h100",
+    "request": {
+      "mode": "express",
+      "relationship": "partner",
+      "style": "poetic",
+      "text": "Tell them I'd love to count the balcony lights with them",
+      "language": "auto",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "balcony"
+      ],
+      [
+        "light"
+      ]
+    ],
+    "forbidden": [
+      "forever"
+    ],
+    "review": "Address the partner directly and preserve the image."
+  },
+  {
+    "id": "h101",
+    "request": {
+      "mode": "express",
+      "relationship": "family",
+      "style": "respectful",
+      "text": "Ask my uncle to save a seat near the aisle",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "aisle"
+      ],
+      [
+        "seat"
+      ]
+    ],
+    "forbidden": [
+      "disabled"
+    ],
+    "review": "Refer to the seating preference without assuming a reason."
+  },
+  {
+    "id": "h102",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "bold",
+      "text": "Tell him I won't lend him my headphones this week",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "headphones"
+      ],
+      [
+        "week"
+      ],
+      [
+        "won't",
+        "will not"
+      ]
+    ],
+    "forbidden": [
+      "next week i will"
+    ],
+    "review": "Do not turn a refusal into a future commitment."
+  },
+  {
+    "id": "h103",
+    "request": {
+      "mode": "express",
+      "relationship": "crush",
+      "style": "subtle",
+      "text": "Ask if they want to browse the stationery shop together",
+      "language": "en",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "stationery"
+      ],
+      [
+        "shop"
+      ]
+    ],
+    "forbidden": [
+      "pick you up at"
+    ],
+    "review": "Invite without assuming agreement."
+  },
+  {
+    "id": "h104",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "sarcastic",
+      "text": "Make a light joke about our two-hour debate over a logo colour",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "logo"
+      ],
+      [
+        "colour",
+        "color"
+      ],
+      [
+        "two",
+        "2"
+      ]
+    ],
+    "forbidden": [
+      "idiot"
+    ],
+    "review": "Aim sarcasm at the situation."
+  },
+  {
+    "id": "h105",
+    "request": {
+      "mode": "express",
+      "relationship": "colleague",
+      "style": "custom",
+      "text": "Ask them if they can leave the word adda untranslated",
+      "language": "en",
+      "intensity": "bold",
+      "preferences": {
+        "custom": "Keep it short, conversational, and preserve technical terms.",
+        "emoji": "none",
+        "length": "short"
+      }
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "adda"
+      ],
+      [
+        "untranslated",
+        "as is"
+      ]
+    ],
+    "forbidden": [],
+    "review": "Preserve the local term and avoid explaining familiar words."
+  },
+  {
+    "id": "h106",
+    "request": {
+      "mode": "express",
+      "relationship": "stranger",
+      "style": "confident",
+      "text": "Ask where the queue for parcel pickup starts",
+      "language": "en",
+      "intensity": "subtle"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "queue",
+        "line"
+      ],
+      [
+        "parcel"
+      ]
+    ],
+    "forbidden": [
+      "let me through"
+    ],
+    "review": "Ask for directions without demanding priority."
+  },
+  {
+    "id": "h107",
+    "request": {
+      "mode": "express",
+      "relationship": "family",
+      "style": "comforting",
+      "text": "Tell her it's okay if learning the harmonium feels slow",
+      "language": "en",
+      "intensity": "balanced"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "harmonium"
+      ],
+      [
+        "slow",
+        "time"
+      ]
+    ],
+    "forbidden": [
+      "you'll master"
+    ],
+    "review": "Encourage without promising mastery."
+  },
+  {
+    "id": "h108",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "savage",
+      "text": "Tease the printer for eating all the good paper",
+      "language": "en",
+      "intensity": "bold"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "printer"
+      ],
+      [
+        "paper"
+      ]
+    ],
+    "forbidden": [
+      "useless person"
+    ],
+    "review": "Keep the roast aimed at the machine."
+  },
+  {
+    "id": "h109",
+    "request": {
+      "mode": "reply",
+      "relationship": "friend",
+      "style": "comforting",
+      "text": "I am exhausted after the trip.",
+      "language": "banglish"
+    },
+    "expectedLanguage": "banglish",
+    "required": [],
+    "forbidden": [],
+    "review": "Respond in Latin-script Banglish to an English description of exhaustion."
+  },
+  {
+    "id": "h110",
+    "request": {
+      "mode": "reply",
+      "relationship": "stranger",
+      "style": "respectful",
+      "text": "অনুগ্রহ করে আমার ভিডিওটা পোস্ট করবেন না।",
+      "language": "en"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "respect",
+        "understand",
+        "okay",
+        "will not",
+        "won't",
+        "of course",
+        "absolutely"
+      ]
+    ],
+    "forbidden": [],
+    "review": "Accept the Bengali opt-out in English."
+  },
+  {
+    "id": "h111",
+    "request": {
+      "mode": "reply",
+      "relationship": "colleague",
+      "style": "professional",
+      "text": "Can you confirm whether room A17 is free?",
+      "language": "bn"
+    },
+    "expectedLanguage": "bn",
+    "required": [],
+    "forbidden": [
+      "yes, it is"
+    ],
+    "review": "Answer in Bengali without claiming unknown availability."
+  },
+  {
+    "id": "h112",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "colleague",
+      "style": "respectful",
+      "text": "আজ ২:৩০ এর আগে call নিতে পারব না।",
+      "language": "banglish"
+    },
+    "expectedLanguage": "banglish",
+    "required": [
+      [
+        "2:30",
+        "2.30",
+        "২:৩০",
+        "arai",
+        "aaraita",
+        "araita",
+        "duita trish",
+        "duita tirish"
+      ]
+    ],
+    "forbidden": [],
+    "review": "Express the same time and negation in Latin-script Banglish."
+  },
+  {
+    "id": "h113",
+    "request": {
+      "mode": "express",
+      "relationship": "friend",
+      "style": "bold",
+      "text": "Ami nijer address share korte chai na.",
+      "language": "en"
+    },
+    "expectedLanguage": "en",
+    "required": [
+      [
+        "don't",
+        "won't",
+        "do not",
+        "will not",
+        "rather",
+        "private",
+        "prefer",
+        "not comfortable"
+      ]
+    ],
+    "forbidden": [],
+    "review": "Express the address-sharing boundary directly in English."
+  },
+  {
+    "id": "h114",
+    "request": {
+      "mode": "rewrite",
+      "relationship": "friend",
+      "style": "subtle",
+      "text": "Please keep the date 04/12 exactly as written.",
+      "language": "bn"
+    },
+    "expectedLanguage": "bn",
+    "required": [
+      [
+        "04/12"
+      ]
+    ],
+    "forbidden": [],
+    "review": "Use Bengali while preserving the ambiguous date exactly."
+  }
+]

@@ -1,0 +1,18 @@
+# PostgreSQL accounting
+
+The backend uses an isolated schema on standard PostgreSQL, including Supabase PostgreSQL. No Data API, Supabase Auth, service-role token or client database credentials are required. Do not add `keyboard_private` to exposed schemas. The migration enables Row Level Security and grants access to the dedicated backend role.
+
+1. Pick the approved database and apply [the migration](supabase/migrations/20261125204106_private_usage.sql) using the database administrator connection. With PostgreSQL installed, `psql "$KEYBOARD_ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f infrastructure/supabase/migrations/20261125204106_private_usage.sql` applies it from the repository root.
+2. In an administrator `psql` session, run `\password keyboard_api` to set a strong password without putting it in the command text, then `alter role keyboard_api login;`. Save that dedicated role's connection string in the API's server configuration.
+3. Configure `DATABASE_URL` for the direct endpoint or Supabase session pooler. For the session pooler the username is `keyboard_api.PROJECT_REF`. Supply the provider's verified root certificate path via `DATABASE_CA_FILE` if the certificate is outside Node's trusted roots. Avoid TLS query parameters in the URL since the server configures TLS directly. [Supabase PostgreSQL connection options](https://supabase.com/docs/guides/database/connecting-to-postgres)
+4. Set `NODE_ENV=production`, generate one random `RATE_LIMIT_SECRET` of at least 32 bytes, and share it across replicas. Route mobile traffic through HTTPS ingress. Leave proxy trust disabled unless you can supply the trusted ingress CIDRs and the proxy sets the forwarded address securely.
+
+Admissions and settlements serialize on a single ledger row inside short transactions. Provider I/O occurs outside the database transaction. Pending requests hold quota slots and reserve budget until settlement. Expired pending leases release quota and concurrency, while their cost reservations remain. Successful, failed and abandoned generations retain metadata for 45 days. Expired and revoked sessions are removed when no generation rows refer to them. Rate windows are eligible for cleanup after two minutes and are pruned at startup and hourly.
+
+The configured budget restricts calls from backend instances using this ledger. Provider account activity outside this service falls outside that accounting. An uncertain provider charge remains at the reserved amount. Review the provider dashboard against the ledger if the service reports above-bound usage or runs out of budget unexpectedly.
+
+## Verified project
+
+Project ahvxzmylajnknxiyginv uses the private migration in this directory. The hosted migration version is 20261125204106. The restricted keyboard_api login has database access via TLS, and each ledger table has RLS enabled. Catalog checks verified both anon and authenticated lack SELECT on all four tables. A Fastify check with a synthetic message and a mock generator verified session creation, successful generation, one allowance charged, duplicate rejection, revocation and denial of the revoked token.
+
+The local ignored backend/.env.hosted contains the dedicated credential. Its file mode is 0600. Database credentials are deliberately separate from the mobile backend URL. The public certificate used by the local verification was obtained from [Supabase’s certificate distribution](https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt). The application validates the certificate chain and hostname. [Supabase SSL documentation](https://supabase.com/docs/guides/platform/ssl-enforcement)

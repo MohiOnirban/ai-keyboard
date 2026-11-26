@@ -1,51 +1,58 @@
-# iOS
+# KothaKey on iOS
 
-Open `KothaKeys.xcodeproj` in Xcode, choose the KothaKeys scheme, select an iPhone simulator, and Run. Offline typing works with the bundled keyboard resources. For AI testing, start the repository's mock backend with `npm run dev` in `backend/`. Debug simulator builds use `http://localhost:4000`.
+## Install in Simulator
 
-In Settings → General → Keyboard → Keyboards → Add New Keyboard, choose Kotha Keys. In a text field, hold the globe and choose Kotha Keys, then select English, Banglish, Phonetic or বাংলা using the layout menu. Leave Allow Full Access off for offline typing. To enable the extension's AI feature, open the Kotha Keys entry in Settings and turn on Allow Full Access. For mock AI practice before activation, open the app's Practice tab.
-
-For a rewrite, select the passage in the host application before tapping AI and Generate. When the keyboard has access to partial draft context or pasted text, it can offer insertion at the cursor. Review the suggestion before applying it. If the original target changes, the keyboard cancels an active request or offers to copy an existing result.
-
-From the repository root, build and test with the installed iPhone simulator UUID substituted for DEVICE_ID.
+For the packaged simulator build, unzip `artifacts/phase1/KothaKey-iOS-simulator.zip` and drag `KothaKeys.app` onto a booted iPhone Simulator. Alternatively, run these commands from the repository root with a booted simulator's UUID.
 
 ```sh
 xcodebuild -project apps/ios/KothaKeys.xcodeproj -scheme KothaKeys -configuration Debug -destination 'platform=iOS Simulator,id=DEVICE_ID' -derivedDataPath artifacts/ios build
-xcodebuild -project apps/ios/KothaKeys.xcodeproj -scheme KothaKeys -configuration Debug -destination 'platform=iOS Simulator,id=DEVICE_ID' -derivedDataPath artifacts/ios -parallel-testing-enabled NO test
 xcrun simctl install DEVICE_ID artifacts/ios/Build/Products/Debug-iphonesimulator/KothaKeys.app
 xcrun simctl launch DEVICE_ID dev.kothakeys.app
 ```
 
-## Simulator verification
+1. Open KothaKey. The Practice tab includes a host text field and a companion AI playground.
+2. In iOS Settings, go to **General → Keyboard → Keyboards → Add New Keyboard**, then choose **KothaKey**.
+3. Open a normal text field. Hold the system globe and select **KothaKey**. Its language shortcut or a long press on the spacebar selects English, বাংলা, Phonetic or Banglish.
+4. For AI, open the KothaKey entry in Settings and enable **Allow Full Access**. Run the mock backend from `backend/` with `npm run dev`. Debug simulator builds connect to `http://localhost:4000` by default. English, Bengali and phonetic typing work offline with Full Access off.
+5. In the companion Settings tab, choose System, Light or Dark appearance, adjust keyboard height and haptics, or edit style preferences. The extension reads App Group preferences when iOS permits access.
 
-Xcode 27.2 built the Debug app and its embedded keyboard extension for the iPhone 18 Pro simulator running iOS 27.2. The app icon and UserDefaults required-reason privacy manifests are packaged in the app and extension as applicable.
+## Using the keyboard
 
-The mock suite in `artifacts/ios-verified-workflows.xcresult` passed three tests.
+- Hold a top-row Latin letter to type its number. Tap Shift twice for Caps Lock. Phonetic typing respects uppercase Avro input. Tap a local suggestion or press space to commit a pending word.
+- English and raw Banglish candidates come from small bundled prefix lists. Direct Bangla uses local dictionary entries and phonetic candidates use the existing Avro parser and dictionary. Ordinary typing does not call the AI service.
+- Tap **?123** for symbols, then the secondary-page shortcut or **123** for the dedicated keypad. Its operators sit alongside the three digit columns. Tap **ABC** to return to letters or **?123** for symbols.
+- Tap a toolbar icon to replace the keys with Grammar, Improve & Tone, Ask AI, Translation, Emoji, Clipboard or More. The back button restores the typing layout. A conditional, three-candidate strip shares toolbar space. Its grid icon reveals the tools while retaining a pending phonetic word.
+- For a replacement, select the exact passage in the host first. Without a selection, the panel labels the available input as a cursor excerpt and offers insertion. Tap **Generate**, review the result, then choose the action. The extension checks the document identifier, selection and surrounding text again. Moving the target invalidates a pending replacement.
+- Tone offers nine primary choices followed by additional styles and favorites. Picking a new tone from a result makes a new explicit generation request. Distinct alternatives for the same source can be selected before applying. Ask supports Express, Rewrite, Reply and request-specific writing instructions. Translation exposes separate source and target controls for Bangla, Banglish and English. The default mock demonstrates a limited set of translations.
+- The Return key follows the host’s declared return-key type. An explicit tap inserts the platform newline action through the document proxy. The host controls whether it advances a field, submits a form or inserts a newline.
+- Clipboard contents load only after an explicit tap. The voice utility explains how to use iOS dictation and offers keyboard switching. Secure text fields and some phone fields use Apple's keyboard. Hosts may disable extensions. [Apple custom keyboard configuration](https://developer.apple.com/documentation/uikit/configuring-a-custom-keyboard-interface) and [Apple virtual keyboard guidance](https://developer.apple.com/design/human-interface-guidelines/virtual-keyboards)
 
-- The companion generated and applied a suggestion, displayed the daily allowance, revoked the anonymous session, and created a fresh session with zero usage.
-- The keyboard extension with Full Access on generated a mock suggestion from a synthetic draft, preserved the draft through preview, and inserted the suggestion after an explicit tap.
-- The keyboard extension with Full Access off switched to phonetic typing and committed `আমি তোমাকে ভালোবাসি ` after using Shift and editing the pending word with Backspace. The pending word appears in the keyboard toolbar until it is committed.
+On iOS 27.2 Safari, moving directly from a textarea to a number input sometimes delivered the default keyboard trait. In that case, use **?123 → 123** to select the keypad. The same number field automatically opened the numeric layout when refocused after a password field. Password entry used the system keyboard.
 
-The separately authorized live extension case passed in `artifacts/ios-extension-live-one.xcresult`. It made one generation request with a synthetic draft, confirmed the draft remained intact during preview, and inserted the result after an explicit tap.
+## Reproduce the simulator checks
 
-After the live test, the default mock build was reinstalled. The Full Access off typing check passed again in `artifacts/ios-default-restored.xcresult`.
+Use a booted simulator with an English-language Settings interface. The tests walk through keyboard activation and change Full Access as required. The local mock must be running on port 4000. For loading-state screenshots, run the delayed forwarding proxy in a second terminal. Run the Safari fixture server in a third terminal.
 
-The host phonetic checks passed 26 cases and 150 dictionary entries, including uppercase Avro distinctions.
-
-### Safari and draft safety
-
-Both follow-up UI checks passed in `artifacts/ios-safari-and-draft.xcresult`.
-
-- The real extension typed `আমি ` into a local Safari textarea in dark landscape mode with Full Access off.
-- A mock preview stayed safe after the draft changed to `meeting x`. Tapping Insert preserved the edited text. Cancel closed the preview, and the test restored Full Access to off.
-
-To run the Safari fixture test, serve the fixture from the repository root before starting the simulator tests. The test skips when the fixture page is unavailable.
+```sh
+node apps/ios/Tests/delayedMock.mjs
+```
 
 ```sh
 python3 -m http.server 4100 --bind 127.0.0.1 --directory apps/ios/Tests
 ```
 
-## Device signing and release
+```sh
+xcodebuild -project apps/ios/KothaKeys.xcodeproj -scheme KothaKeys -configuration Debug -destination 'platform=iOS Simulator,id=DEVICE_ID' -derivedDataPath artifacts/ios -parallel-testing-enabled NO -resultBundlePath /tmp/kothakey-phase1.xcresult KEYBOARD_API_BASE=http://localhost:4133 test
+```
 
-On a physical iPhone, register the containing app and extension bundle identifiers for your team, enable the identical App Group on both, configure signing, and select the connected device. The App Group also identifies the shared Keychain access group. If you use a different group, update both the entitlement and Settings.group. Set the KEYBOARD_API_BASE build setting to the HTTPS backend on both targets. Enable Developer Mode when prompted, run the containing app, and follow the activation steps. The locally built simulator .app targets the simulator and requires a separate signed device build for an iPhone.
+The proxy delays each generation for four seconds, then forwards it to the real local mock. The shipped simulator build uses the normal backend URL. Xcode provides screenshot attachments in the result bundle. Phase 1 captures are collected under `artifacts/phase1/before` and `artifacts/phase1/after/ios`. Coverage includes the original target staying intact during generation, selecting and inserting results, changing the selection, return to the prior layout, symbol/numeric pages, offline Bengali typing, light/dark appearance, fixed panel geometry, and a local Safari fixture.
 
-For TestFlight use the team's distribution signing, registered identifiers, App Group provisioning, an App Store Connect record and a signed Release archive for a generic physical device. Validate through Organizer before uploading. Review final branding, icons, privacy disclosures and the store listing, including the keyboard extension requirements in App Review Guideline 4.4.1. [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/#extensions)
+All ten workflows passed together on the packaged configuration using the normal local mock. [Final Xcode result summary](../../artifacts/phase1/checks/ios-integrated-summary.json) · [Phase 1 screenshot gallery](../../artifacts/phase1/screenshots.html)
+
+The established pre-redesign results remain available in `artifacts/ios-verified-workflows.xcresult`, `artifacts/ios-safari-and-draft.xcresult` and `artifacts/ios-default-restored.xcresult`. The separately authorized historical live generation is in `artifacts/ios-extension-live-one.xcresult`. Phase 1 uses the mock.
+
+## Physical devices and TestFlight
+
+Open the Xcode project, configure both bundle IDs for your development team, enable the same App Group on the app and extension, and provision the shared Keychain access group. Update `Settings.group` if your registered group differs. Set `KEYBOARD_API_BASE` to the HTTPS backend for both targets. Choose the connected iPhone, enable Developer Mode if requested, then run the containing app and follow the activation steps. A simulator application requires a separate signed device build.
+
+For TestFlight, create an App Store Connect record and distribution provisioning profiles, archive a Release build for a generic device, validate in Organizer and upload under your developer account. Review extension requirements, privacy disclosures, and the final listing before distribution. [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/#extensions)

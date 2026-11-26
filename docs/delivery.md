@@ -1,4 +1,6 @@
-# Kotha Keys development delivery
+# Original keyboard development delivery
+
+For the redesigned keyboard and current installation instructions, see [the Phase 1 delivery](phase1-redesign.md).
 
 The Kotlin input method and Swift keyboard extension both type English, raw Banglish, phonetic Bangla and direct Bangla offline. The companion apps provide setup, preferences, practice and usage controls. Rewrite, Reply and Express use a shared Fastify API and private PostgreSQL accounting. A suggestion stays in preview until the user accepts it. The normal development builds point to the local mock service on port 4000.
 

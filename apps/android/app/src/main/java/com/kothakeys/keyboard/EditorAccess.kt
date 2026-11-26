@@ -13,7 +13,11 @@ internal data class EditorTraits(
     val address: Boolean = false,
     val url: Boolean = false,
     val noSuggestions: Boolean = false,
-    val enterAction: Int = EditorInfo.IME_ACTION_NONE
+    val enterAction: Int = EditorInfo.IME_ACTION_NONE,
+    val phone: Boolean = false,
+    val decimal: Boolean = false,
+    val signed: Boolean = false,
+    val dateTime: Boolean = false,
 ) {
     val aiAllowed get() = !sensitive && !numeric && !address
     val wordAssistance get() = aiAllowed && !noSuggestions
@@ -45,7 +49,11 @@ internal data class EditorTraits(
                 address = address,
                 url = kind == InputType.TYPE_CLASS_TEXT && variant == InputType.TYPE_TEXT_VARIATION_URI,
                 noSuggestions = info.inputType and InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS != 0,
-                enterAction = action
+                enterAction = action,
+                phone = kind == InputType.TYPE_CLASS_PHONE,
+                decimal = kind == InputType.TYPE_CLASS_NUMBER && !sensitive && info.inputType and InputType.TYPE_NUMBER_FLAG_DECIMAL != 0,
+                signed = kind == InputType.TYPE_CLASS_NUMBER && !sensitive && info.inputType and InputType.TYPE_NUMBER_FLAG_SIGNED != 0,
+                dateTime = kind == InputType.TYPE_CLASS_DATETIME,
             )
         }
     }

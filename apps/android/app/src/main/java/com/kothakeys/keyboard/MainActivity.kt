@@ -181,7 +181,7 @@ private fun StartPage(activation: Activation, enable: () -> Unit, pick: () -> Un
             Modifier.fillMaxWidth().padding(22.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("নিজের মতো করে বলুন।", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Medium)
+            Text("কথা হোক নিজের মতো।", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Medium)
             Text("A Bangladesh-first keyboard for everyday conversations.", style = MaterialTheme.typography.bodyLarge)
             Text("Type in Bangla, Banglish or English. Ask for writing help when you want it.", style = MaterialTheme.typography.bodyMedium)
         }
@@ -200,7 +200,7 @@ private fun StartPage(activation: Activation, enable: () -> Unit, pick: () -> Un
     }
     KothaSection("Typing practice") {
         PracticeField()
-        Text("Tap 文 to switch layouts. In phonetic mode, type ami bhalo achi.")
+        Text("Tap 文 to cycle layouts or hold it to choose. In phonetic mode, type ami bhalo achi.")
     }
     KothaSection("Try the message assistant") {
         Text("You can try a rewrite here using your current keyboard.")

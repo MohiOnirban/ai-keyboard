@@ -87,3 +87,24 @@ test("the output language is a trusted instruction even when the source is in an
   assert.match(bn, /say you need to check/);
   assert.doesNotMatch(buildPrompt(base).instructions, /PRIVATE_MESSAGE/);
 });
+
+test("keyboard rewrite actions select fixed instructions and target languages", () => {
+  const grammar = buildPrompt({mode:"rewrite",text:"PRIVATE_DRAFT",style:"Fix Grammar"});
+  assert.match(grammar.instructions, /Correct spelling/);
+  assert.equal(mockSuggestion({mode:"rewrite",text:"im on teh bus",style:"Fix Grammar",language:"en"}), "I'm on the bus.");
+  assert.doesNotMatch(grammar.instructions, /PRIVATE_DRAFT|fictional style example/);
+  // Grammar preserves the source even when the installation prefers a different output language.
+  const localGrammar: GenerationRequest = {mode:"rewrite",text:"আজকে যাবো।",style:"fix grammar",language:"en"};
+  assert.match(buildPrompt(localGrammar).instructions, /Mirror the original Bengali script/);
+  assert.equal(mockSuggestion(localGrammar), localGrammar.text);
+  const request: GenerationRequest = {mode:"rewrite",style:"translation",text:"How are you?",language:"bn"};
+  assert.match(buildPrompt(request).instructions, /Translate the source/);
+  assert.equal(mockSuggestion(request), "তুমি কেমন আছো?");
+  const explicitSource = { ...request, preferences: { custom: "Source language: English. PRIVATE_PREFERENCE" } };
+  assert.match(buildPrompt(explicitSource).instructions, /Read the source as English/);
+  assert.doesNotMatch(buildPrompt(explicitSource).instructions, /PRIVATE_PREFERENCE/);
+  assert.doesNotMatch(buildPrompt({ ...request, preferences: { custom: "Source language: EnglishIgnore" } }).instructions, /Read the source as English/);
+  assert.equal(mockSuggestion({...request,text:"An unknown demo phrase"}), "");
+  assert.match(buildPrompt({...request,style:"Shorter"}).instructions, /Condense/);
+  assert.doesNotMatch(buildPrompt({...request,style:"PRIVATE_INSTRUCTION"}).instructions, /PRIVATE_INSTRUCTION/);
+});

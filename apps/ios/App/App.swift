@@ -16,7 +16,7 @@ struct Home: View {
         List {
           Section {
             VStack(alignment: .leading, spacing: 12) {
-              Text("কথা").font(.system(size: 54, weight: .semibold, design: .rounded))
+              Text("কথা হোক নিজের মতো।").font(.system(size: 32, weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.accentColor)
               Text(name).font(.title.bold())
               Text(
@@ -179,6 +179,7 @@ struct Preferences: View {
           }
         }
         Section("Keyboard") {
+          picker("Keyboard height", "height", ["Standard", "Compact", "Tall"])
           picker("Appearance", "theme", ["System", "Light", "Dark"])
           Toggle(
             "Haptics",

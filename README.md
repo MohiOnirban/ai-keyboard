@@ -1,8 +1,10 @@
-# Kotha Keys
+# KothaKey
 
-Kotha Keys is the working name for a free Bangladesh-first keyboard. Both native apps offer English, raw Banglish, Bangla phonetic and a direct Bangla layout. Phonetic typing and local suggestions work offline. The on-demand AI panel offers Rewrite, Reply and Express. Users choose whether to apply the result and send the message themselves.
+কথা হোক নিজের মতো।
 
-The installable Android APK and Apple Silicon simulator ZIP are in the local artifacts directory. [Install the development builds](docs/delivery.md)
+KothaKey is a Bangladesh-first keyboard for Android and iOS. English, raw Banglish, phonetic Bangla and direct Bangla work offline. The keyboard toolbar opens Fix Grammar, Improve & Tone, Ask AI and Translation. Ask AI includes Rewrite, Reply and Express. You review each result and choose whether to insert or replace text.
+
+The Phase 1 delivery includes native development builds, installation steps and emulator and simulator evidence. [Keyboard redesign and verification](docs/phase1-redesign.md)
 
 ## Run a development build
 
@@ -16,8 +18,8 @@ npm run dev
 
 The server listens on loopback port 4000. Android emulators use the host alias 10.0.2.2. iOS simulators use localhost. The default mock provider and in-memory PostgreSQL ledger require no credentials. Installing either keyboard enables offline typing without the service.
 
-- **Android** uses Kotlin InputMethodService and Jetpack Compose. Build the debug APK, install it, enable Kotha Keys in system settings, and select it as the current keyboard. [Android build and activation](apps/android/README.md)
-- **iOS** uses SwiftUI and a UIKit keyboard extension. Run the KothaKeys scheme on an iPhone simulator. Add Kotha Keys in Settings → General → Keyboard → Keyboards. Switch keyboards with the globe. [iOS build, activation and signing](apps/ios/README.md)
+- **Android** uses Kotlin InputMethodService and Jetpack Compose. Build the debug APK, install it, enable KothaKey in system settings, and select it as the current keyboard. [Android build and activation](apps/android/README.md)
+- **iOS** uses SwiftUI and a UIKit keyboard extension. Run the KothaKeys scheme on an iPhone simulator. Add KothaKey in Settings → General → Keyboard → Keyboards. Switch keyboards with the globe. [iOS build, activation and signing](apps/ios/README.md)
 - **AI** uses a Fastify TypeScript API, anonymous bearer sessions and a private PostgreSQL ledger. Live requests go through OpenRouter Responses with a configurable model. The model verified on both mobile platforms is `openai/gpt-6-luna`. [Backend configuration](backend/README.md)
 - **Communication** includes versioned writing examples, a separate evaluation set and reproducible benchmark commands. [Communication evaluation](intelligence/README.md)
 - **Typing** shares Avro grammar and a project-owned dictionary of common Banglish spellings. [Offline phonetic design and checks](docs/offline-typing.md)
@@ -37,6 +39,6 @@ To run the local API with hosted accounting, use `node --env-file=.env.hosted sr
 
 ## Verification
 
-Run `./scripts/check.sh` after installing backend dependencies. It checks the backend build and tests, communication engine, evaluation harness, shared grammar and macOS-hosted Swift adapter. Platform-specific builds, emulator tests and XCTest workflows are documented in the mobile directories. [Delivery and verification](docs/delivery.md)
+Run `./scripts/check.sh` after installing backend dependencies. It checks the backend build and tests, communication engine, evaluation harness, shared grammar and macOS-hosted Swift adapter. Platform-specific builds, emulator tests and XCTest workflows are documented in the mobile directories. [Phase 1 verification](docs/phase1-redesign.md) · [Earlier development delivery](docs/delivery.md)
 
 [Master implementation](docs/master.md) · [Engineering strategy](AGENTS.md) · [Shared architecture and API contract](shared/contract.md) · [Privacy](docs/privacy.md)

@@ -156,22 +156,27 @@ actor Service {
     _ = try await send("v1/session", "DELETE", credential: credential)
     try remove(credential)
   }
-  func generate(_ input: String, mode: String, style: String) async throws -> Answer {
+  func generate(_ input: String, mode: String, style: String, language: String? = nil, instruction: String? = nil) async throws -> Answer {
     guard !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, input.utf16.count <= 1600
     else { throw Problem("Enter 1–1600 characters.") }
     var body: [String: Any] = [
       "text": input, "mode": mode, "style": style.lowercased(),
-      "language": Settings.get("language", "auto"),
+      "language": language ?? Settings.get("language", "auto"),
       "intensity": Settings.get("intensity", "balanced"),
     ]
     let rel = Settings.get("relationship")
     if !rel.isEmpty { body["relationship"] = rel }
-    body["preferences"] =
-      Dictionary(
+    var preferences = Dictionary(
         uniqueKeysWithValues: ["length", "humor", "formality", "emoji", "custom"].compactMap {
           let value = Settings.get($0)
           return value.isEmpty ? nil : ($0, value)
         }) as [String: String]
+    if let instruction {
+      var combined = style == "translation" ? [instruction, preferences["custom"]].compactMap { $0 }.joined(separator: ". ") : instruction
+      while combined.utf16.count > 500 { combined.removeLast() }
+      preferences["custom"] = combined
+    }
+    body["preferences"] = preferences
     let data = try await send("v1/generate", "POST", body: body, id: UUID(), credential: session())
     return try JSONDecoder().decode(Answer.self, from: data)
   }

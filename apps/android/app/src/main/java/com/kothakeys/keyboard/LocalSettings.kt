@@ -37,6 +37,10 @@ internal class LocalSettings(context: Context) {
         get() = get("theme", "System")
         set(value) = put("theme", value)
 
+    var keyboardHeight: KeyboardHeight
+        get() = KeyboardHeight.entries.firstOrNull { it.name == get("keyboard_height") } ?: KeyboardHeight.Standard
+        set(value) = put("keyboard_height", value.name)
+
     var haptics: Boolean
         get() = prefs.getBoolean("haptics", true)
         set(value) { prefs.edit().putBoolean("haptics", value).apply() }

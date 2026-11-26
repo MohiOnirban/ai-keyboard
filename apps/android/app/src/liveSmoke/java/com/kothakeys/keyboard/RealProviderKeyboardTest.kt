@@ -23,14 +23,14 @@ class RealProviderKeyboardTest : KeyboardJourneyTest() {
         draft.forEach { touchKey(if (it == ' ') "Space" else it.toString()) }
         editedText(draft)
 
-        clickKeyboardControl("Open AI assistant")
+        openFeature("Ask AI")
         assertEquals(draft, practiceText())
         clickKeyboardControl("Generate")
-        waitFor("Replace", keyboard = true, timeoutMillis = 75_000)
+        waitFor("Replace Text", keyboard = true, timeoutMillis = 75_000)
         val preview = previewText()
         assertEquals("preview preserves the editor before acceptance", draft, practiceText())
 
-        clickKeyboardControl("Replace")
+        clickKeyboardControl("Replace Text")
         editedText(preview)
         assertEquals("the accepted editor text matches the preview", preview, practiceText())
     }

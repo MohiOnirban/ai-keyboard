@@ -1,9 +1,10 @@
 <resources>
-    <string name="app_name">Kotha Keys</string>
+    <string name="app_name">KothaKey</string>
+    <item type="id" name="ai_suggestion" />
     <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:colorAccent">#116B58</item>
+        <item name="android:colorAccent">#006B58</item>
     </style>
 </resources>

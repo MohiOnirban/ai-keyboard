@@ -4,12 +4,19 @@ import org.json.JSONObject
 import java.util.Locale
 
 internal enum class TypingLanguage(val label: String) {
-    English("EN"), Bangla("বাংলা"), Phonetic("বাংলা · phonetic"), Banglish("Banglish")
+    English("English"), Bangla("বাংলা"), Phonetic("বাংলা · phonetic"), Banglish("Banglish")
 }
 
 internal class Phonetics(overrides: JSONObject, private val avro: Avro) {
     private val words = overrides.getJSONObject("words").let { entries ->
         entries.keys().asSequence().associateWith(entries::getString)
+    }
+
+    fun banglishCandidates(raw: String): List<String> {
+        if (raw.length < 2) return emptyList()
+        val lower = raw.lowercase(Locale.ROOT)
+        return words.keys.asSequence().filter { it != lower && it.startsWith(lower) }
+            .sortedWith(compareBy({ it.length }, { it })).take(3).map { matchWordCase(it, raw) }.toList()
     }
 
     fun candidates(raw: String): List<String> {
@@ -75,15 +82,22 @@ internal object KeyboardLayouts {
         row("া ি ী ু ূ ৃ ে ৈ ো ৌ"),
         row("১ ২ ৩ ৪ ৫ ৬ ৭ ৮ ৯ ০")
     )
-    val symbols = listOf(row("1 2 3 4 5 6 7 8 9 0"), row("@ # $ % & - + ( ) /"), row("! ? : ; \" ' , . * ="))
-    val symbolsExtra = listOf(row("~ ` | \\ ^ _ < > [ ]"), row("{ } € £ ৳ ₹ ¥ ° • §"), row("÷ × ± ≠ ≤ ≥ © ® ™ …"))
+    val symbols = listOf(
+        row("1 2 3 4 5 6 7 8 9 0"),
+        row("@ # $ _ & - + ( ) /", listOf("©", "®", "৳", "%", "§", "−", "=", "[", "]", "÷")),
+        row("* ! ? : ; \" '"),
+    )
+    val symbolsExtra = listOf(
+        row("~ ` | \\ ^ _ < > [ ]"),
+        row("{ } € £ ৳ ₹ ¥ ° • §"),
+        row("÷ × ± ≠ ≤ ≥ …", listOf("©", "®", "™", "×", "«", "»", "·")),
+    )
     val emoji = listOf(
         row("😀 😂 🥹 😊 😅 🙂 🙃 😍 🥰 😘"),
         row("😭 😔 😌 😎 🙄 😳 🤭 🤔 🤗 😴"),
         row("❤️ 💚 🫶 🙏 👍 👎 👀 🔥 ✨ 🎉"),
         row("💯 😂 🤝 💌 🌸 🌿 🌧️ ☕ 🇧🇩 👨‍👩‍👧")
     )
-    val numeric = listOf(row("1 2 3 -"), row("4 5 6 +"), row("7 8 9 ."), row("# 0 * ,"))
 }
 
 internal data class TextSnapshot(

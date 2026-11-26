@@ -27,6 +27,7 @@
 		B2BFEEEBB2C181A81009909A /* phonetic.json in Resources */ = {isa = PBXBuildFile; fileRef = F3FCD29CAD1C52CFA7568125 /* phonetic.json */; };
 		C3CD5C1736A0A1C7D6C1A19B /* Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = 793EB71A969FA4F274697567 /* Service.swift */; };
 		CD1494D753C92CDCF56F53C7 /* KeyboardController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2564F954CA4FF879C79E5E44 /* KeyboardController.swift */; };
+		AA99112233C92CDCF56F53C7 /* KeyboardDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA991122334FF879C79E5E44 /* KeyboardDesign.swift */; };
 		D144437104BCB4ECB8401F24 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE780A2C4F30E2104FC061B6 /* Foundation.framework */; };
 		F67515C60191454E14F610EC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE780A2C4F30E2104FC061B6 /* Foundation.framework */; };
 /* End PBXBuildFile section */
@@ -65,6 +66,7 @@
 /* Begin PBXFileReference section */
 		15557FD87BF3C2B19DE35382 /* KothaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KothaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2564F954CA4FF879C79E5E44 /* KeyboardController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeyboardController.swift; sourceTree = "<group>"; };
+		AA991122334FF879C79E5E44 /* KeyboardDesign.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeyboardDesign.swift; sourceTree = "<group>"; };
 		44EEFCB609AC4F8226966576 /* LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; name = LICENSE.txt; path = ../../shared/avro/LICENSE.txt; sourceTree = "<group>"; };
 		49EE732DF1E80943A0993CD9 /* App.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		63099AC7762D409D89E775F0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -120,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				2564F954CA4FF879C79E5E44 /* KeyboardController.swift */,
+				AA991122334FF879C79E5E44 /* KeyboardDesign.swift */,
 			);
 			name = Keyboard;
 			path = Keyboard;
@@ -330,6 +333,7 @@
 				4936959065E1186A036BACE5 /* Phonetic.swift in Sources */,
 				28D415CFFA1A51432E58C8EE /* Service.swift in Sources */,
 				CD1494D753C92CDCF56F53C7 /* KeyboardController.swift in Sources */,
+				AA99112233C92CDCF56F53C7 /* KeyboardDesign.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

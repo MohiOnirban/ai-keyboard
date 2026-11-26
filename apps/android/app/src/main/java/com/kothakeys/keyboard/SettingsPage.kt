@@ -66,6 +66,10 @@ internal fun SettingsPage(
             onTheme(it)
             version++
         }
+        Choice("Keyboard height", KeyboardHeight.entries.map { it.label }, saved.height.label) { value ->
+            settings.keyboardHeight = KeyboardHeight.entries.first { it.label == value }
+            version++
+        }
         Toggle("Keyboard haptics", saved.haptics) { settings.haptics = it; version++ }
         Toggle("English suggestions and autocorrect", saved.correction) { settings.correction = it; version++ }
     }
@@ -104,7 +108,7 @@ internal fun SettingsPage(
         OutlinedButton(onClick = { confirmation = "session" }, enabled = task == null) { Text("Revoke AI session") }
     }
     KothaSection("Help and troubleshooting") {
-        Text("If the keyboard is missing, open Start and check Android’s keyboard settings. The ◎ key opens Android’s keyboard picker.")
+        Text("If the keyboard is missing, open Start and check Android’s keyboard settings. More options opens Android’s keyboard picker.")
         Text("AI is unavailable in password, email and other private or specialized fields. Use a normal message field or the Playground.")
         Text("For a rewrite, select the text. On Android 14 or later, you can also place the cursor at the end of a short draft in a compatible editor.")
         Text("If AI cannot connect, you can keep typing and retry later.")
@@ -152,6 +156,7 @@ private class SettingsView(settings: LocalSettings) {
     val typing = settings.typingLanguage
     val aiLanguage = settings.aiLanguage
     val theme = settings.theme
+    val height = settings.keyboardHeight
     val haptics = settings.haptics
     val correction = settings.correction
     val favorites = settings.favorites

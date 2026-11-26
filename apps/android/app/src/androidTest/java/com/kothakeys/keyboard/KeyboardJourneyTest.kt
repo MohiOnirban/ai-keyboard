@@ -3,6 +3,7 @@ package com.kothakeys.keyboard
 import android.app.Instrumentation
 import android.content.ComponentName
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.Build
 import android.os.ParcelFileDescriptor
@@ -18,9 +19,15 @@ import android.widget.EditText
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
+import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 open class KeyboardJourneyTest {
     private val startingLanguage: TypingLanguage?
@@ -55,7 +62,7 @@ open class KeyboardJourneyTest {
             type("ami")
             editedText("ami")
             clear()
-            clickKeyboardControl("Toggle emoji keyboard")
+            openFeature("Emoji")
             clickKeyboardControl("🇧🇩")
             clickKeyboardControl("👨‍👩‍👧")
             editedText("🇧🇩👨‍👩‍👧")
@@ -104,36 +111,47 @@ open class KeyboardJourneyTest {
         focusPracticeField()
         selectLayout(TypingLanguage.English)
         type("hello")
-        clickKeyboardControl("Open AI assistant")
+        openFeature("Ask AI")
         clickKeyboardControl("Generate")
-        waitFor("Replace", keyboard = true)
+        waitFor("Replace Text", keyboard = true)
         val suggestion = previewText()
-        clickKeyboardControl("Replace")
+        clickKeyboardControl("Replace Text")
         editedText(suggestion)
 
-        clickKeyboardControl("Editing tools")
+        showToolbar()
+        clickKeyboardControl("More options")
         selectAll()
-        clickKeyboardControl("Editing tools")
-        clickKeyboardControl("Open AI assistant")
+        clickKeyboardControl("Return to keyboard")
+        openFeature("Ask AI")
         clickKeyboardControl("Generate")
-        waitFor("Replace", keyboard = true)
-        type("", "Space")
-        type("x")
-        clickKeyboardControl("Replace")
+        waitFor("Replace Text", keyboard = true)
+        setPracticeText("Changed draft")
+        clickKeyboardControl("Replace Text")
         waitFor("Insert safely", keyboard = true)
-        clickKeyboardControl("Close AI panel")
-        editedText(" x")
+        clickKeyboardControl("Return to keyboard")
+        editedText("Changed draft")
         instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
     }
 
     protected fun setupKeyboard() {
         assumeTrue("requires an isolated Android 35 emulator", Build.HARDWARE.contains("ranchu") && Build.VERSION.SDK_INT >= 35)
         val flags = automation.serviceInfo
-        flags.flags = flags.flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+        flags.flags = flags.flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
+            android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
         automation.serviceInfo = flags
         val context = instrumentation.targetContext
-        startingLanguage?.let { language ->
-            instrumentation.runOnMainSync { LocalSettings(context).typingLanguage = language }
+        instrumentation.runOnMainSync {
+            LocalSettings(context).apply {
+                typingLanguage = startingLanguage ?: TypingLanguage.English
+                theme = "Light"
+                keyboardHeight = KeyboardHeight.Standard
+            }
+        }
+        if (InstrumentationRegistry.getArguments().getString("kothaMock") == "true" &&
+            BuildConfig.BACKEND_URL == "http://10.0.2.2:4000") {
+            val ready = CountDownLatch(1)
+            AiClient.get(context).usage { ready.countDown() }
+            assertTrue("mock session ready", ready.await(12, TimeUnit.SECONDS))
         }
         val component = ComponentName(context, KothaIme::class.java).flattenToShortString()
         command("ime enable $component")
@@ -141,31 +159,238 @@ open class KeyboardJourneyTest {
         val launch = Intent(instrumentation.targetContext, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         activity = instrumentation.startActivitySync(launch) as MainActivity
-        val appName = instrumentation.targetContext.getString(R.string.app_name)
-        waitFor("$appName is your active keyboard.")
+        if (InstrumentationRegistry.getArguments().getString("viewportTest") == "true") {
+            instrumentation.runOnMainSync {
+                val host = android.widget.FrameLayout(activity)
+                val field = EditText(activity).apply {
+                    hint = "Synthetic draft"
+                    inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                }
+                host.addView(field, android.widget.FrameLayout.LayoutParams(-1, -2))
+                activity.setContentView(host)
+            }
+        }
+        val selected = android.provider.Settings.Secure.getString(
+            context.contentResolver, android.provider.Settings.Secure.DEFAULT_INPUT_METHOD,
+        )
+        assertEquals(ComponentName.unflattenFromString(component), ComponentName.unflattenFromString(selected))
     }
 
     protected fun selectEnglishLayout() = selectLayout(TypingLanguage.English)
 
     protected fun previewText(): String = eventually("generated suggestion") {
-        val preview = keyboardNode("Close AI panel")?.parent?.parent?.getChild(1)
-        preview?.takeIf { it.className == "android.widget.TextView" }
-            ?.text?.toString()?.takeIf(String::isNotBlank)
+        visibleRoots(true).firstNotNullOfOrNull { root ->
+            root.first { it.viewIdResourceName?.endsWith(":id/ai_suggestion") == true }?.text?.toString()
+        }?.takeIf(String::isNotBlank)
+    }
+
+    protected fun openFeature(name: String) {
+        showToolbar()
+        if (keyboardNode(name) == null) clickKeyboardControl("More options")
+        clickKeyboardControl(name)
+    }
+
+    private fun showToolbar() {
+        if (keyboardNode("Show keyboard toolbar") != null) clickKeyboardControl("Show keyboard toolbar")
+    }
+
+    private fun setPracticeText(value: String) {
+        instrumentation.runOnMainSync {
+            val field = checkNotNull(activity.window.decorView.practiceField())
+            field.text.replace(0, field.text.length, value)
+            field.setSelection(value.length)
+        }
+        editedText(value)
+    }
+
+    private fun keyboardFrame(): Rect {
+        val display = if (Build.VERSION.SDK_INT >= 30) activity.windowManager.maximumWindowMetrics.bounds else null
+        fun sample() = automation.windows.firstOrNull { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+            ?.let { Rect().also(it::getBoundsInScreen) }
+            ?.takeIf { display == null || it.bottom <= display.bottom }
+        return eventually("settled keyboard frame") {
+            val first = sample() ?: return@eventually null
+            SystemClock.sleep(125)
+            if (sample() != first) return@eventually null
+            SystemClock.sleep(125)
+            sample()?.takeIf { it == first }
+        }
+    }
+
+    private fun capture(name: String) {
+        if (InstrumentationRegistry.getArguments().getString("phase1Evidence") != "true") return
+        val dir = checkNotNull(instrumentation.targetContext.getExternalFilesDir("phase1"))
+        val bitmap = checkNotNull(automation.takeScreenshot())
+        try {
+            File(dir, "$name.png").outputStream().use {
+                check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+            }
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
+    @Test fun phaseOneGridAndModeHeight() {
+        setupKeyboard()
+        focusPracticeField()
+        selectLayout(TypingLanguage.English)
+        val frame = keyboardFrame()
+        val q = bounds(waitFor("q", keyboard = true))
+        val a = bounds(waitFor("a", keyboard = true))
+        val z = bounds(waitFor("z", keyboard = true))
+        val shift = bounds(waitFor(shiftKey, keyboard = true))
+        val delete = bounds(waitFor("Backspace", keyboard = true))
+        assertTrue("regular letter widths match across alphabet rows", abs(q.width() - a.width()) <= 1 && abs(q.width() - z.width()) <= 1)
+        assertTrue("second row is offset by half a key", abs((a.left - q.left) * 2 - q.width()) <= 3)
+        assertTrue("third row is offset by its wider shift key", abs(z.left - shift.right) <= 1 && shift.width() > z.width())
+        assertTrue("left and right side keys are equally wide", abs(shift.width() - delete.width()) <= 2)
+        capture("01-english-alphabet")
+
+        setPracticeText("Keep this draft")
+        for (feature in listOf("Fix Grammar", "Improve & Tone", "Ask AI", "Translation", "Emoji", "Clipboard")) {
+            openFeature(feature)
+            waitFor("Return to keyboard", keyboard = true)
+            assertNull("no host letter keys in $feature", keyboardNode("q"))
+            assertEquals("fixed keyboard bounds in $feature", frame, keyboardFrame())
+            editedText("Keep this draft")
+            val output = mapOf("Fix Grammar" to "07-fix-grammar", "Improve & Tone" to "08-improve-tone",
+                "Ask AI" to "09-ask-ai", "Translation" to "10-translation",
+                "Emoji" to "11-emoji", "Clipboard" to "12-clipboard")
+            capture(output.getValue(feature))
+            clickKeyboardControl("Return to keyboard")
+            waitFor("q", keyboard = true)
+        }
+        setPracticeText("")
+        clickKeyboardControl("Toggle numbers and symbols")
+        waitFor("More symbols", keyboard = true)
+        capture("04-symbols")
+        clickKeyboardControl("More symbols")
+        waitFor("Primary symbols", keyboard = true)
+        capture("05-secondary-symbols")
+        clickKeyboardControl("Numeric keypad")
+        val zero = bounds(waitFor("0", keyboard = true))
+        val two = bounds(waitFor("2", keyboard = true))
+        assertTrue("zero aligns under the middle numeric column", abs(zero.centerX() - two.centerX()) <= 1)
+        assertEquals(frame, keyboardFrame())
+        capture("06-numeric")
+        clickKeyboardControl("Alphabet layout")
+        selectLayout(TypingLanguage.Phonetic)
+        capture("02-bangla-phonetic")
+        selectLayout(TypingLanguage.Bangla)
+        capture("03-direct-bangla")
+        selectLayout(TypingLanguage.Banglish)
+        capture("13-raw-banglish")
+    }
+
+    @Test fun phaseOneAiPanelsUseMockWithoutOverwritingDraft() {
+        val arguments = InstrumentationRegistry.getArguments()
+        val delayedMock = arguments.getString("phase1LoadingEvidence") == "true" && BuildConfig.BACKEND_URL == "http://127.0.0.1:4133"
+        assumeTrue(BuildConfig.BACKEND_URL == "http://10.0.2.2:4000" || delayedMock)
+        assumeTrue(arguments.getString("kothaMock") == "true")
+        setupKeyboard()
+        focusPracticeField()
+        val frame = keyboardFrame()
+
+        setPracticeText("im on teh bus")
+        openFeature("Fix Grammar")
+        clickWithoutDelay("Check grammar")
+        captureLoading("Checking grammar…", "14-fix-grammar-loading")
+        assertEquals(frame, keyboardFrame())
+        waitFor("Replace Text", keyboard = true)
+        assertEquals("I'm on the bus.", previewText())
+        assertEquals("im on teh bus", practiceText())
+        capture("15-fix-grammar-preview")
+        clickKeyboardControl("Replace Text")
+        editedText("I'm on the bus.")
+
+        setPracticeText("can you check this today?")
+        openFeature("Improve & Tone")
+        clickKeyboardControl("Professional")
+        clickWithoutDelay("Generate")
+        captureLoading("Generating…", "16-improve-tone-loading")
+        waitFor("Replace Text", keyboard = true)
+        assertTrue(previewText().isNotBlank())
+        assertEquals("can you check this today?", practiceText())
+        capture("17-improve-tone-preview")
+        clickKeyboardControl("Return to keyboard")
+
+        setPracticeText("How are you?")
+        openFeature("Translation")
+        waitFor("Bangla", keyboard = true)
+        clickWithoutDelay("Translate")
+        captureLoading("Translating…", "18-translation-loading")
+        waitFor("Replace Text", keyboard = true)
+        assertEquals("তুমি কেমন আছো?", previewText())
+        assertEquals("How are you?", practiceText())
+        capture("19-translation-preview")
+        clickKeyboardControl("Return to keyboard")
+
+        openFeature("Ask AI")
+        clickKeyboardControl("Express")
+        clickKeyboardControl("Type input")
+        type("hello")
+        clickKeyboardControl("Done editing")
+        clickWithoutDelay("Generate")
+        captureLoading("Generating…", "20-ask-ai-loading")
+        waitFor("Insert", keyboard = true)
+        assertTrue(previewText().isNotBlank())
+        assertEquals("How are you?", practiceText())
+        capture("21-ask-ai-preview")
+    }
+
+    @Test fun phaseOneDarkThemeAndHeightPreference() {
+        setupKeyboard()
+        val settings = LocalSettings(instrumentation.targetContext)
+        try {
+            instrumentation.runOnMainSync {
+                settings.theme = "Dark"
+                settings.keyboardHeight = KeyboardHeight.Tall
+            }
+            focusPracticeField()
+            val tall = keyboardFrame()
+            capture("22-dark-alphabet")
+            openFeature("Ask AI")
+            assertEquals(tall, keyboardFrame())
+            capture("23-dark-ask-ai")
+            clickKeyboardControl("Return to keyboard")
+            instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+            eventually("keyboard closed") { true.takeIf { keyboardNode("Ask AI") == null } }
+            instrumentation.runOnMainSync { settings.keyboardHeight = KeyboardHeight.Compact }
+            focusPracticeField()
+            assertTrue("compact keyboard is shorter", keyboardFrame().height() < tall.height())
+            capture("24-dark-compact")
+        } finally {
+            instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+            instrumentation.runOnMainSync {
+                settings.theme = "Light"
+                settings.keyboardHeight = KeyboardHeight.Standard
+            }
+        }
+    }
+
+    private fun captureLoading(label: String, filename: String) {
+        if (InstrumentationRegistry.getArguments().getString("phase1LoadingEvidence") == "true") {
+            waitFor(label, keyboard = true, timeoutMillis = 6_000)
+            capture(filename)
+        }
+    }
+
+    private fun clickWithoutDelay(label: String) {
+        val button = waitFor(label, keyboard = true)
+        assertTrue("activated keyboard control $label", button.performAction(AccessibilityNodeInfo.ACTION_CLICK))
     }
 
     protected fun focusPracticeField() {
-        eventually("practice editor window focus") {
-            var focused = false
+        eventually("practice editor and visible keyboard") {
+            if (keyboardNode("Ask AI") != null) return@eventually true
             instrumentation.runOnMainSync {
                 val field = activity.window.decorView.practiceField()
                 if (field?.hasWindowFocus() == true && field.requestFocus()) {
                     WindowCompat.getInsetsController(activity.window, field).show(WindowInsetsCompat.Type.ime())
-                    focused = true
                 }
             }
-            true.takeIf { focused }
+            null
         }
-        waitFor("Open AI assistant", keyboard = true)
         startingLanguage?.let { waitFor(it.label, keyboard = true) }
     }
 
@@ -226,21 +451,16 @@ open class KeyboardJourneyTest {
     }
 
     private fun clear() {
-        clickKeyboardControl("Editing tools")
+        showToolbar()
+        clickKeyboardControl("More options")
         selectAll()
+        clickKeyboardControl("Return to keyboard")
         clickKeyboardControl("Backspace")
-        clickKeyboardControl("Editing tools")
         editedText("")
     }
 
     protected fun editedText(expected: String) {
-        eventually("editor text $expected") {
-            visibleRoots(false).firstNotNullOfOrNull { root ->
-                root.first(includeHidden = true) {
-                    it.className == "android.widget.EditText" && (if (it.isShowingHintText) "" else it.text?.toString().orEmpty()) == expected
-                }
-            }
-        }
+        eventually("editor text $expected") { true.takeIf { practiceText() == expected } }
     }
 
     protected fun touchKey(label: String) = touch(label, settledKeyBounds(label))
@@ -270,7 +490,7 @@ open class KeyboardJourneyTest {
         fun snapshot(): KeyFrame? {
             val window = automation.windows.firstOrNull { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD } ?: return null
             val root = window.root ?: return null
-            val key = root.first { it.text?.toString() == label || it.contentDescription?.toString() == label } ?: return null
+            val key = root.first { it.matches(label) } ?: return null
             val space = root.first { it.contentDescription?.toString() == "Space" }?.let(::bounds)
             return KeyFrame(Rect().also(window::getBoundsInScreen), bounds(key), space)
         }
@@ -292,8 +512,12 @@ open class KeyboardJourneyTest {
         eventually(label, timeoutMillis) { find(label, keyboard) }
 
     private fun find(label: String, keyboard: Boolean) = visibleRoots(keyboard).firstNotNullOfOrNull { root ->
-        root.first { it.text?.toString() == label || it.contentDescription?.toString() == label }
+        root.first { it.matches(label) }
     }
+
+    private fun AccessibilityNodeInfo.matches(label: String) =
+        text?.toString() == label || contentDescription?.toString() == label ||
+            (Build.VERSION.SDK_INT >= 30 && stateDescription?.toString() == label)
 
     private fun visibleRoots(keyboard: Boolean) = automation.windows.filter {
         it.type == if (keyboard) AccessibilityWindowInfo.TYPE_INPUT_METHOD else AccessibilityWindowInfo.TYPE_APPLICATION

@@ -1,5 +1,21 @@
 # Android verification
 
+## Phase 1 keyboard redesign
+
+The Phase 1 Android debug package is signed with the SDK development key and targets the emulator host mock at `10.0.2.2:4000`. Its SHA-256 is `12b1655517a439458eb1f25a806b3a68955777d703cca5dbd4076a09bfcdf0de`. The unsigned release APK built with SHA-256 `2e95a085535d739955289e0dcfda50f91a3f63fc62638d2650d47c46618af0dc`. [Debug APK](../../artifacts/phase1/KothaKey-android-debug.apk)
+
+The native keyboard uses a fixed-height header and content area. The ten-unit alphabet rows, specialized number layouts, theme, and height preference share that area with Grammar, Improve & Tone, Ask AI, Translation, Emoji and Clipboard. Candidate suggestions temporarily occupy the toolbar slot. Their toolbar button restores direct access to AI while composing.
+
+On the isolated API 35 emulator, the Phase 1 suite checked matching letter widths, a half-key stagger, wider side keys, zero centered in the keypad, unchanged typing-area bounds across modes, light and dark appearance, the OpenRouter-independent mock flows, stale-draft replacement, draft preservation, credential revocation, and offline Bangla phonetic conversion and Bengali and emoji deletion. The final standard-size suite used the 1,080 × 2,400 emulator display. All ten scenarios passed together in 46.536 seconds on the final signed APK, after the test waited for the keyboard-close animation during the height comparison. [Complete native run](../../artifacts/phase1/checks/android/ordinary-final.log)
+
+The keyboard geometry and mode journey separately passed at 840 × 1,920 (320 dp wide) and at 2,400 × 1,080 in landscape. Those viewport checks used a plain Android EditText as the host. The JVM suite passed all 10 tests. Android lint passed with zero errors and 17 warnings. [Run transcripts](../../artifacts/phase1/checks/android)
+
+Loading evidence used a separately built debug APK connected to a local forwarding proxy with a four-second delay. The proxy forwarded to the same mock service. That APK and its reverse port mapping were removed from the emulator after capture. [Before screenshots](../../artifacts/phase1/before), [After screenshots](../../artifacts/phase1/after/android)
+
+Voice input delegates to an enabled Android voice input subtype where available. Actual dictation depends on that provider and requires device verification. The direct Bangla layout uses the existing character pages and grapheme handling. Prediction suggestions are available for the supported English, phonetic and raw Banglish dictionaries. Phase 1 verification used an emulator; physical-device checks remain open.
+
+## Pre-redesign baseline
+
 Android builds used JDK 21, Gradle 9.3.1, Android SDK Platform 36 and Build Tools 36.0.0. Device checks used an isolated Pixel 7 Android 35 Google APIs emulator. The ordinary Android suite used the local mock backend. One separately authorized synthetic live smoke used an isolated local listener.
 
 ## Build and packaging

@@ -5,13 +5,25 @@ cd "$project"
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 dataset=${2:-shared/tests/typing-evaluation.tsv}
-case ${1:-} in
+platform=${1:-}
+if [[ "$platform" == *-glide ]]; then
+  dataset=${2:-$work/glide.tsv}
+  if [[ -z ${2:-} ]]; then
+    python3 scripts/glide-evaluation.py shared/wordfreq.tsv > "$dataset"
+  fi
+fi
+case "$platform" in
+  ios-glide)
+    xcrun swiftc -O -module-cache-path "$work/cache" apps/ios/Common/GlideDecoder.swift \
+      shared/tests/prediction/GlideMeasure.swift -o "$work/measure"
+    /usr/bin/time -l "$work/measure" shared/wordfreq.tsv "$dataset"
+    ;;
   ios)
     xcrun swiftc -O -module-cache-path "$work/cache" apps/ios/Common/Predictor.swift \
       shared/tests/prediction/Measure.swift -o "$work/measure"
     /usr/bin/time -l "$work/measure" shared/predict.tsv "$dataset" shared/wordfreq.tsv
     ;;
-  android)
+  android|android-glide)
     gradle_modules=${GRADLE_USER_HOME:-$HOME/.gradle}/caches/modules-2/files-2.1
     compiler_jars=(
       "$gradle_modules"/org.jetbrains.kotlin/kotlin-compiler-embeddable/2.2.10/*/*.jar
@@ -27,6 +39,14 @@ case ${1:-} in
       "$gradle_modules"/org.json/json/20250517/*/*.jar
     )
     android=apps/android/app/src/main/java/com/kothakeys/keyboard
+    if [[ "$platform" == android-glide ]]; then
+      java -cp "${(j.:.)compiler_jars}" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
+        -jvm-target 17 -no-stdlib -no-reflect -cp "${(j.:.)runtime_jars}" -d "$work/measure.jar" \
+        "$android/GlideDecoder.kt" shared/tests/prediction/GlideMeasure.kt
+      /usr/bin/time -l java -cp "$work/measure.jar:${(j.:.)runtime_jars}" com.kothakeys.keyboard.GlideMeasureKt \
+        shared/wordfreq.tsv "$dataset"
+      exit
+    fi
     java -cp "${(j.:.)compiler_jars}" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
       -jvm-target 17 -no-stdlib -no-reflect -cp "${(j.:.)runtime_jars}" -d "$work/measure.jar" \
       "$android/OfflinePrediction.kt" "$android/TypingModel.kt" shared/android/Avro.kt shared/tests/prediction/Measure.kt
@@ -34,7 +54,7 @@ case ${1:-} in
       shared/predict.tsv "$dataset" shared/wordfreq.tsv
     ;;
   *)
-    printf '%s\n' 'Usage: zsh scripts/measure-prediction.sh {ios|android} [dataset.tsv]' >&2
+    printf '%s\n' 'Usage: zsh scripts/measure-prediction.sh {ios|android|ios-glide|android-glide} [dataset.tsv]' >&2
     exit 2
     ;;
 esac

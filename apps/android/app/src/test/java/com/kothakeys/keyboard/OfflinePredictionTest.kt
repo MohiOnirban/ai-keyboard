@@ -44,6 +44,28 @@ class OfflinePredictionTest {
         assertEquals("didn't", model.spelling(english, "didnt", emptySet()).first())
     }
 
+    @Test fun wholePhraseAndTwoEditCorrectionUseFrequencyAndContext() {
+        val lexicon = OfflinePrediction(sequenceOf("en\twe will be there", "en\tthey will be late"),
+            sequenceOf("en\tdefinitely\t20000", "en\tdefinite\t8000", "en\tback\t500000", "en\tend\t180000",
+                "en\tbacked\t12000", "en\tgoodnight\t20000"))
+        assertEquals("we will be there", lexicon.autocorrect(english, "wewillbethere", PredictionContext()))
+        assertNull(lexicon.autocorrect(english, "wewillbethere", PredictionContext(allowSegmentation = false)))
+        assertEquals("definitely", lexicon.autocorrect(english, "definatly", PredictionContext()))
+        assertNull(lexicon.autocorrect(english, "backend", PredictionContext()))
+        assertNull(lexicon.autocorrect(english, "goodnight", PredictionContext()))
+    }
+
+    @Test fun followingWordAndTouchCanDisambiguateAnExistingWord() {
+        val ranker = OfflinePrediction(sequenceOf("en\tgold medal", "en\tgood weather"),
+            sequenceOf("en\tgood\t80000", "en\tgold\t12000"))
+        fun choice(context: PredictionContext) = ranker.suggestions(english, "gopd", context).first { it != "gopd" }
+        assertEquals("good", choice(PredictionContext()))
+        assertEquals("gold", choice(PredictionContext(following = "medal")))
+        assertEquals("gold", choice(PredictionContext(touchHints = mapOf(2 to 'l'))))
+        assertEquals("today", ranker.next(english, PredictionContext("good", learnedNext = mapOf("today" to 3))).first())
+        assertTrue(ranker.glideVocabulary(english).containsKey("weather"))
+    }
+
     @Test fun attestedSubtitleFormsNeedContextBeforeAutomaticCorrection() {
         val withFrequency = OfflinePrediction(sequenceOf(
             "en\tI'm well", "en\tI'm leaving", "en\twe can't go", "en\twe can't stay",

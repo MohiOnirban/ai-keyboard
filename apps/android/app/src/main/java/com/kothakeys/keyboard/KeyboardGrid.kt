@@ -36,9 +36,17 @@ internal class KeyboardGrid(
     private val stopRepeat: () -> Unit,
     private val enter: () -> Unit,
     private val openEmoji: () -> Unit,
+    private val touchHint: (Char?) -> Unit,
+    private val glide: (List<GlidePoint>) -> Unit,
+    private val glideEnabled: () -> Boolean,
+    private val trailEnabled: () -> Boolean,
+    private val moveCursor: (Boolean) -> Unit,
 ) {
     fun layout(state: TypingState, traits: EditorTraits, enterLabel: String, panelEditing: Boolean): LinearLayout {
-        val grid = views.vertical()
+        val useCoordinates = state.layer == KeyLayer.Alphabet && traits.wordAssistance && !panelEditing &&
+            state.language != TypingLanguage.Bangla
+        val grid = if (useCoordinates) LetterGestureView(views.context, glideEnabled(), trailEnabled(), views.colors.accent,
+            touchHint, glide) else views.vertical()
         when {
             traits.numeric -> restrictedNumbers(grid, traits, enterLabel)
             state.layer == KeyLayer.Numbers -> numbers(grid, enterLabel)
@@ -227,6 +235,7 @@ internal class KeyboardGrid(
 
     private fun glyph(row: LinearLayout, spec: KeySpec, fontSize: Float = 23f) {
         views.gridItem(row, views.key(spec.label, alternate = spec.alternate, fontSize = fontSize, face = TypingKeyFace.Regular) { type(spec.text) }.apply {
+            spec.text.singleOrNull()?.lowercaseChar()?.takeIf { it in 'a'..'z' }?.let { tag = it }
             spec.alternate?.let { alternate -> setOnLongClickListener { type(alternate); true } }
         })
     }
@@ -247,7 +256,31 @@ internal class KeyboardGrid(
             type(" ")
         }.apply {
             if (Build.VERSION.SDK_INT >= 30) stateDescription = language.label
-            if (chooseLanguage) setOnLongClickListener { this@KeyboardGrid.chooseLanguage(); true }
+            if (chooseLanguage) {
+                setOnLongClickListener { this@KeyboardGrid.chooseLanguage(); true }
+                var origin = 0f
+                var moved = false
+                setOnTouchListener { _, event ->
+                    when (event.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> { origin = event.x; moved = false; false }
+                        MotionEvent.ACTION_MOVE -> {
+                            val steps = ((event.x - origin) / views.dp(14)).toInt().coerceIn(-6, 6)
+                            if (steps != 0) {
+                                cancelLongPress()
+                                repeat(kotlin.math.abs(steps)) { moveCursor(steps > 0) }
+                                origin = event.x
+                                moved = true
+                            }
+                            moved
+                        }
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                            if (moved) isPressed = false
+                            moved
+                        }
+                        else -> false
+                    }
+                }
+            }
         }, weight)
     }
 

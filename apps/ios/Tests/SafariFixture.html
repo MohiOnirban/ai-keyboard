@@ -4,12 +4,50 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <style>
+    input, textarea, button { font-size: 16px }
+    nav { display: flex; flex-wrap: wrap; gap: 4px; position: sticky; top: 0; z-index: 1; background: Canvas }
+    h1 { font-size: 18px }
+  </style>
   <title>Kotha Keys local keyboard fixture</title>
 </head>
 <body>
   <h1>Kotha Keys local keyboard fixture</h1>
+  <nav>
+  <button type="button" id="select">Select misspelling</button>
+  <button type="button" id="cursor">Place cursor after misspelling</button>
+  </nav>
   <textarea aria-label="Synthetic message" rows="3" cols="25"></textarea>
   <p><label>Numeric field <input aria-label="Numeric field" type="number" inputmode="numeric"></label></p>
   <p><label>Password field <input aria-label="Password field" type="password" autocomplete="new-password"></label></p>
+  <p><label>Email address <input aria-label="Email field" type="email"></label></p>
+  <p><label>Website <input aria-label="URL field" type="url"></label></p>
+  <script>
+    const draft = document.querySelector("textarea");
+    document.querySelector("nav").addEventListener("mousedown", event => event.preventDefault());
+    // Give each identifier trait a fresh activation at the top of the viewport.
+    const kind = new URLSearchParams(location.search).get("field");
+    if (kind === "email" || kind === "url") {
+      const field = document.querySelector('input[type="' + kind + '"]').closest("p");
+      document.body.prepend(field);
+      for (const node of document.body.children) {
+        if (node !== field && node.tagName !== "SCRIPT") node.hidden = true;
+      }
+    }
+    const sample = "Draft one.\nPlease check teh message.";
+    function position(start, end) {
+      draft.focus();
+      draft.setSelectionRange(start, end);
+    }
+    document.getElementById("select").onclick = () => {
+      draft.value = sample;
+      const index = sample.indexOf("teh");
+      position(index, index + 3);
+    };
+    document.getElementById("cursor").onclick = () => {
+      const index = draft.value.indexOf("teh") + 3;
+      position(index, index);
+    };
+  </script>
 </body>
 </html>

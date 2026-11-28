@@ -8,6 +8,10 @@ internal data class PredictionContext(
     val previous: String? = null,
     val previousPrevious: String? = null,
     val sentenceStart: Boolean = false,
+    val following: String? = null,
+    val touchHints: Map<Int, Char> = emptyMap(),
+    val allowSegmentation: Boolean = true,
+    val learnedNext: Map<String, Int> = emptyMap(),
 )
 
 internal data class PredictionProfile(
@@ -27,6 +31,9 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
         val following = mutableMapOf<String, MutableMap<String, Int>>()
         val afterPair = mutableMapOf<Pair<String, String>, MutableMap<String, Int>>()
         val starts = mutableMapOf<String, Int>()
+        val preceding = mutableMapOf<String, MutableMap<String, Int>>()
+        lateinit var glide: Map<String, Int>
+        var suffixNext: Map<String, List<String>> = emptyMap()
         val apostrophes = mutableMapOf<String, MutableList<String>>()
         lateinit var alphabetical: List<String>
         lateinit var shortPrefixes: Map<String, List<String>>
@@ -38,6 +45,22 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
 
         fun index() {
             alphabetical = words.keys.sorted()
+            glide = words.filterKeys { it.length in 2..24 && it.all { c -> c in 'a'..'z' } }
+            for ((left, successors) in following) for ((right, count) in successors) {
+                preceding.getOrPut(right, ::mutableMapOf)[left] = count
+            }
+            val suffixes = mutableMapOf<String, MutableMap<String, Pair<Int, Int>>>()
+            for ((left, successors) in following) for (length in 2..3) {
+                if (left.length <= length) continue
+                val group = suffixes.getOrPut(left.takeLast(length), ::mutableMapOf)
+                for ((word, count) in successors) {
+                    val (stems, uses) = group[word] ?: (0 to 0)
+                    group[word] = (stems + 1) to (uses + count)
+                }
+            }
+            suffixNext = suffixes.mapValues { (_, counts) -> counts.filterValues { it.first >= 2 }.keys
+                .sortedWith(compareByDescending<String> { counts.getValue(it).first }
+                    .thenByDescending { counts.getValue(it).second }.thenBy { it }).take(MAX_SUGGESTIONS) }
             lengths = alphabetical.groupBy(String::length)
             val prefixes = mutableMapOf<String, MutableList<String>>()
             words.keys.sortedWith(compareByDescending<String> { words[it] }.thenBy { it }).forEach { word ->
@@ -64,15 +87,18 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
         val previous: Map<String, Int> = emptyMap(),
         val pair: Map<String, Int> = emptyMap(),
         val start: Map<String, Int> = emptyMap(),
+        val following: Map<String, Int> = emptyMap(),
+        val hints: Map<Int, Char> = emptyMap(),
+        val allowSegmentation: Boolean = true,
     ) {
         fun weight(word: String) = log2((previous[word] ?: 0) + 1.0) * 3 +
             log2((pair[word] ?: 0) + 1.0) * 6 +
-            log2((start[word] ?: 0) + 1.0) * 2
+            log2((start[word] ?: 0) + 1.0) * 2 + log2((following[word] ?: 0) + 1.0) * 6
     }
 
     private enum class Edit(val prior: Double) {
         Apostrophe(32.0), Transposed(16.0), Repeated(15.0), InsertDelete(12.0),
-        Neighbor(11.0), Substitute(7.0), Split(14.0),
+        Neighbor(11.0), Substitute(7.0), DoubleEdit(4.0), Split(14.0),
     }
 
     private data class RankedEdit(val word: String, val edit: Edit, val score: Double, val frequency: Int)
@@ -117,6 +143,8 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
         languages.values.forEach(LanguageData::index)
     }
 
+    fun glideVocabulary(language: TypingLanguage): Map<String, Int> = languageData(language).glide
+
     fun complete(language: TypingLanguage, prefix: String, previous: String?, personal: Set<String>) =
         complete(language, prefix, PredictionContext(previous), PredictionProfile(personal))
 
@@ -151,11 +179,14 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
         val data = languageData(language)
         val related = related(data, context)
         val personal = profile.learned.entries.associate { wordKey(it.key) to it.value }
-        return (related.pair.keys + related.previous.keys)
-            .sortedWith(compareByDescending<String> { related.pair[it] ?: 0 }
+        val exact = (context.learnedNext.keys + related.pair.keys + related.previous.keys)
+            .sortedWith(compareByDescending<String> { (context.learnedNext[it] ?: 0) >= 2 }
+                .thenByDescending { context.learnedNext[it] ?: 0 }.thenByDescending { related.pair[it] ?: 0 }
                 .thenByDescending { related.previous[it] ?: 0 }.thenByDescending { personal[it] ?: 0 }
                 .thenByDescending { data.words[it] ?: 0 }.thenBy { it })
-            .take(MAX_SUGGESTIONS).map { display(language, it, "") }
+        val previous = wordKey(context.previous)
+        val backoff = listOf(3, 2).filter { previous.length > it }.flatMap { data.suffixNext[previous.takeLast(it)].orEmpty() }
+        return (exact + backoff).distinct().take(MAX_SUGGESTIONS).map { display(language, it, "") }
     }
 
     fun suggestions(
@@ -172,9 +203,10 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
         val correction = if (language == TypingLanguage.English) chooseAutomatic(word, edits, data, contextWords, profile) else null
         val completions = completions(language, key, data, contextWords, profile)
         val preferredCompletion = completions.firstOrNull()?.takeIf {
-            if (key.length < 2 || key in data.words || profile.keeps(key)) return@takeIf false
+            if (key.length < 2 || profile.keeps(key)) return@takeIf false
             val candidate = wordKey(it.word)
-            profile.keeps(candidate) || (contextWords.pair[candidate] ?: 0) > 0 || (contextWords.previous[candidate] ?: 0) >= 2
+            profile.keeps(candidate) || key !in data.words && ((contextWords.pair[candidate] ?: 0) > 0 ||
+                (contextWords.previous[candidate] ?: 0) >= 2)
         }
         val preferred = (correction?.word ?: preferredCompletion?.word)?.let { display(language, it, word) }
         val corrections = edits.map { RankedWord(it.word, it.score) }
@@ -193,12 +225,15 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
     }
 
     fun autocorrect(language: TypingLanguage, word: String, personal: Set<String>): String? =
-        autocorrect(language, word, PredictionContext(), PredictionProfile(personal))
+        autocorrect(language, wordKey(word), PredictionContext(), PredictionProfile(personal))?.let {
+            matchWordCase(it, word)
+        }
 
     fun autocorrect(
         language: TypingLanguage, word: String, context: PredictionContext, profile: PredictionProfile = PredictionProfile(),
     ): String? {
         if (language != TypingLanguage.English) return null
+        if (word == "i" && !profile.keeps("i") && !profile.rejects("i", "i")) return "I"
         val data = languageData(language)
         val related = related(data, context)
         return chooseAutomatic(word, edits(language, wordKey(word), data, related, profile), data, related, profile)
@@ -209,13 +244,15 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
         word: String, options: List<RankedEdit>, data: LanguageData, related: Related, profile: PredictionProfile,
     ): RankedEdit? {
         val best = options.firstOrNull() ?: return null
-        if (word.drop(1).any(Char::isUpperCase) && word.any(Char::isLowerCase)) return null
+        if (word.length > 1 && word == word.uppercase(Locale.ROOT) || word.drop(1).any(Char::isUpperCase)) return null
         val key = wordKey(word)
-        if (profile.rejects(key, wordKey(best.word))) return null
+        if (profile.rejects(key, wordKey(best.word)) || key in languages.getValue("banglish").words) return null
+        if (word.firstOrNull()?.isUpperCase() == true && related.start.isEmpty()) return null
         val margin = best.score - (options.getOrNull(1)?.score ?: 0.0)
         val strongContext = (related.pair[best.word] ?: 0) >= 1 || (related.previous[best.word] ?: 0) >= 2
+        if (best.edit != Edit.Split && !strongContext && options.any { it.edit == Edit.Split }) return null
         val literalFrequency = data.words[key] ?: 0
-        if (literalFrequency > 0) {
+        if (literalFrequency > 0 && best.edit != Edit.Split) {
             // Subtitle frequencies also contain unpunctuated dialogue. Require independent context before replacing one.
             val supportsContraction = strongContext || (related.previous[best.word] ?: 0) >= 1 ||
                 (related.start[best.word] ?: 0) >= 2
@@ -226,8 +263,12 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
             Edit.Apostrophe -> best.frequency >= 2 && margin >= 3
             Edit.Transposed -> key.length >= 3 && best.frequency >= 2 && margin >= 2
             Edit.Repeated -> key.length >= 4 && best.frequency >= 5 && margin >= 2
-            Edit.InsertDelete, Edit.Neighbor -> key.length >= 4 && strongContext && margin >= 4
-            Edit.Substitute, Edit.Split -> false
+            Edit.InsertDelete, Edit.Neighbor, Edit.Substitute -> key.length >= 4 &&
+                ((strongContext || (related.following[best.word] ?: 0) > 0) && margin >= 3 ||
+                 key.length >= 6 && best.frequency >= 1_000 && margin >= 6)
+            Edit.DoubleEdit -> key.length >= 7 && best.frequency >= 5_000 && margin >= 3
+            Edit.Split -> best.frequency >= 2 && margin >= 3 &&
+                (options.none { it.edit != Edit.Split && it.frequency >= 2_000 } || best.word.count { it == ' ' } >= 2)
         }
         return best.takeIf { confident }
     }
@@ -235,18 +276,23 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
     private fun edits(
         language: TypingLanguage, key: String, data: LanguageData, related: Related, profile: PredictionProfile,
     ): List<RankedEdit> {
-        if (key.length !in 2..MAX_EDIT_LENGTH || profile.keeps(key) || language == TypingLanguage.Banglish) {
+        if (key.length !in 2..MAX_EDIT_LENGTH || profile.keeps(key)) {
             return emptyList()
         }
         if (language == TypingLanguage.English && key.any { it !in 'a'..'z' && it != '\'' }) return emptyList()
         val ranked = linkedMapOf<String, RankedEdit>()
         fun add(word: String, edit: Edit, count: Int = data.words[word] ?: 0, personalBoost: Double = 0.0) {
-            if (count == 0 && personalBoost == 0.0) return
+            if (count == 0) return
             val score = edit.prior + log2(count + 1.0) + related.weight(word) + personalBoost
             if (score > (ranked[word]?.score ?: Double.NEGATIVE_INFINITY)) ranked[word] = RankedEdit(word, edit, score, count)
         }
         if (language == TypingLanguage.English) {
             for (word in data.apostrophes[key].orEmpty()) add(word, Edit.Apostrophe)
+        }
+        if (language == TypingLanguage.English && related.allowSegmentation && key.length >= 5 &&
+            (data.words[key] ?: 0) < 2_000 && key !in data.authored &&
+            key !in languages.getValue("banglish").words) {
+            segmentation(key, data, related)?.let { ranked[it.word] = it }
         }
         if (key in data.words) return ranked.values.sortedByDescending(RankedEdit::score)
         if (language == TypingLanguage.English) {
@@ -256,7 +302,9 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
                     val tail = key.substring(index)
                     for (letter in 'a'..'z') {
                         val repeated = head.lastOrNull() == letter || tail.firstOrNull() == letter
-                        add(head + letter + tail, if (repeated) Edit.Repeated else Edit.InsertDelete)
+                        val internalVowel = index in 1 until key.lastIndex && letter in "aeiou"
+                        add(head + letter + tail, if (repeated) Edit.Repeated else Edit.InsertDelete,
+                            personalBoost = if (internalVowel) 3.0 else 0.0)
                     }
                     if (tail.isEmpty()) continue
                     val after = tail.substring(1)
@@ -267,12 +315,16 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
                         add(head + tail[1] + original + tail.substring(2), Edit.Transposed)
                     }
                     for (letter in 'a'..'z') if (letter != original) {
-                        add(head + letter + after, if (nearby(original, letter)) Edit.Neighbor else Edit.Substitute)
+                        val spatial = related.hints[index] == letter && nearby(original, letter)
+                        add(head + letter + after, if (nearby(original, letter)) Edit.Neighbor else Edit.Substitute,
+                            personalBoost = if (spatial) 9.0 else 0.0)
                     }
-                    if (head.isNotEmpty() && (head.length > 1 || head in setOf("a", "i")) && tail.length > 1) {
-                        val splitUses = data.following[head]?.get(tail) ?: 0
-                        if (splitUses > 0) add("$head $tail", Edit.Split, splitUses, data.weight(head) * 0.4 + data.weight(tail) * 0.4)
-                    }
+                }
+            }
+            // For a longer token a shared initial trigram bounds the two-edit search.
+            if (key.length >= 7 && ranked.values.none { it.edit != Edit.Split }) {
+                for (word in data.prefixWords(key.take(3))) {
+                    if (withinTwoEdits(key, word)) add(word, Edit.DoubleEdit)
                 }
             }
         } else if (key.length >= 3) {
@@ -282,13 +334,58 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
         }
         if (key.length >= 3) {
             for (word in profile.dictionary) if (isWordFor(language, word)) {
-                classify(key, wordKey(word))?.let { add(word, it, personalBoost = 12.0) }
+                classify(key, wordKey(word))?.let { add(word, it, maxOf(1, data.words[word] ?: 0), personalBoost = 12.0) }
             }
             for ((word, count) in profile.learned) classify(key, wordKey(word))?.let {
-                add(word, it, personalBoost = 8.0 + log2(count + 1.0))
+                add(word, it, maxOf(1, data.words[word] ?: 0), personalBoost = 8.0 + log2(count + 1.0))
             }
         }
         return ranked.values.sortedWith(compareByDescending<RankedEdit> { it.score }.thenBy { it.word })
+    }
+
+    // Each boundary keeps the two strongest paths with distinct previous words. This lets
+    // observed transitions disambiguate splits without exploring exponentially many phrases.
+    private data class SegmentPath(val phrase: String, val last: String, val score: Double,
+        val parts: Int, val observed: Int, val minimum: Int)
+
+    private fun segmentation(key: String, data: LanguageData, context: Related): RankedEdit? {
+        val paths = List(key.length + 1) { mutableListOf<SegmentPath>() }
+        paths[0].add(SegmentPath("", "", 0.0, 0, 0, Int.MAX_VALUE))
+        for (end in 1..key.length) {
+            for (start in maxOf(0, end - 13) until end) {
+                if ((start == 0 && end == key.length) || paths[start].isEmpty()) continue
+                val token = key.substring(start, end)
+                if (token.length == 1 && token != "i" && token != "a") continue
+                val count = data.words[token] ?: continue
+                if (count < 500 && token !in data.authored) continue
+                for (prior in paths[start]) {
+                    if (prior.parts >= 7) continue
+                    val attested = prior.parts > 0 && data.following[prior.last]?.containsKey(token) == true
+                    val edge = if (attested) 3.5 else 0.0
+                    val value = prior.score + log2(count + 1.0) - 27.0 + edge +
+                        (if (prior.parts == 0) minOf(3.0, context.weight(token)) else 0.0)
+                    val candidate = SegmentPath(if (start == 0) token else prior.phrase + " " + token,
+                        token, value, prior.parts + 1, prior.observed + (if (attested) 1 else 0), minOf(count, prior.minimum))
+                    val best = paths[end]
+                    if (best.any { it.last == token && it.score >= value }) continue
+                    best.removeAll { it.last == token }
+                    best.add(candidate)
+                    best.sortByDescending { it.score }
+                    if (best.size > 2) best.removeAt(2)
+                }
+            }
+        }
+        val best = paths.last().firstOrNull() ?: return null
+        val literal = data.words[key] ?: 0
+        if (literal > 0 && (best.observed != best.parts - 1 || best.minimum < literal * 150L)) return null
+        val credible = best.observed == best.parts - 1 ||
+            best.minimum >= (if (best.observed > 0 || best.parts >= 3) 100_000 else 250_000) &&
+                (best.observed > 0 || best.parts <= 3)
+        if (!credible && (best.minimum < 1_500 || best.observed == 0 && best.parts != 2)) return null
+        val ambiguous = paths.last().getOrNull(1)?.let { best.score - it.score < 1.5 } == true
+        val confident = credible && !ambiguous
+        return RankedEdit(best.phrase, Edit.Split,
+            (if (confident) 31.0 else 18.0) + best.score / (best.parts * 5), if (confident) 2 else 1)
     }
 
     private fun related(data: LanguageData, context: PredictionContext): Related {
@@ -298,6 +395,7 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
             data.following[previous].orEmpty(),
             if (prior != null && previous != null) data.afterPair[prior to previous].orEmpty() else emptyMap(),
             if (context.sentenceStart) data.starts else emptyMap(),
+            data.preceding[context.following?.let(::wordKey)].orEmpty(), context.touchHints, context.allowSegmentation,
         )
     }
 
@@ -374,6 +472,26 @@ internal class OfflinePrediction(lines: Sequence<String>, frequencyLines: Sequen
             val (rowA, xA) = keyPositions[a] ?: return false
             val (rowB, xB) = keyPositions[b] ?: return false
             return kotlin.math.abs(rowA - rowB) <= 1 && kotlin.math.abs(xA - xB) <= 4
+        }
+
+        private fun withinTwoEdits(a: String, b: String): Boolean {
+            if (kotlin.math.abs(a.length - b.length) > 2) return false
+            var previous = IntArray(b.length + 1) { it }
+            var row = IntArray(b.length + 1)
+            for (i in a.indices) {
+                row[0] = i + 1
+                var minimum = row[0]
+                for (j in b.indices) {
+                    row[j + 1] = minOf(previous[j + 1] + 1, row[j] + 1,
+                        previous[j] + (if (a[i] == b[j]) 0 else 1))
+                    minimum = minOf(minimum, row[j + 1])
+                }
+                if (minimum > 2) return false
+                val swap = previous
+                previous = row
+                row = swap
+            }
+            return previous.last() <= 2
         }
 
         private fun classify(a: String, b: String): Edit? {

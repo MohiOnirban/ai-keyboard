@@ -83,6 +83,129 @@ open class KeyboardJourneyTest {
         }
     }
 
+    @Test fun cursorCorrectionsSpacingAndUndoWorkInTheEditor() {
+        setupKeyboard()
+        focusPracticeField()
+        val original = "First line.\nWe recieve parcels."
+        val first = original.indexOf("recieve")
+        for ((left, right) in listOf(first + 2 to first + 2, first to first + 7, first + 7 to first + 7)) {
+            setPracticeText(original)
+            instrumentation.runOnMainSync { activity.window.decorView.practiceField()!!.setSelection(left, right) }
+            waitFor("Suggestion receive", keyboard = true)
+            capture("advanced-cursor")
+            clickKeyboardControl("Suggestion receive")
+            editedText(original.replace("recieve", "receive"))
+            clickKeyboardControl("Undo")
+            editedText(original)
+        }
+        setPracticeText("")
+        type("teh")
+        clickKeyboardControl("Suggestion the")
+        editedText("the ")
+        clickKeyboardControl("Space")
+        editedText("the ")
+        setPracticeText("")
+        type("teh")
+        clickKeyboardControl("Suggestion the")
+        clickKeyboardControl("Comma")
+        editedText("the,")
+        setPracticeText("")
+        type("teh")
+        clickKeyboardControl("Period")
+        editedText("the.")
+        clickKeyboardControl("Backspace")
+        editedText("teh")
+        setPracticeText("")
+        type("hi", "Space")
+        clickKeyboardControl("Space")
+        editedText("hi. ")
+    }
+
+    @Test fun glideWritesAWordAndCanBeUndone() {
+        setupKeyboard()
+        focusPracticeField()
+        selectLayout(TypingLanguage.English)
+        fun drag(keys: String) {
+            val centers = keys.map { settledKeyBounds(it.toString()) }
+            val start = SystemClock.uptimeMillis()
+            fun send(action: Int, x: Float, y: Float) {
+                val event = MotionEvent.obtain(start, SystemClock.uptimeMillis(), action, x, y, 0)
+                event.source = InputDevice.SOURCE_TOUCHSCREEN
+                try { assertTrue(automation.injectInputEvent(event, true)) } finally { event.recycle() }
+            }
+            send(MotionEvent.ACTION_DOWN, centers.first().exactCenterX(), centers.first().exactCenterY())
+            centers.zipWithNext().forEach { (from, to) ->
+                for (step in 1..4) {
+                    val t = step / 4f
+                    send(MotionEvent.ACTION_MOVE, from.exactCenterX() * (1 - t) + to.exactCenterX() * t,
+                        from.exactCenterY() * (1 - t) + to.exactCenterY() * t)
+                }
+            }
+            capture("advanced-glide-trail")
+            send(MotionEvent.ACTION_UP, centers.last().exactCenterX(), centers.last().exactCenterY())
+        }
+        drag("world")
+        editedText("world ")
+        capture("advanced-glide-result")
+        clickKeyboardControl("Undo")
+        editedText("")
+        clickKeyboardControl("q")
+        editedText("q")
+    }
+
+    @Test fun clipboardCutUndoAndPinnedInsertionStayInTheKeyboard() {
+        setupKeyboard()
+        focusPracticeField()
+        val settings = LocalSettings(instrumentation.targetContext)
+        settings.clipboardHistory = true
+        try {
+            setPracticeText("Before. Parcel arrives. After.")
+            instrumentation.runOnMainSync { activity.window.decorView.practiceField()!!.setSelection(8, 23) }
+            openFeature("Clipboard")
+            clickKeyboardControl("Cut selection")
+            editedText("Before.  After.")
+            clickKeyboardControl("Undo")
+            editedText("Before. Parcel arrives. After.")
+            touchKey("Save clipboard item")
+            clickKeyboardControl("Pin")
+            assertTrue(settings.clips().single().pinned)
+            capture("advanced-clipboard")
+            clickKeyboardControl("Return to keyboard")
+            setPracticeText("")
+            openFeature("Clipboard")
+            clickKeyboardControl("Insert saved clip Parcel arrives.")
+            editedText("Parcel arrives.")
+            clickKeyboardControl("Undo")
+            editedText("")
+            openFeature("Clipboard")
+            clickKeyboardControl("Delete clip")
+            assertTrue(settings.clips().isEmpty())
+        } finally {
+            settings.clipboardHistory = false
+            instrumentation.runOnMainSync { activity.getSystemService(ClipboardManager::class.java).clearPrimaryClip() }
+        }
+    }
+
+    @Test fun clearUndoAndSelectedBackspaceRestoreExactRange() {
+        setupKeyboard()
+        focusPracticeField()
+        setPracticeText("A second paragraph.")
+        clickKeyboardControl("Tools menu")
+        clickKeyboardControl("Text editing")
+        clickKeyboardControl("Clear draft")
+        editedText("")
+        clickKeyboardControl("Undo")
+        editedText("A second paragraph.")
+        clickKeyboardControl("Back to tools")
+        clickKeyboardControl("Close tools")
+        instrumentation.runOnMainSync { activity.window.decorView.practiceField()!!.setSelection(2, 8) }
+        clickKeyboardControl("Backspace")
+        editedText("A  paragraph.")
+        clickKeyboardControl("Undo")
+        editedText("A second paragraph.")
+        assertTrue(practiceText() == "A second paragraph.")
+    }
+
     @Test fun phase11SuggestionsToolbarUndoAndDictionaryWorkOffline() {
         setupKeyboard()
         val settings = LocalSettings(instrumentation.targetContext)
@@ -130,7 +253,7 @@ open class KeyboardJourneyTest {
             setPracticeText("")
             type("fah")
             clickKeyboardControl("Suggestion Fahimah")
-            editedText("Fahimah")
+            editedText("Fahimah ")
             instrumentation.runOnMainSync { settings.removeDictionaryWord("Fahimah") }
             setPracticeText("")
             type("fah")
@@ -182,7 +305,7 @@ open class KeyboardJourneyTest {
             clickKeyboardControl("Space")
             editedText("hey how ya doing? I'm ")
             clickKeyboardControl("Undo")
-            editedText("hey how ya doing? Im ")
+            editedText("hey how ya doing? im ")
             setPracticeText("hey how ya doing? ")
             type("im", "Space")
             editedText("hey how ya doing? Im ")
@@ -198,7 +321,7 @@ open class KeyboardJourneyTest {
             type("quandi")
             waitFor("Suggestion quandivox", keyboard = true)
             clickKeyboardControl("Suggestion quandivox")
-            editedText("quandivox")
+            editedText("quandivox ")
             val persisted = LocalSettings(instrumentation.targetContext)
             assertEquals(5, persisted.predictionProfile(TypingLanguage.English).learned["quandivox"])
 
@@ -315,6 +438,14 @@ open class KeyboardJourneyTest {
                 typingLanguage = startingLanguage ?: TypingLanguage.English
                 correction = true
                 suggestions = true
+                spaceAfterSuggestion = true
+                automaticSpacing = true
+                cursorSuggestions = true
+                doubleSpacePeriod = true
+                glideTyping = true
+                gestureTrail = true
+                voiceTyping = true
+                clipboardHistory = false
                 nextWord = true
                 automaticCapitalization = false
                 learning = false
@@ -393,6 +524,7 @@ open class KeyboardJourneyTest {
     private fun capture(name: String) {
         val arguments = InstrumentationRegistry.getArguments()
         val folder = when {
+            arguments.getString("advancedEvidence") == "true" -> "advanced"
             arguments.getString("phase2Evidence") == "true" -> "phase2"
             arguments.getString("geometryEvidence") == "true" -> "geometry"
             arguments.getString("phase11Evidence") == "true" -> "phase11"
@@ -591,6 +723,13 @@ open class KeyboardJourneyTest {
         clickKeyboardControl("Back to tools")
         clickKeyboardControl("Settings")
         waitFor("Free daily AI usage")
+    }
+
+    @Test fun platformRecognitionOnSuppliedSyntheticEnglishAudio() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("syntheticVoice") == "true" && Build.VERSION.SDK_INT >= 33)
+        setupKeyboard()
+        focusPracticeField()
+        syntheticDictationCheck(instrumentation)
     }
 
     @Test fun phaseTwoHandsOffToAndroidVoiceProvider() {

@@ -23,6 +23,51 @@ private struct Anchor: Equatable {
   }
 }
 
+// UIKit exposes a window around the selection. A revisited word must have
+// visible boundaries on both sides or be an explicit full-word selection.
+private struct CursorWord {
+  var left: String
+  var right: String
+  var selected: String?
+  var earlier: String
+  var later: String
+  var word: String { selected ?? (left + right) }
+
+  init?(_ anchor: Anchor) {
+    let before = anchor.before ?? "", after = anchor.after ?? ""
+    func letter(_ c: Character) -> Bool { Predictor.isWordKey(String(c)) }
+    func joinsIdentifier(_ c: Character) -> Bool { c.isNumber || "@/_#%+-".contains(c) }
+    if let selection = anchor.selected, !selection.isEmpty {
+      guard Predictor.normalizedEntry(selection) != nil,
+        before.last.map({ !letter($0) && !joinsIdentifier($0) }) != false,
+        after.first.map({ !letter($0) && !joinsIdentifier($0) }) != false else { return nil }
+      selected = selection
+      left = ""; right = ""; earlier = before; later = after
+    } else {
+      left = String(before.reversed().prefix(while: letter).reversed())
+      right = String(after.prefix(while: letter))
+      earlier = String(before.dropLast(left.count))
+      later = String(after.dropFirst(right.count))
+      guard !left.isEmpty || !right.isEmpty, Predictor.normalizedEntry(left + right) != nil,
+        earlier.last.map({ !joinsIdentifier($0) }) != false,
+        later.first.map({ !joinsIdentifier($0) }) != false else { return nil }
+      // A word filling a context window could be a suffix of a longer word.
+      if earlier.isEmpty && before.utf16.count >= 40 || later.isEmpty && after.utf16.count >= 40 { return nil }
+    }
+    // Treat dotted identifiers as indivisible, while allowing a sentence-final period.
+    if earlier.hasSuffix("."), earlier.dropLast().last.map(letter) == true { return nil }
+    if later.hasPrefix("."), later.dropFirst().first.map(letter) == true { return nil }
+  }
+}
+private struct UndoEdit {
+  let original: String
+  let inserted: String
+  let anchor: Anchor
+  let label: String
+  var rejected: String?
+  var originalWord: String?
+}
+
 private enum Candidate: Equatable {
   case word(String)
   case undo(String)
@@ -99,14 +144,45 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
   private var autoShiftSuppressed = false
   private var renderedAutomaticShift = false
   private var cursorDrag: (document: UUID, x: CGFloat)?
+  private var glideGesture: LetterGlideRecognizer!
+  private let glideTrail = CAShapeLayer()
+  private var pendingTapHint: Character?
+  private var glideAnchor: Anchor?
+  private var glideEdit: (anchor: Anchor, words: [String], leading: String, trailing: String)?
+  private static var glideModels: [TypingLanguage: GlideDecoder] = [:] // predictions queue only
   private weak var returnControl: DeckKey?
   private weak var shiftControl: DeckKey?
   private var latinKeys: [(key: DeckKey, letter: String, alternate: String?)] = []
-  private var showsVoiceToolbar: Bool { needsInputModeSwitchKey }
+  private var showsVoiceToolbar: Bool { needsInputModeSwitchKey && Settings.voiceTyping }
   private weak var candidateRow: CandidateRow?
   private var candidateAnchor: Anchor?
   private var typingAnchor: Anchor?
-  private var correction: (original: String, replacement: String, anchor: Anchor)?
+  private var pendingSelectionDelete: UUID?
+  private var undoCheck: Timer?
+  private var correction: UndoEdit? {
+    didSet {
+      undoCheck?.invalidate()
+      undoCheck = nil
+      guard let edit = correction else { return }
+      let expires = ProcessInfo.processInfo.systemUptime + 12
+      // Some web editors move their DOM selection without sending a UIKit delegate
+      // callback. Revalidate only during the short lifetime of a visible Undo.
+      let check = Timer(timeInterval: 0.35, repeats: true) { [weak self] timer in
+        guard let self else { timer.invalidate(); return }
+        if !isInputVisible || sensitive || tool != nil || ProcessInfo.processInfo.systemUptime >= expires
+          || Anchor(proxy) != edit.anchor {
+          correction = nil
+          updateCandidates()
+        }
+      }
+      check.tolerance = 0.08
+      undoCheck = check
+      RunLoop.main.add(check, forMode: .common)
+    }
+  }
+  private var suggestedSpace: Anchor?
+  private var manualSpace: Anchor?
+  private var touchHints: [Int: Character] = [:]
   private let layouts = ["English", "বাংলা", "Phonetic", "Banglish"]
   private var layout = 0, page = 0, shift = 0
   private var raw = "", loading = false, editingPreview = false
@@ -159,7 +235,8 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
     return Self.protectedTypes.contains(type)
   }
   private var canPredictHere: Bool {
-    guard !sensitive, !hasEditor, !numericPage, !numericHost else { return false }
+    guard !sensitive, !hasEditor, !numericPage, !numericHost,
+      proxy.autocorrectionType != .no else { return false }
     return ![.emailAddress, .URL, .webSearch, .twitter, .namePhonePad].contains(
       proxy.keyboardType ?? .default)
   }
@@ -168,7 +245,7 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
     page > 0 && canPredictHere && Settings.predictiveSuggestions && Settings.nextWordPrediction
   }
   private var allowsPhonetic: Bool {
-    !sensitive && layout == 2 && page == 0 && !numericPage && !numericHost
+    layout == 2 && page == 0 && canPredictHere
   }
   private var typingLanguage: TypingLanguage {
     switch layout {
@@ -200,18 +277,26 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       && proxy.autocorrectionType != .no
   }
 
-  private func learn(_ value: String, as event: TypingHistory.Event) {
+  private func learn(_ value: String, as event: TypingHistory.Event, after previous: String = "") {
     guard learningAllowed else { return }
     var history = Settings.typingHistory
-    history.record(value, in: typingLanguage, as: event)
+    history.record(value, in: typingLanguage, as: event, after: previous)
     Settings.saveTypingHistory(history)
   }
 
   private func resetTyping() {
+    pendingSelectionDelete = nil
     prefix = ""
     typingAnchor = nil
     candidateAnchor = nil
     correction = nil
+    suggestedSpace = nil
+    manualSpace = nil
+    touchHints = [:]
+    pendingTapHint = nil
+    glideEdit = nil
+    glideAnchor = nil
+    glideTrail.path = nil
     prefixWasAutomaticallyCapitalized = false
     predictionWork?.cancel()
     predictionRevision += 1
@@ -232,6 +317,16 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
     doubleShift.delaysTouchesEnded = false
     doubleShift.delegate = self
     rows.addGestureRecognizer(doubleShift)
+    glideGesture = LetterGlideRecognizer(target: self, action: #selector(handleGlide(_:)))
+    glideGesture.delegate = self
+    glideGesture.delaysTouchesBegan = false
+    glideGesture.delaysTouchesEnded = false
+    rows.addGestureRecognizer(glideGesture)
+    glideTrail.fillColor = nil
+    glideTrail.lineCap = .round
+    glideTrail.lineJoin = .round
+    glideTrail.zPosition = 4
+    rows.layer.addSublayer(glideTrail)
     height = view.heightAnchor.constraint(equalToConstant: 260)
     height.priority = .defaultHigh
     NSLayoutConstraint.activate([
@@ -267,6 +362,7 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     isInputVisible = true
+    hasDictationKey = !Settings.voiceTyping
     document = documentID(proxy)
     traits = proxy.keyboardType
     wasSensitive = sensitive
@@ -320,14 +416,17 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       autoShiftSuppressed = false
     } else {
       checkComposition()
-      if allowsPrediction {
+      if canPredictHere {
         let anchor = Anchor(proxy)
         if typingAnchor != anchor {
           prefix = ""
           typingAnchor = nil
+          touchHints = [:]
           prefixWasAutomaticallyCapitalized = false
         }
         if correction?.anchor != anchor { correction = nil }
+        if suggestedSpace != anchor { suggestedSpace = nil }
+        if manualSpace != anchor { manualSpace = nil }
       } else {
         resetTyping()
       }
@@ -420,7 +519,33 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       render()
       return
     }
+    let hint = pendingTapHint
+    pendingTapHint = nil
+    glideEdit = nil
     let wasAutomatic = automaticShift
+    let position = allowsPrediction || canPredictHere ? Anchor(proxy) : nil
+    let punctuation = s.count == 1 && ",.!?;:।".contains(s)
+    if let position, suggestedSpace == position, s == " " {
+      suggestedSpace = nil
+      manualSpace = position
+      return
+    }
+    if let position, punctuation, suggestedSpace == position,
+      replaceLocalSuffix(" ", with: s, at: position) {
+      resetTyping()
+      render()
+      return
+    }
+    if s == " ", let position, manualSpace == position, Settings.doubleSpacePeriod,
+      let before = position.before, before.hasSuffix(" "), let last = before.dropLast().last,
+      last.isLetter || last.isNumber, replaceLocalSuffix(" ", with: ". ", at: position) {
+      resetTyping()
+      rememberEdit(original: "  ", inserted: ". ", label: "period")
+      render()
+      return
+    }
+    suggestedSpace = nil
+    manualSpace = nil
     if allowsPhonetic, s.count == 1,
       s.utf8.allSatisfy({ (65...90).contains($0) || (97...122).contains($0) })
     {
@@ -429,7 +554,7 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       if raw.count >= 96 { finishWord() }
       if raw.isEmpty { composition = Anchor(proxy) }
       if composition != nil { raw += s } else { proxy.insertText(s) }
-    } else if s == " ", applyAutomaticCorrection() {
+    } else if (s == " " || punctuation), applyAutomaticCorrection(boundary: s) {
       prefix = ""
       typingAnchor = nil
       prefixWasAutomaticallyCapitalized = false
@@ -441,12 +566,16 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       let composed = takeWord()
       if s == " " || s == "\n", let before {
         if !composed.isEmpty && before.selected?.isEmpty != false { learn(composed, as: .typed) }
-        if let typed = activePrefix(in: before), !typed.isEmpty { learn(typed, as: .typed) }
+        if let typed = activePrefix(in: before), !typed.isEmpty {
+          learn(typed, as: .typed, after: Predictor.previous(in: earlierText(in: before, excluding: typed)))
+        }
       }
       proxy.insertText(composed + s)
       if allowsPrediction, layout != 2, Predictor.isWordKey(s),
         previousPrefix.unicodeScalars.count + s.unicodeScalars.count <= 40
       {
+        if previousPrefix.isEmpty { touchHints.removeAll(keepingCapacity: true) }
+        if let hint { touchHints[previousPrefix.count] = hint }
         prefix = previousPrefix + s
         typingAnchor = Anchor(proxy)
         prefixWasAutomaticallyCapitalized = previousPrefix.isEmpty ? wasAutomatic : previousCapital
@@ -456,6 +585,11 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
         prefixWasAutomaticallyCapitalized = false
       }
     }
+    if wasAutomatic, s.count == 1, s.lowercased() != s, !prefix.isEmpty {
+      rememberEdit(original: s.lowercased(), inserted: s, label: "capitalization")
+    }
+    if s == " ", canPredictHere { manualSpace = Anchor(proxy) }
+    if prefix.isEmpty { touchHints.removeAll(keepingCapacity: true) }
     autoShiftSuppressed = false
     updateReturnKey()
     if shift == 1 || wasAutomatic != automaticShift {
@@ -489,59 +623,131 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
     String((anchor.before ?? "").unicodeScalars.dropLast(word.unicodeScalars.count))
   }
 
-  private func applyAutomaticCorrection() -> Bool {
-    guard allowsPrediction, Settings.autocorrect, layout != 2,
+  private func applyAutomaticCorrection(boundary: String) -> Bool {
+    guard canPredictHere, Settings.autocorrect, layout != 2,
       proxy.autocorrectionType != .no, let anchor = Anchor(proxy),
       let typed = activePrefix(in: anchor), !typed.isEmpty,
       let word = predictor?.correction(
         for: typed, after: Predictor.context(in: earlierText(in: anchor, excluding: typed)),
         language: typingLanguage, personal: personalWords,
         history: learningAllowed ? Settings.typingHistory.words(in: typingLanguage) : [:],
-        allowInitialCapital: prefixWasAutomaticallyCapitalized)
+        allowInitialCapital: prefixWasAutomaticallyCapitalized, touchHints: touchHints,
+        allowSegmentation: Settings.automaticSpacing)
     else { return false }
-    guard replaceLocalSuffix(typed, with: word + " ", at: anchor) else { return false }
-    correction = Anchor(proxy).map { (typed, word, $0) }
+    guard replaceLocalSuffix(typed, with: word + boundary, at: anchor) else { return false }
+    rememberEdit(original: typed + boundary, inserted: word + boundary, label: typed,
+      rejected: word, originalWord: typed)
     return true
   }
 
   // Verify the exact caret and suffix before changing a token. A Bengali cluster may
   // be removed in several delete operations, depending on the host.
   private func replaceLocalSuffix(_ old: String, with new: String, at anchor: Anchor) -> Bool {
-    guard allowsPrediction, Anchor(proxy) == anchor, anchor.selected?.isEmpty != false,
-      let before = anchor.before,
+    guard !sensitive, Anchor(proxy) == anchor, anchor.selected?.isEmpty != false else { return false }
+    if old.isEmpty {
+      if !new.isEmpty { proxy.insertText(new) }
+      return true
+    }
+    guard let before = anchor.before,
       before.unicodeScalars.suffix(old.unicodeScalars.count).elementsEqual(old.unicodeScalars)
     else { return false }
-    let earlier = earlierText(in: anchor, excluding: old)
     if new.unicodeScalars.starts(with: old.unicodeScalars) {
       proxy.insertText(String(new.unicodeScalars.dropFirst(old.unicodeScalars.count)))
       return true
     }
-    var remaining = old.unicodeScalars.count
-    for _ in old.unicodeScalars {
+    let common = zip(old, new).prefix(while: { $0.0 == $0.1 }).count
+    let earlier = earlierText(in: anchor, excluding: old) + old.prefix(common)
+    let remove = String(old.dropFirst(common))
+    let insert = String(new.dropFirst(common))
+    var remaining = remove.unicodeScalars.count
+    for _ in remove.unicodeScalars {
       proxy.deleteBackward()
-      let current = proxy.documentContextBeforeInput ?? ""
+      guard let moved = Anchor(proxy), moved.document == anchor.document,
+        moved.selected?.isEmpty != false, moved.after == anchor.after else { return false }
+      let current = moved.before ?? ""
       guard let next = (0..<remaining).reversed().first(where: { count in
-        let expected = earlier + String(old.unicodeScalars.prefix(count))
+        let expected = earlier + String(remove.unicodeScalars.prefix(count))
         return current == expected || (!earlier.isEmpty && current.hasSuffix(expected))
       }) else { return false }
       remaining = next
       if remaining == 0 {
-        proxy.insertText(new)
+        if !insert.isEmpty { proxy.insertText(insert) }
         return true
       }
     }
     return false
   }
 
+  private func rememberEdit(original: String, inserted: String, label: String,
+    rejected: String? = nil, originalWord: String? = nil) {
+    guard !sensitive, original != inserted, max(original.utf16.count, inserted.utf16.count) <= 1600,
+      let anchor = Anchor(proxy), anchor.selected?.isEmpty != false,
+      inserted.isEmpty || anchor.before?.hasSuffix(inserted) == true else { return }
+    correction = UndoEdit(original: original, inserted: inserted, anchor: anchor, label: label,
+      rejected: rejected, originalWord: originalWord)
+  }
+
   private func undoCorrection() -> Bool {
-    guard let correction,
-      replaceLocalSuffix(correction.replacement + " ", with: correction.original + " ",
-        at: correction.anchor)
-    else { return false }
-    learn(correction.replacement, as: .rejected)
-    learn(correction.original, as: .typed)
+    guard let edit = correction, Anchor(proxy) == edit.anchor,
+      replaceLocalSuffix(edit.inserted, with: edit.original, at: edit.anchor) else { return false }
+    if learningAllowed, let rejected = edit.rejected, let word = edit.originalWord {
+      var history = Settings.typingHistory
+      history.reject(word, suggestion: rejected, in: typingLanguage)
+      history.record(word, in: typingLanguage, as: .typed)
+      Settings.saveTypingHistory(history)
+    }
     resetTyping()
     return true
+  }
+
+  // Restore a moved caret only when both visible contexts agree on the exact offset.
+  private func restoreCaret(_ original: Anchor) {
+    guard let current = Anchor(proxy), current != original, current.document == original.document,
+      current.selected?.isEmpty != false else { return }
+    let a = original.before ?? "", b = original.after ?? ""
+    let c = current.before ?? "", d = current.after ?? ""
+    if c.hasPrefix(a) {
+      let difference = String(c.dropFirst(a.count))
+      if b == difference + d { proxy.adjustTextPosition(byCharacterOffset: -difference.utf16.count) }
+    } else if a.hasPrefix(c) {
+      let difference = String(a.dropFirst(c.count))
+      if d == difference + b { proxy.adjustTextPosition(byCharacterOffset: difference.utf16.count) }
+    }
+  }
+
+  private func replaceCursorWord(_ target: CursorWord, with replacement: String, at anchor: Anchor) -> Bool {
+    guard !sensitive, anchor == Anchor(proxy) else { return false }
+    if let selected = target.selected {
+      guard proxy.selectedText == selected else { return false }
+      proxy.insertText(replacement)
+      return true
+    }
+    var readyToEdit = false
+    defer { if !readyToEdit { restoreCaret(anchor) } }
+    // Probe ambiguous window boundaries by moving the caret, never by deleting.
+    // If a host conceals context or moves to an unexpected position, decline the edit.
+    if target.earlier.isEmpty || target.later.isEmpty {
+      if target.earlier.isEmpty {
+        proxy.adjustTextPosition(byCharacterOffset: -target.left.utf16.count - 1)
+        guard let edge = Anchor(proxy), edge.document == anchor.document,
+          (edge.before ?? "").isEmpty, (edge.after ?? "").hasPrefix(target.word) else { return false }
+        proxy.adjustTextPosition(byCharacterOffset: target.left.utf16.count)
+        guard Anchor(proxy) == anchor else { return false }
+      }
+      if target.later.isEmpty {
+        proxy.adjustTextPosition(byCharacterOffset: target.right.utf16.count + 1)
+        guard let edge = Anchor(proxy), edge.document == anchor.document,
+          (edge.after ?? "").isEmpty, (edge.before ?? "").hasSuffix(target.word) else { return false }
+        proxy.adjustTextPosition(byCharacterOffset: -target.right.utf16.count)
+        guard Anchor(proxy) == anchor else { return false }
+      }
+    }
+    if !target.right.isEmpty { proxy.adjustTextPosition(byCharacterOffset: target.right.utf16.count) }
+    guard let end = Anchor(proxy), end.document == anchor.document,
+      end.selected?.isEmpty != false, (end.before ?? "").hasSuffix(target.word),
+      end.after ?? "" == target.later else { return false }
+    readyToEdit = true
+    return replaceLocalSuffix(target.word, with: replacement, at: end)
   }
 
   @objc private func erase() {
@@ -556,7 +762,10 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
     } else if !raw.isEmpty {
       raw.removeLast()
       if raw.isEmpty { composition = nil }
-    } else if deleteTimer != nil || !undoCorrection() {
+    } else if !sensitive, let anchor = Anchor(proxy), let selected = anchor.selected,
+      !selected.isEmpty, selected.utf16.count <= 1600 {
+      deleteSelectedText(at: anchor, label: "deletion")
+    } else if deleteTimer != nil || correction?.rejected == nil || !undoCorrection() {
       correction = nil
       let previous = allowsPrediction ? Anchor(proxy) : nil
       var typed = previous != nil && previous == typingAnchor ? prefix : ""
@@ -569,6 +778,7 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
         typed = String(typed.unicodeScalars.dropLast())
       }
       prefix = typed
+      touchHints = touchHints.filter { $0.key < typed.count }
       typingAnchor = typed.isEmpty ? nil : updated
       if typed.isEmpty { prefixWasAutomaticallyCapitalized = false }
     }
@@ -667,12 +877,10 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       return
     }
     // UIKit replaces the host selection in one insertion. Without a selection, insert at the cursor.
-    if !raw.isEmpty && !replaceSelection {
-      proxy.insertText(takeWord() + preview)
-    } else {
-      proxy.insertText(preview)
-    }
+    let inserted = (!raw.isEmpty && !replaceSelection ? takeWord() : "") + preview
+    proxy.insertText(inserted)
     resetTyping()
+    rememberEdit(original: selection, inserted: inserted, label: "AI edit")
     close()
     render()
   }
@@ -783,22 +991,41 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
     case .undo:
       _ = undoCorrection()
     case .word(let word):
-      var inserted = false
+      if let glide = glideEdit, anchor == glide.anchor, glide.words.contains(word), let first = glide.words.first {
+        let original = glide.leading + first + glide.trailing
+        let replacement = glide.leading + word + glide.trailing
+        guard replaceLocalSuffix(original, with: replacement, at: anchor) else { updateCandidates(); return }
+        resetTyping()
+        learn(word, as: .accepted)
+        rememberEdit(original: original, inserted: replacement, label: first)
+        if !glide.trailing.isEmpty { suggestedSpace = Anchor(proxy) }
+        updateCandidates()
+        return
+      }
+      let active = activePrefix(in: anchor)
+      let target = raw.isEmpty && (active == nil || active == "") && Settings.cursorAware
+        ? CursorWord(anchor) : nil
+      let suffix = Settings.spaceAfterSuggestion && target == nil
+        && (anchor.after ?? "").isEmpty ? " " : ""
+      let new = word + suffix
+      var old = ""
+      var earlier = anchor.before ?? ""
       if !raw.isEmpty {
         guard !takeWord().isEmpty else { updateCandidates(); return }
-        proxy.insertText(word + " ")
-        inserted = true
-      } else if let typed = activePrefix(in: anchor) {
-        if typed.isEmpty {
-          proxy.insertText(word + " ")
-          inserted = true
-        } else {
-          inserted = replaceLocalSuffix(typed, with: word + " ", at: anchor)
-        }
-        if inserted, word == typed, !typed.isEmpty { learn(typed, as: .typed) }
-      }
-      if inserted { learn(word, as: .accepted) }
+        proxy.insertText(new)
+      } else if let target {
+        old = target.word
+        earlier = target.earlier
+        guard replaceCursorWord(target, with: word, at: anchor) else { updateCandidates(); return }
+      } else if let active {
+        old = active
+        earlier = earlierText(in: anchor, excluding: active)
+        guard replaceLocalSuffix(active, with: new, at: anchor) else { updateCandidates(); return }
+      } else { updateCandidates(); return }
+      learn(word, as: .accepted, after: Predictor.previous(in: earlier))
       resetTyping()
+      rememberEdit(original: old, inserted: new, label: old.isEmpty ? "suggestion" : old)
+      if !suffix.isEmpty { suggestedSpace = Anchor(proxy) }
     }
     if automaticShift { render() } else { updateCandidates() }
   }
@@ -856,10 +1083,22 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       let anchor = Anchor(proxy)
     else { candidateRow.show([]); return }
 
-    let undo = correction.map { [Candidate.undo($0.original)] } ?? []
+    let undo = correction.flatMap { $0.anchor == anchor ? [Candidate.undo($0.label)] : nil } ?? []
+    if let glide = glideEdit, glide.anchor == anchor {
+      candidateAnchor = anchor
+      candidateRow.show(Array((undo + glide.words.dropFirst().map(Candidate.word)).prefix(3)))
+      return
+    }
     let phonetic = raw.isEmpty ? [] : rules?.candidates(raw) ?? [raw]
-    let query = phonetic.first ?? activePrefix(in: anchor)
-    let context = Predictor.context(in: earlierText(in: anchor, excluding: phonetic.isEmpty ? query ?? "" : ""))
+    let active = activePrefix(in: anchor)
+    let target = phonetic.isEmpty && (active == nil || active == "") && Settings.cursorAware
+      ? CursorWord(anchor) : nil
+    let query = phonetic.first ?? target?.word ?? active
+    let earlier = target?.earlier ?? earlierText(in: anchor, excluding: phonetic.isEmpty ? query ?? "" : "")
+    let context = Predictor.context(in: earlier)
+    let following = (target?.later ?? anchor.after ?? "").split(whereSeparator: {
+      !Predictor.isWordKey(String($0))
+    }).first.map(String.init) ?? ""
     guard showWords, let query, !query.isEmpty || Settings.nextWordPrediction,
       let predictor
     else {
@@ -871,10 +1110,15 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
     let revision = predictionRevision
     let language = typingLanguage
     let personal = personalWords
-    let local = learningAllowed ? Settings.typingHistory.words(in: language) : [:]
+    let history = learningAllowed ? Settings.typingHistory : TypingHistory()
+    let local = history.words(in: language)
+    let learnedNext = history.following(Predictor.previous(in: earlier), in: language)
+    let hints = target == nil && !prefix.isEmpty ? touchHints : [:]
+    let segmentation = Settings.automaticSpacing
     let work = DispatchWorkItem { [weak self, weak candidateRow] in
       let matches = predictor.suggestions(
-        for: query, after: context, language: language, personal: personal, history: local)
+        for: query, after: context, language: language, personal: personal, history: local,
+        following: following, touchHints: hints, allowSegmentation: segmentation, learnedNext: learnedNext)
       var seen = Set<String>()
       let ordered = phonetic.isEmpty ? matches
         : Array(phonetic.prefix(1)) + matches.prefix(1) + phonetic.dropFirst() + matches.dropFirst()
@@ -967,7 +1211,24 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
     }
     if !sensitive { key.installPreview(in: view, text: displayed) }
     configureAlternates(of: key, displayed, additional: alternate, installGesture: true)
-    if followsShift { latinKeys.append((key, text, alternate)) }
+    if followsShift {
+      latinKeys.append((key, text, alternate))
+      key.observeTap = { [weak self, weak key] point in
+        guard let self, let key, layout == 0, allowsPrediction, text.count == 1 else { return }
+        let local = key.convert(point, to: rows)
+        let center = key.convert(CGPoint(x: key.bounds.midX, y: key.bounds.midY), to: rows)
+        pendingTapHint = nil
+        guard hypot(local.x - center.x, local.y - center.y) > key.bounds.width * 0.27 else { return }
+        let nearest = latinKeys.filter { $0.key !== key }.min { a, b in
+          func distance(_ other: DeckKey) -> CGFloat {
+            let mid = other.convert(CGPoint(x: other.bounds.midX, y: other.bounds.midY), to: self.rows)
+            return hypot((mid.x - local.x) / key.bounds.width, (mid.y - local.y) / key.bounds.height)
+          }
+          return distance(a.key) < distance(b.key)
+        }
+        pendingTapHint = nearest?.letter.first
+      }
+    }
     return key
   }
 
@@ -1050,9 +1311,93 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
   }
 
   func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+    if gestureRecognizer === glideGesture {
+      guard Settings.glideTyping, canPredictHere, tool == nil, page == 0, layout != 1,
+        let hit = touch.view as? DeckKey, latinKeys.contains(where: { $0.key === hit }) else { return false }
+      glideGesture.pitch = max(1, hit.bounds.width)
+      return true
+    }
     guard let shiftControl, layout != 1, page == 0, !numericPage, !numericHost
     else { return false }
     return shiftControl.bounds.contains(touch.location(in: shiftControl))
+  }
+
+  @objc private func handleGlide(_ gesture: LetterGlideRecognizer) {
+    guard canPredictHere, layout != 1, tool == nil, !hasEditor else {
+      glideTrail.path = nil
+      glideAnchor = nil
+      return
+    }
+    if gesture.state == .began {
+      guard raw.isEmpty, let at = Anchor(proxy), at.selected?.isEmpty != false,
+        (at.after?.first).map({ !Predictor.isWordKey(String($0)) }) != false else { return }
+      glideAnchor = at
+      pendingTapHint = nil
+    }
+    guard let anchor = glideAnchor else { return }
+    switch gesture.state {
+    case .began, .changed:
+      guard Settings.gestureTrail, let start = gesture.samples.first else { return }
+      let path = UIBezierPath()
+      path.move(to: start)
+      for point in gesture.samples.dropFirst() { path.addLine(to: point) }
+      glideTrail.strokeColor = Deck.brand.withAlphaComponent(0.48).cgColor
+      glideTrail.lineWidth = max(4, gesture.pitch * 0.18)
+      glideTrail.path = path.cgPath
+    case .ended:
+      glideAnchor = nil
+      glideTrail.path = nil
+      guard anchor == Anchor(proxy), let predictor,
+        let q = latinKeys.first(where: { $0.letter == "q" })?.key,
+        let a = latinKeys.first(where: { $0.letter == "a" })?.key else { return }
+      let qCenter = q.convert(CGPoint(x: q.bounds.midX, y: q.bounds.midY), to: rows)
+      let aCenter = a.convert(CGPoint(x: a.bounds.midX, y: a.bounds.midY), to: rows)
+      let pitchY = max(1, aCenter.y - qCenter.y)
+      let points = gesture.samples.map { GlidePoint(x: Double(($0.x - qCenter.x) / gesture.pitch),
+        y: Double(($0.y - qCenter.y) / pitchY)) }
+      let index = layout
+      let lang: TypingLanguage = index == 0 ? .english : .banglish
+      let context = Predictor.context(in: anchor.before ?? "")
+      let capital = uppercasesLatinKeys && index == 0
+      let revision = predictionRevision
+      let addSpace = Settings.spaceAfterSuggestion
+      Self.predictions.async { [weak self] in
+        let decoder = Self.glideModels[lang] ?? GlideDecoder(vocabulary: predictor.glideVocabulary(language: lang))
+        Self.glideModels[lang] = decoder
+        let contextual = predictor.suggestions(for: "", after: context, language: lang, personal: [])
+        let words = decoder.candidates(points: points, contextual: contextual)
+        DispatchQueue.main.async { [weak self] in
+          self?.commitGlide(words, index: index, anchor: anchor, revision: revision,
+            capital: capital, addSpace: addSpace)
+        }
+      }
+    default:
+      glideAnchor = nil
+      glideTrail.path = nil
+    }
+  }
+
+  private func commitGlide(_ decoded: [String], index: Int, anchor: Anchor, revision: Int,
+    capital: Bool, addSpace: Bool) {
+    guard !decoded.isEmpty, isInputVisible, tool == nil, canPredictHere,
+      layout == index, revision == predictionRevision, anchor == Anchor(proxy) else { return }
+    let words = decoded.map { word in
+      index == 2 ? rules?.render(word) ?? word : capital ? word.prefix(1).uppercased() + word.dropFirst() : word
+    }
+    let leading = anchor.before?.last.map({ Predictor.isWordKey(String($0)) }) == true ? " " : ""
+    let trailing = addSpace && (anchor.after ?? "").isEmpty ? " " : ""
+    let inserted = leading + words[0] + trailing
+    proxy.insertText(inserted)
+    resetTyping()
+    if shift == 1 { shift = 0 }
+    rememberEdit(original: "", inserted: inserted, label: "glide")
+    if let at = Anchor(proxy) {
+      if !trailing.isEmpty { suggestedSpace = at }
+      glideEdit = (at, words, leading, trailing)
+    }
+    refreshLatinShift()
+    updateReturnKey()
+    updateCandidates()
   }
 
   @objc private func lockShift(_ gesture: UITapGestureRecognizer) {
@@ -1065,7 +1410,7 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
 
   private func setPage(_ value: Int, numeric: Bool = false) {
     if hasEditor { finishEditorWord() } else { finishWord() }
-    resetTyping()
+    if numeric || numericPage { resetTyping() }
     page = value
     numericPage = numeric
     render()
@@ -1380,6 +1725,7 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       return
     }
     pasted = s
+    if !forAI, canPredictHere { Settings.addClip(s) }
     message = ""
     render()
   }
@@ -1641,21 +1987,7 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       controls.append(deleteKey())
       actions(controls)
     case .clipboard:
-      rows.addArrangedSubview(
-        scroller(
-          !message.isEmpty ? message : pasted ?? "Load the current clipboard to preview it here."))
-      var options: [UIView] = [button("Load clipboard") { self.loadPaste(forAI: false) }]
-      if let pasted {
-        options.append(
-          button("Insert", .accent) {
-            guard !self.sensitive else { return }
-            self.insert(pasted)
-            self.resetTyping()
-            self.close()
-            self.render()
-          })
-      }
-      actions(options)
+      renderClipboard()
     case .voice:
       rows.addArrangedSubview(
         scroller(
@@ -1663,7 +1995,7 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
         ))
       actions([button("Switch keyboard", .accent) { self.advanceToNextInputMode() }])
     case .more:
-      let choices: [Tool] = [.theme, .clipboard, .emoji, .language, .editing, .layout, .voice, .settings]
+      let choices: [Tool] = [.theme, .clipboard, .emoji, .language, .editing, .layout] + (Settings.voiceTyping ? [.voice] : []) + [.settings]
       toolGrid(choices.map { entry in
         let b = utilityTile(entry.rawValue, icon: entry.icon()) { self.open(entry) }
         b.isEnabled = !sensitive || entry == .voice
@@ -1687,8 +2019,9 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
         utilityTile("Move cursor right", symbol: "arrow.right") { self.moveCursor(by: 1) },
         utilityTile("Backspace", symbol: "delete.left") {
           self.finishWord()
-          self.resetTyping()
-          self.proxy.deleteBackward()
+          self.erase()
+          self.close()
+          self.render()
         },
         utilityTile("Switch keyboard", symbol: "globe") { self.advanceToNextInputMode() },
       ])
@@ -1720,6 +2053,141 @@ final class KeyboardController: UIInputViewController, UIGestureRecognizerDelega
       }
       toolGrid(tools)
     default: break
+    }
+  }
+
+  @discardableResult private func deleteSelectedText(at original: Anchor, label: String) -> Bool {
+    guard !sensitive, Anchor(proxy) == original, let text = original.selected, !text.isEmpty else { return false }
+    resetTyping()
+    // The host owns its selection and may consume an adjacent space during a
+    // smart delete. A single native deletion never walks into neighboring words.
+    // The extension proxy can lag WebKit, so compare two settled observations.
+    let ticket = UUID()
+    pendingSelectionDelete = ticket
+    proxy.deleteBackward()
+    func observe(_ previous: Anchor?, attemptsLeft: Int) {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) { [weak self] in
+        guard let self, pendingSelectionDelete == ticket, isInputVisible, !sensitive,
+          let after = Anchor(proxy), after.document == original.document else { return }
+        guard after == previous, after.selected?.isEmpty != false else {
+          if attemptsLeft > 0 { observe(after, attemptsLeft: attemptsLeft - 1) }
+          else { pendingSelectionDelete = nil }
+          return
+        }
+        pendingSelectionDelete = nil
+        let left = original.before ?? "", right = original.after ?? ""
+        let nowLeft = after.before ?? "", nowRight = after.after ?? ""
+        let lostLeft = left == nowLeft ? "" : " "
+        let lostRight = right == nowRight ? "" : " "
+        guard left == nowLeft + lostLeft, right == lostRight + nowRight,
+          after.before != nil || after.after != nil else { return }
+        // With smart deletion WebKit can report the old boundary whitespace even
+        // after its DOM caret has moved. Do not offer a reconstruction in that case.
+        if lostLeft.isEmpty && lostRight.isEmpty &&
+          (left.last?.isWhitespace == true || right.first?.isWhitespace == true) { return }
+        rememberEdit(original: lostLeft + text + lostRight, inserted: "", label: label)
+        updateCandidates()
+      }
+    }
+    observe(nil, attemptsLeft: 4)
+    return true
+  }
+
+  private func copySelection(cutting: Bool) {
+    guard canPredictHere, hasFullAccess, let anchor = Anchor(proxy),
+      let text = anchor.selected, !text.isEmpty else { return }
+    UIPasteboard.general.setItems([["public.utf8-plain-text": text]], options: [.localOnly: true])
+    Settings.addClip(text)
+    if cutting, anchor == Anchor(proxy) {
+      if deleteSelectedText(at: anchor, label: "cut") {
+        close()
+      } else {
+        message = "Copied the selection. Use this app’s Edit menu to cut it."
+      }
+    } else {
+      message = "Copied selection."
+    }
+    render()
+  }
+
+  private func insertClip(_ text: String) {
+    guard canPredictHere, hasFullAccess, let anchor = Anchor(proxy) else { return }
+    let inserted = takeWord() + text
+    proxy.insertText(inserted)
+    resetTyping()
+    rememberEdit(original: anchor.selected ?? "", inserted: inserted, label: "paste")
+    close()
+    render()
+  }
+
+  private func renderClipboard() {
+    guard canPredictHere, hasFullAccess else {
+      rows.addArrangedSubview(scroller(sensitive || !canPredictHere ?
+        "Clipboard is unavailable in this field." : "Allow Full Access to read the clipboard."))
+      return
+    }
+    let selected = proxy.selectedText?.isEmpty == false
+    let copy = button("Copy") { self.copySelection(cutting: false) }
+    let cut = button("Cut") { self.copySelection(cutting: true) }
+    for key in [copy, cut] { key.isEnabled = selected; key.alpha = selected ? 1 : 0.45 }
+    actions([copy, cut, button("Load clipboard") { self.loadPaste(forAI: false) }])
+    let scroll = UIScrollView()
+    let list = stack(.vertical, gap: 5)
+    list.translatesAutoresizingMaskIntoConstraints = false
+    scroll.addSubview(list)
+    NSLayoutConstraint.activate([
+      list.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
+      list.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
+      list.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
+      list.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor),
+      list.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor),
+    ])
+    if let current = pasted {
+      let preview = UILabel()
+      preview.text = String(current.prefix(130))
+      preview.numberOfLines = 2
+      preview.font = .preferredFont(forTextStyle: .body)
+      preview.textColor = Deck.ink
+      list.addArrangedSubview(preview)
+      let insert = button("Insert", .accent) { self.insertClip(current) }
+      insert.heightAnchor.constraint(equalToConstant: 38).isActive = true
+      list.addArrangedSubview(insert)
+    }
+    let clips = Settings.clips().sorted { $0.pinned && !$1.pinned }
+    for clip in clips {
+      let line = stack(.horizontal, gap: 4)
+      let insert = button(String(clip.text.prefix(40)), .letter) { self.insertClip(clip.text) }
+      insert.contentHorizontalAlignment = .leading
+      insert.titleLabel?.lineBreakMode = .byTruncatingTail
+      insert.accessibilityLabel = "Insert saved item, " + String(clip.text.prefix(60))
+      let pin = glyph(clip.pinned ? "pin.fill" : "pin", clip.pinned ? "Unpin item" : "Pin item") {
+        var saved = Settings.clips()
+        guard let i = saved.firstIndex(where: { $0.id == clip.id }) else { return }
+        saved[i].pinned.toggle()
+        saved[i].date = Date()
+        Settings.saveClips(saved)
+        self.render()
+      }
+      let delete = glyph("trash", "Delete item") {
+        Settings.saveClips(Settings.clips().filter { $0.id != clip.id })
+        self.render()
+      }
+      for key in [insert, pin, delete] { line.addArrangedSubview(key) }
+      for key in [pin, delete] { key.widthAnchor.constraint(equalToConstant: 44).isActive = true }
+      line.heightAnchor.constraint(equalToConstant: 40).isActive = true
+      list.addArrangedSubview(line)
+    }
+    if clips.isEmpty && pasted == nil || !message.isEmpty {
+      let label = UILabel()
+      label.text = message.isEmpty ? "Load clipboard to preview and insert text." : message
+      label.numberOfLines = 0
+      label.textColor = Deck.ink
+      label.font = .preferredFont(forTextStyle: .subheadline)
+      list.addArrangedSubview(label)
+    }
+    rows.addArrangedSubview(scroll)
+    if !clips.isEmpty {
+      actions([button("Clear history") { Settings.clearClips(); self.pasted = nil; self.render() }])
     }
   }
 

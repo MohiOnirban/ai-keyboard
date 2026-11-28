@@ -44,7 +44,7 @@ internal enum class TypingKeyFace(val radius: Int, val insetReduction: Int = 0) 
     Regular(6), Numeric(6, insetReduction = 2), Pill(100),
 }
 
-internal class KeyboardViews(private val context: Context, val colors: KeyboardColors, height: KeyboardHeight) {
+internal class KeyboardViews(val context: Context, val colors: KeyboardColors, height: KeyboardHeight) {
     private val configuration = context.resources.configuration
     private val landscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val headerHeight = 48
@@ -146,7 +146,8 @@ internal class KeyboardViews(private val context: Context, val colors: KeyboardC
 
     fun suggestion(title: String, description: String, undo: Boolean, action: () -> Unit): View =
         button(description, action).apply {
-            background = surfaceRipple()
+            background = if (undo) InsetDrawable(pressed(colors.function, 100), dp(8), dp(2), dp(8), dp(2))
+                else surfaceRipple()
             addView(label(title, 15f, strong = undo).apply {
                 gravity = Gravity.CENTER
                 includeFontPadding = false

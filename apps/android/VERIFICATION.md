@@ -1,5 +1,11 @@
 # Android verification
 
+## Advanced typing 0.3.0
+
+Version code 4 uses the same Android debug signing certificate as the preceding test APK. The signed APK is 10,160,680 bytes and has SHA-256 `4d3585295e8b18f9e89da3e15ccf8d764b15b8c477f9b282de6de27f56a4caa1`. Android Gradle produced both debug and unsigned release APKs. All 34 JVM tests passed. Lint reported 0 errors, 36 warnings and 1 hint.
+
+API 35 emulator checks exercised selection and caret correction, automatic spacing and punctuation, Backspace and contextual Undo, an actual touch path inserting “world”, clipboard cut and restoration, pinned insertion, protected fields and local mock AI workflows. The system voice keyboard handoff succeeded. A separate synthetic English speech check reached Android’s on-device recognition service and received Android client error 5. The platform reported a lost Binder connection during startup. Acoustic transcription, mixed-language speech and physical-device latency still need device verification. [Advanced typing measurements and platform coverage](../../docs/advanced-typing.md)
+
 ## Phase 2
 
 Version 0.2.0 (code 3) was built with Android SDK 36, minimum API 24. The signed debug APK was installed and its SHA-256 matched the staged download. The release APK is unsigned. The package includes both shared language files, the frequency data notices and license, and the Avro data and notices. [Debug APK](../../artifacts/phase2/KothaKey-android-debug.apk) · [Unsigned release APK](../../artifacts/phase2/KothaKey-android-release-unsigned.apk) · [Checksums](../../artifacts/phase2/checks/android/SHA256SUMS.txt) · [Signature](../../artifacts/phase2/checks/android/signature.txt) · [Packaged assets](../../artifacts/phase2/checks/android/packaged-language-assets.txt)

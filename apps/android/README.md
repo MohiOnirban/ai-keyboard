@@ -39,9 +39,13 @@ Rewrite-style actions use an active selection or, on Android 14 and newer, a sho
 
 Grammar and tone choices ask for consent before their first request to the configured service. With consent, opening Grammar on an eligible draft or choosing a tone sends the displayed draft and writing preferences. Ask AI and Translation use their own generation buttons. The keyboard cancels the active client request when the user closes it, changes the input target or chooses another tone. A provider request already dispatched may still finish for billing. Session credentials are encrypted with an Android Keystore AES-GCM key and bound to the backend scheme, host, and effective port. Changing to a different backend origin starts a new installation session. Upgrading discards the former credential entry whose origin was unspecified. The companion can revoke the current session and clear local preferences separately.
 
-Tap a word to choose it. When automatic English correction changes a word, tap **Undo** or press Backspace immediately to restore the original. Set English autocorrection or edit your personal dictionary in Settings. The corpus, dictionary and predictions are available offline.
+Tap a suggestion to finish a word. In a supported editor, tap inside a previously typed word to see alternatives for the whole word. Tapping one preserves the surrounding punctuation and spaces. With English autocorrection enabled, Space or punctuation can fix a confident spelling mistake or add missing spaces. Backspace immediately reverses an automatic correction. The Undo chip also restores recent keyboard replacements, cuts and deletions when the editor can verify the affected range.
 
-Voice input uses an enabled Android voice input subtype where the system exposes one. If there is no voice subtype, the toolbar explains how to enable one and opens the Android keyboard picker.
+Glide across letter keys and release to insert a word. The strip shows available alternatives. Drag the spacebar horizontally to move the cursor. Settings controls glide, its trail, prediction, cursor suggestions, spacing, capitalization and on-device learning. The personal dictionary works even with learning off. Frequency and context data are bundled for offline use.
+
+Open **Tools → Clipboard** to copy, cut or paste. To keep items, enable **Settings → Clipboard → Keep clips I save** and tap **Save clipboard item** in the keyboard. Pin, unpin or delete an item there. Unpinned clips expire after the chosen interval when the shelf is next accessed. Turning history off clears the shelf.
+
+Open **Voice input** to choose English, Bangla or, on Android 14 and later, Mixed. Tap **Allow microphone** for the system permission request, return to the keyboard, then tap **Dictate** to start. Android supplies recognition, available languages and punctuation. KothaKey prefers Android's on-device recognizer when available. The panel identifies when the configured service may process audio online. Partial words appear in the panel. A final result is inserted only while the original editor and cursor range still match. **Start voice input** switches to an enabled system voice keyboard as an alternative.
 
 ## Validation
 
@@ -61,6 +65,8 @@ adb -s emulator-5554 install -r app/build/outputs/apk/androidTest/debug/app-debu
 adb -s emulator-5554 shell am instrument -w -e kothaMock true \
   com.kothakeys.keyboard.test/androidx.test.runner.AndroidJUnitRunner
 ```
+
+On API 33 or newer, the optional `syntheticVoice` instrumented check exercises Android's on-device recognizer with a generated English fixture. Provide signed 16-bit little-endian PCM, mono, 16 kHz, containing “The parcel arrives tomorrow.” Push the fixture to `/sdcard/Android/data/com.kothakeys.keyboard/files/advanced/synthetic-voice.pcm` and add `-e syntheticVoice true` to the instrumentation invocation. The result file reports whether Android supplied a matching transcript or an error code. After testing, restore a previously denied microphone permission with `adb shell pm revoke com.kothakeys.keyboard android.permission.RECORD_AUDIO`.
 
 See [Verification results](VERIFICATION.md) for device and workflow coverage.
 

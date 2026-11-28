@@ -1,0 +1,199 @@
+kind	language	context	input	expected
+keep	en		Fahim	Fahim
+keep	en	ask	Fahim	Fahim
+keep	en		Mahir	Mahir
+keep	en	ask	Mahir	Mahir
+keep	en		Nabila	Nabila
+keep	en	ask	Nabila	Nabila
+keep	en		Rafi	Rafi
+keep	en	ask	Rafi	Rafi
+keep	en		Afsana	Afsana
+keep	en	ask	Afsana	Afsana
+keep	en		Emon	Emon
+keep	en	ask	Emon	Emon
+keep	en		Nafis	Nafis
+keep	en	ask	Nafis	Nafis
+keep	en		Ovi	Ovi
+keep	en	ask	Ovi	Ovi
+keep	en		Mithila	Mithila
+keep	en	ask	Mithila	Mithila
+keep	en		Jubaer	Jubaer
+keep	en	ask	Jubaer	Jubaer
+keep	en		Dhaka	Dhaka
+keep	en	ask	Dhaka	Dhaka
+keep	en		Chittagong	Chittagong
+keep	en	ask	Chittagong	Chittagong
+keep	en		KothaKey	KothaKey
+keep	en	ask	KothaKey	KothaKey
+keep	en		UIKit	UIKit
+keep	en	ask	UIKit	UIKit
+keep	en		PostgreSQL	PostgreSQL
+keep	en	ask	PostgreSQL	PostgreSQL
+keep	en		TypeScript	TypeScript
+keep	en	ask	TypeScript	TypeScript
+keep	en		javascript	javascript
+keep	en	ask	javascript	javascript
+keep	en		typescript	typescript
+keep	en	ask	typescript	typescript
+keep	en		gitlab	gitlab
+keep	en	ask	gitlab	gitlab
+keep	en		kubernetes	kubernetes
+keep	en	ask	kubernetes	kubernetes
+keep	en		docker	docker
+keep	en	ask	docker	docker
+keep	en		npm	npm
+keep	en	ask	npm	npm
+keep	en		backend	backend
+keep	en	ask	backend	backend
+keep	en		frontend	frontend
+keep	en	ask	frontend	frontend
+keep	en		postgres	postgres
+keep	en	ask	postgres	postgres
+keep	en		websocket	websocket
+keep	en	ask	websocket	websocket
+keep	en		middleware	middleware
+keep	en	ask	middleware	middleware
+keep	en		dataplane	dataplane
+keep	en	ask	dataplane	dataplane
+keep	en		dataset	dataset
+keep	en	ask	dataset	dataset
+keep	en		storyboard	storyboard
+keep	en	ask	storyboard	storyboard
+keep	en		worktree	worktree
+keep	en	ask	worktree	worktree
+keep	en		blockchain	blockchain
+keep	en	ask	blockchain	blockchain
+keep	en		livestream	livestream
+keep	en	ask	livestream	livestream
+keep	en		bugfix	bugfix
+keep	en	ask	bugfix	bugfix
+keep	en		lowercase	lowercase
+keep	en	ask	lowercase	lowercase
+keep	en		camelCase	camelCase
+keep	en	ask	camelCase	camelCase
+keep	en		camelcase	camelcase
+keep	en	ask	camelcase	camelcase
+keep	en		substring	substring
+keep	en	ask	substring	substring
+keep	en		deepcopy	deepcopy
+keep	en	ask	deepcopy	deepcopy
+keep	en		quadtree	quadtree
+keep	en	ask	quadtree	quadtree
+keep	en		darkmode	darkmode
+keep	en	ask	darkmode	darkmode
+keep	en		WebView	WebView
+keep	en	ask	WebView	WebView
+keep	en		json	json
+keep	en	ask	json	json
+keep	en		lexer	lexer
+keep	en	ask	lexer	lexer
+keep	en		kotlin	kotlin
+keep	en	ask	kotlin	kotlin
+keep	en		ngram	ngram
+keep	en	ask	ngram	ngram
+keep	en		tokenization	tokenization
+keep	en	ask	tokenization	tokenization
+keep	en		resync	resync
+keep	en	ask	resync	resync
+keep	en		kubectl	kubectl
+keep	en	ask	kubectl	kubectl
+keep	en		onirban	onirban
+keep	en	ask	onirban	onirban
+keep	en		fahim	fahim
+keep	en	ask	fahim	fahim
+keep	en		mahir	mahir
+keep	en	ask	mahir	mahir
+keep	en		nabila	nabila
+keep	en	ask	nabila	nabila
+keep	en		rafi	rafi
+keep	en	ask	rafi	rafi
+keep	en		afsana	afsana
+keep	en	ask	afsana	afsana
+keep	en		emon	emon
+keep	en	ask	emon	emon
+keep	en		nafis	nafis
+keep	en	ask	nafis	nafis
+keep	en		ovi	ovi
+keep	en	ask	ovi	ovi
+keep	en		mithila	mithila
+keep	en	ask	mithila	mithila
+keep	en		jubaer	jubaer
+keep	en	ask	jubaer	jubaer
+keep	en		chatgpt	chatgpt
+keep	en	ask	chatgpt	chatgpt
+keep	en		todo	todo
+keep	en	ask	todo	todo
+keep	en		lol	lol
+keep	en	ask	lol	lol
+keep	en		lmao	lmao
+keep	en	ask	lmao	lmao
+keep	en		brb	brb
+keep	en	ask	brb	brb
+keep	en		yay	yay
+keep	en	ask	yay	yay
+keep	en		whoops	whoops
+keep	en	ask	whoops	whoops
+keep	en		gonna	gonna
+keep	en	ask	gonna	gonna
+keep	en		gotta	gotta
+keep	en	ask	gotta	gotta
+keep	en		wanna	wanna
+keep	en	ask	wanna	wanna
+keep	en		gmail	gmail
+keep	en	ask	gmail	gmail
+keep	en		ami	ami
+keep	en	ask	ami	ami
+keep	en		moi	moi
+keep	en	ask	moi	moi
+keep	en		tumi	tumi
+keep	en	ask	tumi	tumi
+keep	en		tui	tui
+keep	en	ask	tui	tui
+keep	en		koros	koros
+keep	en	ask	koros	koros
+keep	en		koris	koris
+keep	en	ask	koris	koris
+keep	en		kortesi	kortesi
+keep	en	ask	kortesi	kortesi
+keep	en		janailei	janailei
+keep	en	ask	janailei	janailei
+keep	en		hoito	hoito
+keep	en	ask	hoito	hoito
+keep	en		jaitesi	jaitesi
+keep	en	ask	jaitesi	jaitesi
+keep	en		bhai	bhai
+keep	en	ask	bhai	bhai
+keep	en		apu	apu
+keep	en	ask	apu	apu
+keep	en		shobai	shobai
+keep	en	ask	shobai	shobai
+keep	en		acho	acho
+keep	en	ask	acho	acho
+keep	en		kothay	kothay
+keep	en	ask	kothay	kothay
+keep	en		ekhon	ekhon
+keep	en	ask	ekhon	ekhon
+keep	en		bhalobashi	bhalobashi
+keep	en	ask	bhalobashi	bhalobashi
+keep	en		amra	amra
+keep	en	ask	amra	amra
+keep	en		tader	tader
+keep	en	ask	tader	tader
+keep	en		oder	oder
+keep	en	ask	oder	oder
+keep	en		ashbo	ashbo
+keep	en	ask	ashbo	ashbo
+keep	en		ashben	ashben
+keep	en	ask	ashben	ashben
+keep	en		korsi	korsi
+keep	en	ask	korsi	korsi
+keep	en		korchi	korchi
+keep	en	ask	korchi	korchi
+keep	en		kemon	kemon
+keep	en	ask	kemon	kemon
+keep	en		boshen	boshen
+keep	en	ask	boshen	boshen
+keep	en		asen	asen
+keep	en	ask	asen	asen
+keep	en		bhabchi	bhabchi
+keep	en	ask	bhabchi	bhabchi

@@ -5,7 +5,7 @@ import unicodedata
 from pathlib import Path
 
 INPUTS = {
-    "en": (10000, "5351ff405b1126ef555791dd4d9798a48e3e9a501a9fc481a9da957752cfb458"),
+    "en": (20000, "5351ff405b1126ef555791dd4d9798a48e3e9a501a9fc481a9da957752cfb458"),
     "bn": (6000, "2fd6c08f29335f26af983c26821537e5ed5e42dfdf43275a0c646a15d18d636e"),
 }
 

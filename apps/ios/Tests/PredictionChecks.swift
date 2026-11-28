@@ -45,6 +45,34 @@ import Foundation
     ]
     for (name, success) in checks { precondition(success, name) }
 
+    let ranker = Predictor("en\tgold medal\nen\tgood weather\nen\twe will be there", frequencies:
+      "en\tgood\t80000\nen\tgold\t12000\nen\tdefinitely\t20000\nen\tback\t500000\nen\tend\t180000\nen\tbacked\t12000")
+    func offer(following: String = "", hints: [Int: Character] = [:]) -> String? {
+      ranker.suggestions(for: "gopd", after: "", language: .english, personal: [], following: following,
+        touchHints: hints).first { $0 != "gopd" }
+    }
+    precondition(offer() == "good")
+    precondition(offer(following: "medal") == "gold")
+    precondition(offer(hints: [2: "l"]) == "gold")
+    precondition(ranker.correction(for: "wewillbethere", after: "", language: .english, personal: []) == "we will be there")
+    precondition(ranker.correction(for: "wewillbethere", after: "", language: .english, personal: [], allowSegmentation: false) == nil)
+    precondition(ranker.correction(for: "definatly", after: "", language: .english, personal: []) == "definitely")
+    precondition(ranker.correction(for: "backend", after: "", language: .english, personal: []) == nil)
+    precondition(ranker.glideVocabulary(language: .english)["weather"] != nil)
+    var rejected = TypingHistory()
+    rejected.reject("definatly", suggestion: "definitely", in: .english)
+    precondition(ranker.correction(for: "definatly", after: "", language: .english, personal: [],
+      history: rejected.words(in: .english)) == nil)
+    precondition(ranker.correction(for: "definitley", after: "", language: .english, personal: [],
+      history: rejected.words(in: .english)) == "definitely")
+
+    var pairs = TypingHistory()
+    pairs.record("today", in: .english, as: .accepted, after: "good")
+    precondition(pairs.following("good", in: .banglish).isEmpty)
+    let restoredPairs = try JSONDecoder().decode(TypingHistory.self, from: JSONEncoder().encode(pairs))
+    precondition(ranker.suggestions(for: "", after: "good", language: .english, personal: [],
+      learnedNext: restoredPairs.following("good", in: .english)).first == "today")
+
     var history = TypingHistory()
     history.record("zano", in: .english, as: .typed)
     history.record("zano", in: .english, as: .accepted)
@@ -58,6 +86,6 @@ import Foundation
     let json = try JSONEncoder().encode(history)
     let restored = try JSONDecoder().decode(TypingHistory.self, from: json)
     precondition(restored == history)
-    print("\(checks.count + 4) predictor and local history checks passed")
+    print("\(checks.count + 16) predictor and local history checks passed")
   }
 }

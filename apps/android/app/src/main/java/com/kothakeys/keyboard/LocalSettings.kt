@@ -54,12 +54,62 @@ internal class LocalSettings(context: Context) {
         set(value) { prefs.edit().putBoolean("next_word_prediction", value).apply() }
 
     var automaticCapitalization: Boolean
-        get() = prefs.getBoolean("automatic_capitalization", false)
+        get() = prefs.getBoolean("automatic_capitalization", true)
         set(value) { prefs.edit().putBoolean("automatic_capitalization", value).apply() }
 
     var learning: Boolean
         get() = prefs.getBoolean("personalized_learning", false)
         set(value) { prefs.edit().putBoolean("personalized_learning", value).apply() }
+
+    var automaticSpacing: Boolean
+        get() = prefs.getBoolean("automatic_spacing", true)
+        set(value) { prefs.edit().putBoolean("automatic_spacing", value).apply() }
+
+    var spaceAfterSuggestion: Boolean
+        get() = prefs.getBoolean("suggestion_space", true)
+        set(value) { prefs.edit().putBoolean("suggestion_space", value).apply() }
+
+    var cursorSuggestions: Boolean
+        get() = prefs.getBoolean("cursor_suggestions", true)
+        set(value) { prefs.edit().putBoolean("cursor_suggestions", value).apply() }
+
+    var doubleSpacePeriod: Boolean
+        get() = prefs.getBoolean("double_space_period", true)
+        set(value) { prefs.edit().putBoolean("double_space_period", value).apply() }
+
+    var glideTyping: Boolean
+        get() = prefs.getBoolean("glide_typing", true)
+        set(value) { prefs.edit().putBoolean("glide_typing", value).apply() }
+
+    var gestureTrail: Boolean
+        get() = prefs.getBoolean("gesture_trail", true)
+        set(value) { prefs.edit().putBoolean("gesture_trail", value).apply() }
+
+    var voiceTyping: Boolean
+        get() = prefs.getBoolean("voice_typing", true)
+        set(value) { prefs.edit().putBoolean("voice_typing", value).apply() }
+
+    var clipboardHistory: Boolean
+        get() = prefs.getBoolean("clipboard_history", false)
+        set(value) {
+            val edit = prefs.edit().putBoolean("clipboard_history", value)
+            if (!value) edit.remove("saved_clips")
+            edit.apply()
+        }
+
+    var retentionDays: Int
+        get() = prefs.getInt("clip_days", 1)
+        set(value) { prefs.edit().putInt("clip_days", value.coerceIn(1, 30)).apply() }
+
+    fun clips(edit: (ClipboardShelf) -> Unit = {}): List<SavedClip> {
+        if (!clipboardHistory) return emptyList()
+        val old = get("saved_clips", "[]")
+        val shelf = ClipboardShelf(old, System.currentTimeMillis(), retentionDays)
+        edit(shelf)
+        val updated = shelf.encode()
+        if (old != updated) put("saved_clips", updated)
+        return shelf.items
+    }
 
     var correction: Boolean
         get() = prefs.getBoolean("correction", true)
@@ -91,6 +141,18 @@ internal class LocalSettings(context: Context) {
         if (!learning) return
         loadLearning()
         if (history.record(language, word, accepted)) saveLearning()
+    }
+
+    fun learnedNext(language: TypingLanguage, previous: String?): Map<String, Int> {
+        if (!learning || previous == null) return emptyMap()
+        loadLearning()
+        return history.next(language, previous)
+    }
+
+    fun learnPair(language: TypingLanguage, previous: String?, next: String) {
+        if (!learning || previous == null) return
+        loadLearning()
+        if (history.recordPair(language, previous, next)) saveLearning()
     }
 
     fun rejectCorrection(language: TypingLanguage, word: String, correction: String) {

@@ -4,6 +4,8 @@
 
 KothaKey is a Bangladesh-first keyboard for Android and iOS. English, raw Banglish, phonetic Bangla and direct Bangla work offline. The keyboard toolbar opens Fix Grammar, Improve & Tone, Ask AI and Translation. Ask AI includes Rewrite, Reply and Express. You review each result and choose whether to insert or replace text.
 
+Version 0.3.0 adds offline missing-space correction, cursor-aware alternatives, glide typing, contextual Undo and local clipboard history. [Advanced typing, setup and measured results](docs/advanced-typing.md) · [Download the Android APK](https://github.com/MohiOnirban/ai-keyboard/releases/download/v0.3.0/KothaKey-0.3.0-android.apk)
+
 Phase 2 adds a tools dashboard, responsive symbols and number pads, and expanded offline typing intelligence. [Typing engine and data research](docs/phase2-research.md)
 
 Phase 1.1 adds phone connection setup, a separate offline suggestion row and consent for direct AI actions. [Phase 1.1 setup and verification](docs/phase11.md)

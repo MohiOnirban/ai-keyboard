@@ -1,0 +1,71 @@
+kind	language	context	input	expected
+spelling	en	we can	improvse	improvise
+spelling	en	truly	impressve	impressive
+spelling	en	will	recieve	receive
+spelling	en	meet	tommorow	tomorrow
+spelling	en	we will	definatly	definitely
+spelling	en	morning!	im	I'm
+spelling	en	please	dont	don't
+spelling	en	she	didnt	didn't
+spelling	en	we	cant	can't
+spelling	en	on	teh	the
+spelling	en	check the	scheduel	schedule
+spelling	en	thanks for the	invitaiton	invitation
+spelling	en	it was	beatiful	beautiful
+spelling	en	we can	disucss	discuss
+spelling	en	try this	instruciton	instruction
+spelling	en	an unusual	probelm	problem
+spelling	en	take an	umbrellla	umbrella
+spelling	en	meet at the	airprot	airport
+spelling	en	an early	brakfast	breakfast
+spelling	en	works	perfecfly	perfectly
+spelling	en	it was	woderful	wonderful
+spelling	en	we had a	meetinb	meeting
+spelling	en	it seems	differnt	different
+spelling	en	can you	explan	explain
+spelling	en	the	buikding	building
+spelling	en	for your	patiencce	patience
+spelling	en	more	impotant	important
+spelling	en	we have an	appointmnet	appointment
+spelling	en	a quick	qusetion	question
+spelling	en	lost the	reciept	receipt
+spelling	en		howareyou	how are you
+spelling	en		goodmorning	good morning
+spelling	en		thankyou	thank you
+spelling	en		whatareyoudoing	what are you doing
+spelling	en		hellohowareyou	hello how are you
+spelling	en		iwanttogohome	I want to go home
+spelling	en		iloveyou	I love you
+spelling	en		iwillbethere	I will be there
+spelling	en		seeyoulater	see you later
+spelling	en		wecanmeet	we can meet
+spelling	en		openthedoor	open the door
+spelling	en		areyouready	are you ready
+spelling	en		letmeknow	let me know
+spelling	en		givemeacall	give me a call
+spelling	en		talktomesoon	talk to me soon
+spelling	en		haveaniceday	have a nice day
+keep	en	my	raincoat	raincoat
+keep	en	an	everyday	everyday
+keep	en	fix	IndexPath	IndexPath
+keep	en	visit	example.org	example.org
+keep	en	contact	ami@home.dev	ami@home.dev
+keep	en	it is	waterproof	waterproof
+keep	en	ask	Nusrat	Nusrat
+keep	en	আমরা	kortesi	kortesi
+keep	en	hello	USB	USB
+keep	banglish	tumi	jaitesi	jaitesi
+keep	banglish	ami	hoito	hoito
+keep	banglish	moi	koros	koros
+keep	bn	আমি	যাইতেছি	যাইতেছি
+keep	bn	আজ	স্কুলে	স্কুলে
+next	en	How are		you
+next	en	I am going		to
+next	en	See you		soon
+next	en	Thank		you
+next	en	I don't		know
+next	en	I'm feeling		good
+next	banglish	ami tomake		bhalobashi
+personal	en	ask	Nai	Naimul
+personal	banglish	ekhon	moi	Moinuddin
+personal	bn	আমার	মে	মেহজাবিন

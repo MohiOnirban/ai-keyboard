@@ -576,7 +576,7 @@ final class CompanionTests: XCTestCase {
     shot("phase2-contraction-suggestions", app)
     contraction.tap()
     XCTAssertEqual(input.value as? String, "hey how ya doing? I'm ")
-    XCTAssertTrue(!firstSlot.exists || !firstSlot.isEnabled)
+    XCTAssertEqual(firstSlot.label, "Undo · im")
 
     let space = app.buttons["Space"]
     let grip = space.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
@@ -728,6 +728,275 @@ final class CompanionTests: XCTestCase {
     setPreference(learning, enabled: false, in: app)
   }
 
+  func testAdvancedCursorReplacementUndoAndSpacing() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: false)
+    let input = showExtension(in: app)
+    chooseLayout("English", in: app)
+    app.buttons["Tools"].tap()
+    app.buttons["dashboard-settings"].tap()
+    for (title, state) in [("Predictive suggestions","On"), ("Auto-capitalization","Off"), ("Autocorrect","Off")] {
+      let setting = app.buttons[title]
+      if setting.value as? String != state { setting.tap() }
+    }
+    app.buttons["Return to keyboard"].tap()
+    typeOnKotha("say teh ok", in: app)
+    app.buttons["Tools"].tap()
+    app.buttons["Text editing"].tap()
+    let left = app.buttons["Move cursor left"]
+    for _ in 0..<4 { left.tap() }
+    app.buttons["Return to keyboard"].tap()
+    let corrected = app.buttons["the"]
+    XCTAssertTrue(corrected.waitForExistence(timeout: 4), app.debugDescription)
+    shot("advanced-cursor-suggestions", app)
+    corrected.tap()
+    XCTAssertEqual(input.value as? String, "say the ok")
+    app.buttons["Undo · teh"].tap()
+    XCTAssertEqual(input.value as? String, "say teh ok")
+    shot("advanced-cursor-undo", app)
+
+    // Move to the end of the existing sentence and complete a new word.
+    app.buttons["Tools"].tap()
+    app.buttons["Text editing"].tap()
+    for _ in 0..<3 { app.buttons["Move cursor right"].tap() }
+    app.buttons["Return to keyboard"].tap()
+    typeOnKotha(" teh", in: app)
+    corrected.tap()
+    XCTAssertEqual(input.value as? String, "say teh ok the ")
+    typeOnKotha(",", in: app)
+    XCTAssertEqual(input.value as? String, "say teh ok the,")
+    typeOnKotha(" yes  ", in: app)
+    XCTAssertEqual(input.value as? String, "say teh ok the, yes. ")
+    shot("advanced-spacing", app)
+  }
+
+  func testAdvancedSafariSelectionAndProtectedFields() throws {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: false)
+    let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
+    safari.open(URL(string: "http://127.0.0.1:4100/SafariFixture.html")!)
+    if safari.buttons["Continue"].exists { safari.buttons["Continue"].tap() }
+    let select = safari.buttons["Select misspelling"]
+    try XCTSkipUnless(select.waitForExistence(timeout: 8), "Start the local Safari fixture server.")
+    select.tap()
+    selectExtension(in: safari)
+    let candidate = safari.buttons["the"]
+    XCTAssertTrue(candidate.waitForExistence(timeout: 5), safari.debugDescription)
+    candidate.tap()
+    let input = safari.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Synthetic message")).firstMatch
+    XCTAssertEqual(input.value as? String, "Draft one.\nPlease check the message.")
+    let undo = safari.buttons["Undo · teh"]
+    XCTAssertTrue(undo.waitForExistence(timeout: 3))
+    undo.tap()
+    XCTAssertEqual(input.value as? String, "Draft one.\nPlease check teh message.")
+    safari.buttons["Place cursor after misspelling"].tap()
+    XCTAssertEqual(input.value as? String, "Draft one.\nPlease check teh message.")
+    let refreshed = safari.buttons.matching(NSPredicate(format: "label == %@", "the")).firstMatch
+    XCTAssertTrue(refreshed.waitForExistence(timeout: 4), safari.debugDescription)
+    XCTAssertEqual(refreshed.label, "the")
+    refreshed.tap()
+    XCTAssertEqual(input.value as? String, "Draft one.\nPlease check the message.", safari.debugDescription)
+    // Tap the earlier line inside the real editor, as a user would.
+    input.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.19)).tap()
+    let stale = safari.buttons.matching(NSPredicate(format: "label == %@", "Undo · teh")).firstMatch
+    XCTAssertTrue(stale.waitForNonExistence(timeout: 3), "Moving the host caret should dismiss the previous Undo.")
+    XCTAssertEqual(input.value as? String, "Draft one.\nPlease check the message.")
+    shot("advanced-safari-multiline", safari)
+    for field in ["Email field", "URL field"] {
+      let kind = field == "Email field" ? "email" : "url"
+      safari.open(URL(string: "http://127.0.0.1:4100/SafariFixture.html?field=" + kind)!)
+      let editor = safari.textFields[field]
+      XCTAssertTrue(editor.waitForExistence(timeout: 6))
+      editor.tap()
+      let focused = safari.descendants(matching: .any).matching(NSPredicate(format: "label == %@ AND hasKeyboardFocus == 1", field)).firstMatch
+      if !focused.waitForExistence(timeout: 2) { editor.tap() }
+      XCTAssertTrue(focused.waitForExistence(timeout: 4), editor.debugDescription)
+      // Safari can replace the extension with its own keyboard for contact input.
+      let toolbar = safari.buttons["Fix Grammar"]
+      let key = safari.buttons.matching(NSPredicate(format: "label ==[c] %@", "t")).firstMatch
+      if toolbar.exists && key.exists {
+        for letter in "teh" {
+          safari.buttons.matching(NSPredicate(format: "label ==[c] %@", String(letter))).firstMatch.tap()
+        }
+      } else {
+        editor.typeText("teh")
+      }
+      XCTAssertEqual(editor.value as? String, "teh", field)
+      let slot = safari.buttons["candidate-0"]
+      XCTAssertTrue(!slot.exists || !slot.isEnabled, "Host field: \(field); candidate: \(slot.exists ? slot.label : "")")
+      shot("advanced-safari-" + (field == "Email field" ? "email" : "url"), safari)
+    }
+
+  }
+
+  func testAdvancedGlideAndBackspaceUndo() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: false)
+    let input = showExtension(in: app)
+    chooseLayout("English", in: app)
+    let start = app.buttons["w"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+    let end = app.buttons["t"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+    start.press(forDuration: 0.02, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0)
+    let undo = app.buttons["Undo · glide"]
+    XCTAssertTrue(undo.waitForExistence(timeout: 5), app.debugDescription)
+    let inserted = input.value as? String ?? ""
+    XCTAssertEqual(inserted.trimmingCharacters(in: .whitespaces).lowercased(), "wet")
+    shot("advanced-glide-candidates", app)
+    undo.tap()
+    XCTAssertTrue((input.value as? String ?? "").isEmpty)
+    typeOnKotha("wet", in: app)
+    XCTAssertEqual(input.value as? String, "wet")
+  }
+
+  func testAdvancedClipboardCutAndPinnedHistory() throws {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: true)
+    app.tabBars.buttons["Settings"].tap()
+    let remember = app.switches["Remember clipboard items"]
+    setPreference(remember, enabled: false, in: app)
+    setPreference(remember, enabled: true, in: app)
+    // A native UITextView exposes a stable selection around this measured edit.
+    let native = showExtension(in: app)
+    chooseLayout("English", in: app)
+    app.buttons["Tools"].tap()
+    app.buttons["dashboard-settings"].tap()
+    let capitalization = app.buttons["Auto-capitalization"]
+    if capitalization.value as? String == "On" { capitalization.tap() }
+    app.buttons["Return to keyboard"].tap()
+    typeOnKotha("word.", in: app)
+    let draft = native.value as? String ?? ""
+    XCTAssertEqual(draft.lowercased(), "word.")
+    native.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.12)).doubleTap()
+    app.buttons["Tools"].tap()
+    app.buttons["Clipboard"].tap()
+    let cut = app.buttons["Cut"]
+    XCTAssertTrue(cut.isEnabled)
+    cut.tap()
+    XCTAssertEqual(native.value as? String, ".")
+    let undo = app.buttons["Undo · cut"]
+    XCTAssertTrue(undo.waitForExistence(timeout: 4))
+    undo.tap()
+    XCTAssertEqual(native.value as? String, draft)
+    app.buttons["Tools"].tap()
+    app.buttons["Clipboard"].tap()
+    let savedWord = app.buttons["Insert saved item, word"]
+    XCTAssertTrue(savedWord.exists, app.debugDescription)
+    savedWord.tap()
+    XCTAssertEqual(native.value as? String, "wordword.")
+    app.buttons["Undo · paste"].tap()
+    XCTAssertEqual(native.value as? String, draft)
+    app.buttons["Tools"].tap()
+    app.buttons["Clipboard"].tap()
+    let pin = app.buttons["Pin item"].firstMatch
+    XCTAssertTrue(pin.exists, app.debugDescription)
+    pin.tap()
+    XCTAssertTrue(app.buttons["Unpin item"].firstMatch.exists)
+    shot("advanced-clipboard", app)
+    app.buttons["Delete item"].firstMatch.tap()
+    XCTAssertFalse(app.buttons["Unpin item"].exists)
+    app.launch()
+    app.tabBars.buttons["Settings"].tap()
+    setPreference(remember, enabled: false, in: app)
+  }
+
+  func testAdvancedSafariSmartDeleteProtectsNeighbors() throws {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: true)
+    let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
+    safari.open(URL(string: "http://127.0.0.1:4100/SafariFixture.html")!)
+    let select = safari.buttons["Select misspelling"]
+    try XCTSkipUnless(select.waitForExistence(timeout: 6), "Start the local Safari fixture server.")
+    select.tap()
+    selectExtension(in: safari)
+    safari.buttons["Tools"].tap()
+    safari.buttons["Clipboard"].tap()
+    XCTAssertTrue(safari.buttons["Cut"].isEnabled)
+    safari.buttons["Cut"].tap()
+    let input = safari.textViews["Synthetic message"]
+    let results = ["Draft one.\nPlease check  message.", "Draft one.\nPlease check message."]
+    let cut = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      results.contains(input.value as? String ?? "")
+    }, object: input)
+    XCTAssertEqual(XCTWaiter().wait(for: [cut], timeout: 4), .completed)
+    XCTAssertFalse(safari.buttons["Undo · cut"].waitForExistence(timeout: 1.2))
+  }
+
+  func testAdvancedMessagesDraft() throws {
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: false)
+    let messages = XCUIApplication(bundleIdentifier: "com.apple.MobileSMS")
+    messages.launch()
+    for step in ["Continue", "Get Started", "Not Now"] {
+      let option = messages.buttons[step]
+      if option.exists && option.isHittable { option.tap() }
+    }
+    let compose = messages.buttons.matching(NSPredicate(format:
+      "label CONTAINS[c] 'compose' OR label CONTAINS[c] 'new message' OR identifier CONTAINS[c] 'compose'")).firstMatch
+    try XCTSkipUnless(compose.waitForExistence(timeout: 4), "Messages compose is unavailable on this simulator.")
+    compose.tap()
+    let body = messages.textViews.firstMatch
+    try XCTSkipUnless(body.waitForExistence(timeout: 5) && body.isHittable,
+      "Messages does not expose a body in its unaddressed composer.")
+    body.tap()
+    selectExtension(in: messages)
+    chooseLayout("Banglish", in: messages)
+    typeOnKotha("ami", in: messages)
+    XCTAssertEqual(body.value as? String, "ami")
+    shot("advanced-messages-unsent", messages)
+    for _ in 0..<3 { messages.buttons["Backspace"].tap() }
+    if messages.buttons["Cancel"].exists { messages.buttons["Cancel"].tap() }
+  }
+
+  func testAdvancedTouchSegmentationAndVoiceHandoff() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: false)
+    let input = showExtension(in: app)
+    chooseLayout("English", in: app)
+    app.buttons["Tools"].tap()
+    app.buttons["dashboard-settings"].tap()
+    for (name, desired) in [("Predictive suggestions", "On"), ("Autocorrect", "On"), ("Auto-capitalization", "Off")] {
+      let key = app.buttons[name]
+      if key.value as? String != desired { key.tap() }
+    }
+    app.buttons["Return to keyboard"].tap()
+    typeOnKotha("gopd", in: app)
+    XCTAssertEqual(app.buttons["candidate-0"].label, "good")
+    for _ in 0..<4 { app.buttons["Backspace"].tap() }
+    typeOnKotha("go", in: app)
+    let p = app.buttons["p"]
+    p.coordinate(withNormalizedOffset: CGVector(dx: 0.23, dy: 0.92)).tap()
+    app.buttons["d"].tap()
+    XCTAssertEqual(input.value as? String, "gopd")
+    XCTAssertEqual(app.buttons["candidate-0"].label, "gold")
+    shot("advanced-touch-alternative", app)
+    for _ in 0..<4 { app.buttons["Backspace"].tap() }
+    typeOnKotha("howareyou ", in: app)
+    XCTAssertEqual(input.value as? String, "how are you ")
+    shot("advanced-segmentation", app)
+    app.buttons["Backspace"].tap()
+    XCTAssertEqual(input.value as? String, "howareyou ")
+    app.buttons["Tools"].tap()
+    app.buttons["Voice input"].tap()
+    let handoff = app.buttons["Switch keyboard"]
+    XCTAssertTrue(handoff.exists)
+    shot("advanced-voice-handoff", app)
+    handoff.tap()
+    XCTAssertTrue(app.buttons["Fix Grammar"].waitForNonExistence(timeout: 4))
+  }
+
   private func clearLearnedWords(in app: XCUIApplication) {
     let clear = app.buttons["Clear learned words"].firstMatch
     for _ in 0..<6 {
@@ -742,7 +1011,10 @@ final class CompanionTests: XCTestCase {
   }
 
   private func setPreference(_ control: XCUIElement, enabled: Bool, in app: XCUIApplication) {
-    for _ in 0..<6 where !control.isHittable { app.swipeUp() }
+    for _ in 0..<9 {
+      if control.exists, control.isHittable, control.frame.midY < app.frame.maxY - 108 { break }
+      app.swipeUp()
+    }
     if (control.value as? String == "1") != enabled {
       control.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
     }
@@ -934,7 +1206,10 @@ final class CompanionTests: XCTestCase {
     if !ai.waitForExistence(timeout: 3) {
       let globe = nextKeyboard(in: app)
       XCTAssertTrue(globe.exists, app.debugDescription)
-      for _ in 0..<5 where !ai.exists { globe.tap() }
+      for _ in 0..<5 where !ai.exists {
+        globe.tap()
+        if ai.waitForExistence(timeout: 1.5) { break }
+      }
     }
     XCTAssertTrue(ai.waitForExistence(timeout: 4), app.debugDescription)
   }

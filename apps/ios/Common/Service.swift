@@ -10,10 +10,56 @@ enum Settings {
     "Culturally inspired", "Custom instructions",
   ]
   static var aiConsent: Bool { prefs.bool(forKey: "aiConsent") }
-  static var autocorrect: Bool { prefs.bool(forKey: "autocorrect") }
+  static var autocorrect: Bool { prefs.object(forKey: "autocorrect") as? Bool ?? true }
   static var predictiveSuggestions: Bool { prefs.object(forKey: "predictiveSuggestions") as? Bool ?? true }
   static var nextWordPrediction: Bool { prefs.object(forKey: "nextWordPrediction") as? Bool ?? true }
-  static var automaticCapitalization: Bool { prefs.bool(forKey: "automaticCapitalization") }
+  static var automaticCapitalization: Bool { prefs.object(forKey: "automaticCapitalization") as? Bool ?? true }
+  static var automaticSpacing: Bool { prefs.object(forKey: "automaticSpacing") as? Bool ?? true }
+  static var spaceAfterSuggestion: Bool { prefs.object(forKey: "spaceAfterSuggestion") as? Bool ?? true }
+  static var cursorAware: Bool { prefs.object(forKey: "cursorAware") as? Bool ?? true }
+  static var doubleSpacePeriod: Bool { prefs.object(forKey: "doubleSpacePeriod") as? Bool ?? true }
+  static var glideTyping: Bool { prefs.object(forKey: "glideTyping") as? Bool ?? true }
+  static var gestureTrail: Bool { prefs.object(forKey: "gestureTrail") as? Bool ?? true }
+  static var voiceTyping: Bool { prefs.object(forKey: "voiceTyping") as? Bool ?? true }
+  static var clipboardHistory: Bool { prefs.bool(forKey: "clipboardHistory") }
+  struct Clip: Codable {
+    let id: UUID
+    let text: String
+    var date: Date
+    var pinned: Bool
+  }
+  private static let clipsKey = "localClipboardItems"
+  static func clearClips() { prefs.removeObject(forKey: clipsKey) }
+  static func saveClips(_ items: [Clip]) {
+    guard clipboardHistory else { clearClips(); return }
+    if let data = try? JSONEncoder().encode(items) { prefs.set(data, forKey: clipsKey) }
+  }
+  static func clips() -> [Clip] {
+    guard clipboardHistory, let data = prefs.data(forKey: clipsKey),
+      let items = try? JSONDecoder().decode([Clip].self, from: data) else { return [] }
+    let duration: TimeInterval = ["15 minutes": 900, "1 hour": 3600, "1 day": 86400][get("clipLifetime", "1 hour")] ?? 3600
+    let fresh = items.filter { $0.pinned || $0.date.timeIntervalSinceNow > -duration }
+    if items.count != fresh.count { saveClips(fresh) }
+    return fresh
+  }
+  static func addClip(_ text: String) {
+    guard clipboardHistory, !text.isEmpty, text.utf16.count <= 1600 else { return }
+    // Expiring one-time codes and standalone card/phone numbers should not become history.
+    if text.range(of: #"(?<!\d)(?:\d[ -]?){4,19}(?!\d)"#, options: .regularExpression) != nil { return }
+    var items = clips()
+    if let i = items.firstIndex(where: { $0.text == text }) {
+      var item = items.remove(at: i)
+      item.date = Date()
+      items.insert(item, at: 0)
+    } else {
+      if items.count >= 12 {
+        guard let oldest = items.lastIndex(where: { !$0.pinned }) else { return }
+        items.remove(at: oldest)
+      }
+      items.insert(Clip(id: UUID(), text: text, date: Date(), pinned: false), at: 0)
+    }
+    saveClips(items)
+  }
   static var learning: Bool { prefs.bool(forKey: "typingLearning") }
   private static let historyKey = "typingHistory"
   static var typingHistory: TypingHistory {

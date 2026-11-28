@@ -4,6 +4,7 @@ import android.icu.text.BreakIterator
 import android.os.Build
 import android.text.InputType
 import android.view.KeyEvent
+import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 
@@ -75,7 +76,8 @@ internal class EditorAccess {
             val surrounding = connection.getSurroundingText(1601, afterLimit, 0)
             if (surrounding != null) {
                 val text = surrounding.text
-                if (text.length > 3201 + afterLimit) return null
+                if (text.length > 3201 + afterLimit || surrounding.selectionStart !in 0..text.length ||
+                    surrounding.selectionEnd !in 0..text.length) return null
                 val left = minOf(surrounding.selectionStart, surrounding.selectionEnd)
                 val selectedLength = kotlin.math.abs(surrounding.selectionEnd - surrounding.selectionStart)
                 val offset = if (surrounding.offset >= 0) surrounding.offset
@@ -93,11 +95,58 @@ internal class EditorAccess {
         return TextSnapshot(left + selected + right, minOf(start, end) - left.length, left.length, left.length + selected.length)
     }
 
+    /** A fresh absolute position is required before moving or replacing a host range. */
+    fun editSnapshot(connection: InputConnection, proveWordEnd: Boolean = false): TextSnapshot? {
+        if (Build.VERSION.SDK_INT >= 31) {
+            val sample = connection.getSurroundingText(1601, 64, 0) ?: return null
+            if (sample.offset < 0 || sample.text.length > 3265 ||
+                sample.selectionStart !in 0..sample.text.length || sample.selectionEnd !in 0..sample.text.length) return null
+            val text = sample.text.toString()
+            val suffix = text.substring(maxOf(sample.selectionStart, sample.selectionEnd))
+            val needEnd = proveWordEnd && sample.offset <= 4096 && suffix.length < 64 &&
+                suffix.all { it.isLetter() || Character.getType(it) in 6..8 || it in "'’\u200c\u200d" }
+            val complete = if (needEnd) connection.getExtractedText(ExtractedTextRequest(), 0) else null
+            val proven = complete != null && complete.partialStartOffset == -1 && complete.partialEndOffset == -1 &&
+                complete.startOffset == 0 && complete.text?.length == sample.offset + text.length &&
+                complete.selectionStart == sample.offset + sample.selectionStart &&
+                complete.selectionEnd == sample.offset + sample.selectionEnd &&
+                complete.text?.subSequence(sample.offset, complete.text.length)?.toString() == text
+            return TextSnapshot(text, sample.offset, sample.selectionStart, sample.selectionEnd, proven)
+        }
+        val sample = connection.getExtractedText(ExtractedTextRequest().apply { if (!proveWordEnd) hintMaxChars = 3265 }, 0) ?: return null
+        val text = sample.text ?: return null
+        if (sample.partialStartOffset >= 0 || sample.startOffset < 0 || sample.selectionStart !in 0..text.length ||
+            sample.selectionEnd !in 0..text.length || kotlin.math.abs(sample.selectionStart - sample.selectionEnd) > 1600) return null
+        val left = (minOf(sample.selectionStart, sample.selectionEnd) - 1601).coerceAtLeast(0)
+        val right = (maxOf(sample.selectionStart, sample.selectionEnd) + 64).coerceAtMost(text.length)
+        return TextSnapshot(text.subSequence(left, right).toString(), sample.startOffset + left,
+            sample.selectionStart - left, sample.selectionEnd - left,
+            proveWordEnd && sample.partialEndOffset == -1 && sample.startOffset == 0 && right == text.length)
+    }
+
     fun replace(connection: InputConnection, target: RewriteTarget, suggestion: String): Boolean {
         if (!target.stillMatches(snapshot(connection))) return false
         if (target.snapshot.start != target.snapshot.end) return connection.commitText(suggestion, 1)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return false
         return connection.replaceText(target.start, target.end, suggestion, 1, null)
+    }
+
+    fun replaceRange(connection: InputConnection, range: EditorRange, replacement: String): Boolean {
+        if (!range.matches(editSnapshot(connection, proveWordEnd = range.needsEndProof))) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            return connection.replaceText(range.start, range.start + range.value.length, replacement, 1, null)
+        }
+        connection.beginBatchEdit()
+        try {
+            connection.finishComposingText()
+            if (!connection.setSelection(range.start, range.start + range.value.length)) return false
+            if (connection.getSelectedText(0)?.toString().orEmpty() == range.value &&
+                connection.commitText(replacement, 1)) return true
+            connection.setSelection(range.selectionStart, range.selectionEnd)
+            return false
+        } finally {
+            connection.endBatchEdit()
+        }
     }
 
     fun selectAll(connection: InputConnection) {

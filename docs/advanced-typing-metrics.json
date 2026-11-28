@@ -1,0 +1,618 @@
+{
+  "baseline_commit": "25bc05994f7f9ac0c6714fdeff4a33eefc46e90b",
+  "platforms": {
+    "android": {
+      "regression": {
+        "before": {
+          "groups": {
+            "spelling": {
+              "cases": 30,
+              "top_one": 17,
+              "top_three": 26,
+              "auto_correct": 17,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "segmentation": {
+              "cases": 16,
+              "top_one": 0,
+              "top_three": 1,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "keep": {
+              "cases": 14,
+              "top_one": 14,
+              "top_three": 14,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "next": {
+              "cases": 7,
+              "top_one": 5,
+              "top_three": 5,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "personal": {
+              "cases": 3,
+              "top_one": 1,
+              "top_three": 3,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            }
+          },
+          "timing": {
+            "cold_ms": 934.388459,
+            "queries": 1680,
+            "p50_ms": 0.082041,
+            "p95_ms": 0.315375
+          }
+        },
+        "after": {
+          "groups": {
+            "spelling": {
+              "cases": 30,
+              "top_one": 28,
+              "top_three": 30,
+              "auto_correct": 28,
+              "auto_wrong": 1,
+              "changed_protected": 0
+            },
+            "segmentation": {
+              "cases": 16,
+              "top_one": 14,
+              "top_three": 15,
+              "auto_correct": 14,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "keep": {
+              "cases": 14,
+              "top_one": 14,
+              "top_three": 14,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "next": {
+              "cases": 7,
+              "top_one": 7,
+              "top_three": 7,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "personal": {
+              "cases": 3,
+              "top_one": 3,
+              "top_three": 3,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            }
+          },
+          "timing": {
+            "cold_ms": 1605.704542,
+            "queries": 1680,
+            "p50_ms": 0.119958,
+            "p95_ms": 4.987042
+          }
+        }
+      },
+      "typo_sample": {
+        "before": {
+          "groups": {
+            "spelling": {
+              "cases": 352,
+              "top_one": 138,
+              "top_three": 342,
+              "auto_correct": 138,
+              "auto_wrong": 3,
+              "changed_protected": 0
+            },
+            "keep": {
+              "cases": 360,
+              "top_one": 359,
+              "top_three": 359,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 1
+            }
+          },
+          "timing": {
+            "cold_ms": 248.493541,
+            "queries": 17088,
+            "p50_ms": 0.014625,
+            "p95_ms": 0.156542
+          }
+        },
+        "after": {
+          "groups": {
+            "spelling": {
+              "cases": 352,
+              "top_one": 246,
+              "top_three": 340,
+              "auto_correct": 246,
+              "auto_wrong": 4,
+              "changed_protected": 0
+            },
+            "keep": {
+              "cases": 360,
+              "top_one": 359,
+              "top_three": 359,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 1
+            }
+          },
+          "timing": {
+            "cold_ms": 1185.763084,
+            "queries": 17088,
+            "p50_ms": 0.008583,
+            "p95_ms": 0.141042
+          }
+        }
+      },
+      "dialogue_holdout": {
+        "before": {
+          "groups": {
+            "next": {
+              "cases": 810,
+              "top_one": 38,
+              "top_three": 60,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "completion": {
+              "cases": 536,
+              "top_one": 14,
+              "top_three": 271,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            }
+          },
+          "timing": {
+            "cold_ms": 778.982834,
+            "queries": 32304,
+            "p50_ms": 0.008042,
+            "p95_ms": 0.206042
+          }
+        },
+        "after": {
+          "groups": {
+            "next": {
+              "cases": 810,
+              "top_one": 46,
+              "top_three": 79,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "completion": {
+              "cases": 536,
+              "top_one": 14,
+              "top_three": 274,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            }
+          },
+          "timing": {
+            "cold_ms": 512.853542,
+            "queries": 32304,
+            "p50_ms": 0.00525,
+            "p95_ms": 0.080542
+          }
+        }
+      },
+      "synthetic_glide": {
+        "cases": 160,
+        "top_one": 145,
+        "top_three": 155,
+        "rejected_of_four": 4,
+        "index_ms": 117.153166,
+        "p95_ms": 0.766084
+      }
+    },
+    "ios": {
+      "regression": {
+        "before": {
+          "groups": {
+            "spelling": {
+              "cases": 30,
+              "top_one": 26,
+              "top_three": 26,
+              "auto_correct": 15,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "segmentation": {
+              "cases": 16,
+              "top_one": 1,
+              "top_three": 1,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "keep": {
+              "cases": 14,
+              "top_one": 14,
+              "top_three": 14,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "next": {
+              "cases": 7,
+              "top_one": 5,
+              "top_three": 5,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "personal": {
+              "cases": 3,
+              "top_one": 3,
+              "top_three": 3,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            }
+          },
+          "timing": {
+            "cold_ms": 740.770334,
+            "queries": 1680,
+            "p50_ms": 0.06875,
+            "p95_ms": 0.46575
+          }
+        },
+        "after": {
+          "groups": {
+            "spelling": {
+              "cases": 30,
+              "top_one": 29,
+              "top_three": 30,
+              "auto_correct": 28,
+              "auto_wrong": 1,
+              "changed_protected": 0
+            },
+            "segmentation": {
+              "cases": 16,
+              "top_one": 15,
+              "top_three": 15,
+              "auto_correct": 14,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "keep": {
+              "cases": 14,
+              "top_one": 14,
+              "top_three": 14,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "next": {
+              "cases": 7,
+              "top_one": 7,
+              "top_three": 7,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "personal": {
+              "cases": 3,
+              "top_one": 3,
+              "top_three": 3,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            }
+          },
+          "timing": {
+            "cold_ms": 1241.065416,
+            "queries": 1680,
+            "p50_ms": 0.153833,
+            "p95_ms": 2.54025
+          }
+        }
+      },
+      "typo_sample": {
+        "before": {
+          "groups": {
+            "spelling": {
+              "cases": 352,
+              "top_one": 319,
+              "top_three": 343,
+              "auto_correct": 66,
+              "auto_wrong": 4,
+              "changed_protected": 0
+            },
+            "keep": {
+              "cases": 360,
+              "top_one": 359,
+              "top_three": 359,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 1
+            }
+          },
+          "timing": {
+            "cold_ms": 213.801375,
+            "queries": 17088,
+            "p50_ms": 0.003292,
+            "p95_ms": 0.150333
+          }
+        },
+        "after": {
+          "groups": {
+            "spelling": {
+              "cases": 352,
+              "top_one": 317,
+              "top_three": 340,
+              "auto_correct": 253,
+              "auto_wrong": 5,
+              "changed_protected": 0
+            },
+            "keep": {
+              "cases": 360,
+              "top_one": 359,
+              "top_three": 359,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 1
+            }
+          },
+          "timing": {
+            "cold_ms": 341.988542,
+            "queries": 17088,
+            "p50_ms": 0.031875,
+            "p95_ms": 0.264459
+          }
+        }
+      },
+      "dialogue_holdout": {
+        "before": {
+          "groups": {
+            "next": {
+              "cases": 810,
+              "top_one": 48,
+              "top_three": 90,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "completion": {
+              "cases": 536,
+              "top_one": 202,
+              "top_three": 250,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            }
+          },
+          "timing": {
+            "cold_ms": 744.703459,
+            "queries": 32304,
+            "p50_ms": 0.048583,
+            "p95_ms": 0.326959
+          }
+        },
+        "after": {
+          "groups": {
+            "next": {
+              "cases": 810,
+              "top_one": 58,
+              "top_three": 103,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            },
+            "completion": {
+              "cases": 536,
+              "top_one": 210,
+              "top_three": 258,
+              "auto_correct": 0,
+              "auto_wrong": 0,
+              "changed_protected": 0
+            }
+          },
+          "timing": {
+            "cold_ms": 324.357083,
+            "queries": 32304,
+            "p50_ms": 0.049292,
+            "p95_ms": 0.312292
+          }
+        }
+      },
+      "synthetic_glide": {
+        "cases": 160,
+        "top_one": 145,
+        "top_three": 155,
+        "rejected_of_four": 4,
+        "index_ms": 29.514416,
+        "p95_ms": 0.048458
+      }
+    }
+  },
+  "device_harnesses": {
+    "android_stage_a_emulator": {
+      "load_ms": 2050.427417,
+      "suggestion": {
+        "queries": 120,
+        "p50_ms": 1.544458,
+        "p95_ms": 10.699375
+      },
+      "autocorrect": {
+        "queries": 120,
+        "p50_ms": 0.798375,
+        "p95_ms": 8.150167
+      },
+      "cursor_range_and_suggestions": {
+        "queries": 120,
+        "p50_ms": 0.563917,
+        "p95_ms": 2.450959
+      }
+    },
+    "ios_simulator": {
+      "checksum": 9126,
+      "glide_index_ms": 42.18216700851917,
+      "model_load_cpu_ms": 359.068,
+      "model_load_ms": 507.838082998991,
+      "query_cpu_ms": 260.69999999999993,
+      "rss_after_model_bytes": 37421056,
+      "rss_after_queries_bytes": 41058304,
+      "rss_before_bytes": 25100288,
+      "target": "iPhone 18 Pro simulator iOS 27.2, optimized Swift CLI",
+      "timing": {
+        "boundary correction": {
+          "count": 700,
+          "p50_ms": 0.04329200088977814,
+          "p95_ms": 0.14900000393390656
+        },
+        "cursor ranking": {
+          "count": 700,
+          "p50_ms": 0.0719590038061142,
+          "p95_ms": 0.46799999475479126
+        },
+        "glide ranking": {
+          "count": 100,
+          "p50_ms": 0.0010409951210021973,
+          "p95_ms": 0.009084001183509827
+        },
+        "suggestions": {
+          "count": 700,
+          "p50_ms": 0.09624999761581421,
+          "p95_ms": 0.5351250022649765
+        }
+      }
+    },
+    "android_release_candidate": {
+      "load_ms": 728.445792,
+      "suggestion": {
+        "queries": 120,
+        "p50_ms": 1.521584,
+        "p95_ms": 11.4895
+      },
+      "autocorrect": {
+        "queries": 120,
+        "p50_ms": 1.271458,
+        "p95_ms": 7.779292
+      },
+      "cursor_range_and_suggestions": {
+        "queries": 120,
+        "p50_ms": 1.619959,
+        "p95_ms": 9.968083
+      },
+      "glide_index_load_ms": 630.796376,
+      "glide_decode": {
+        "queries": 120,
+        "p50_ms": 0.113958,
+        "p95_ms": 0.174625
+      },
+      "process_pss_kib": 87865
+    },
+    "ios_simulator_final": {
+      "checksum": 9360,
+      "glide_index_ms": 33.20925000309944,
+      "model_load_cpu_ms": 371.72299999999996,
+      "model_load_ms": 550.3543750047684,
+      "query_cpu_ms": 213.36299999999994,
+      "rss_after_model_bytes": 37502976,
+      "rss_after_queries_bytes": 40009728,
+      "rss_before_bytes": 25149440,
+      "target": "iPhone 18 Pro simulator iOS 27.2, optimized Swift CLI",
+      "timing": {
+        "boundary correction": {
+          "count": 700,
+          "p50_ms": 0.04225000739097595,
+          "p95_ms": 0.11220799386501312
+        },
+        "cursor ranking": {
+          "count": 700,
+          "p50_ms": 0.058834001421928406,
+          "p95_ms": 0.3286669999361038
+        },
+        "glide ranking": {
+          "count": 100,
+          "p50_ms": 0.0009579956531524658,
+          "p95_ms": 0.00562499463558197
+        },
+        "suggestions": {
+          "count": 700,
+          "p50_ms": 0.0690000057220459,
+          "p95_ms": 0.36545799672603607
+        }
+      }
+    }
+  },
+  "same_editor_taps": {
+    "gboard": [
+      [
+        "improvse",
+        "improvse "
+      ],
+      [
+        "teh",
+        "teh "
+      ],
+      [
+        "recieve",
+        "recieve "
+      ],
+      [
+        "tommorow",
+        "tommorow "
+      ],
+      [
+        "howareyou",
+        "howareyou "
+      ],
+      [
+        "iwanttogohome",
+        "iwanttogohomé "
+      ],
+      [
+        "kortesi",
+        "kortesi "
+      ]
+    ],
+    "kothakey": [
+      [
+        "improvse",
+        "improvse "
+      ],
+      [
+        "teh",
+        "the "
+      ],
+      [
+        "recieve",
+        "receive "
+      ],
+      [
+        "tommorow",
+        "tomorrow "
+      ],
+      [
+        "howareyou",
+        "how are you "
+      ],
+      [
+        "iwanttogohome",
+        "I want to go home "
+      ],
+      [
+        "kortesi",
+        "kortesi "
+      ]
+    ]
+  }
+}

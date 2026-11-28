@@ -90,7 +90,8 @@ internal data class TextSnapshot(
     val text: String,
     val offset: Int,
     val selectionStart: Int,
-    val selectionEnd: Int
+    val selectionEnd: Int,
+    val documentEndVerified: Boolean = false,
 ) {
     val start get() = minOf(selectionStart, selectionEnd)
     val end get() = maxOf(selectionStart, selectionEnd)

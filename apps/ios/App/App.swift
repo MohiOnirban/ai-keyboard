@@ -129,9 +129,17 @@ struct Preferences: View {
   @AppStorage("haptics", store: Settings.prefs) private var haptics = false
   @AppStorage("predictiveSuggestions", store: Settings.prefs) private var predictiveSuggestions = true
   @AppStorage("nextWordPrediction", store: Settings.prefs) private var nextWordPrediction = true
-  @AppStorage("autocorrect", store: Settings.prefs) private var autocorrect = false
-  @AppStorage("automaticCapitalization", store: Settings.prefs) private var automaticCapitalization = false
+  @AppStorage("autocorrect", store: Settings.prefs) private var autocorrect = true
+  @AppStorage("automaticCapitalization", store: Settings.prefs) private var automaticCapitalization = true
   @AppStorage("typingLearning", store: Settings.prefs) private var typingLearning = false
+  @AppStorage("automaticSpacing", store: Settings.prefs) private var automaticSpacing = true
+  @AppStorage("spaceAfterSuggestion", store: Settings.prefs) private var spaceAfterSuggestion = true
+  @AppStorage("cursorAware", store: Settings.prefs) private var cursorAware = true
+  @AppStorage("doubleSpacePeriod", store: Settings.prefs) private var doubleSpacePeriod = true
+  @AppStorage("glideTyping", store: Settings.prefs) private var glideTyping = true
+  @AppStorage("gestureTrail", store: Settings.prefs) private var gestureTrail = true
+  @AppStorage("voiceTyping", store: Settings.prefs) private var voiceTyping = true
+  @AppStorage("clipboardHistory", store: Settings.prefs) private var clipboardHistory = false
   @State private var confirmClearHistory = false
   func value(_ key: String, _ initial: String = "") -> Binding<String> {
     Binding(
@@ -188,16 +196,35 @@ struct Preferences: View {
         Section("Keyboard") {
           picker("Keyboard height", "height", ["Standard", "Compact", "Tall"])
           picker("Appearance", "theme", ["System", "Light", "Dark"])
+          Toggle("Glide typing", isOn: $glideTyping)
+          Toggle("Show gesture trail", isOn: $gestureTrail)
+          Toggle("Voice typing", isOn: $voiceTyping)
           Toggle("Haptics", isOn: $haptics)
         }
         Section("Offline typing") {
           Toggle("Predictive suggestions", isOn: $predictiveSuggestions)
           Toggle("Next-word prediction", isOn: $nextWordPrediction)
           Toggle("Autocorrect", isOn: $autocorrect)
-          Text("Space applies high-confidence English corrections. Tap Undo or Backspace to restore your spelling.")
+          Text("Space or punctuation applies high-confidence English corrections. Tap Undo or Backspace to restore your spelling.")
             .font(.footnote)
           Toggle("Auto-capitalization", isOn: $automaticCapitalization)
+          Toggle("Fix missing spaces", isOn: $automaticSpacing)
+          Toggle("Space after suggestions", isOn: $spaceAfterSuggestion)
+          Toggle("Suggestions at cursor", isOn: $cursorAware)
+          Toggle("Double-space period", isOn: $doubleSpacePeriod)
           NavigationLink("Personal dictionary") { PersonalDictionary() }
+        }
+        Section("Clipboard") {
+          Toggle("Remember clipboard items", isOn: $clipboardHistory)
+            .onChange(of: clipboardHistory) { _, enabled in if !enabled { Settings.clearClips() } }
+          if clipboardHistory {
+            Picker("Keep recent items", selection: value("clipLifetime", "1 hour")) {
+              ForEach(["15 minutes", "1 hour", "1 day"], id: \.self) { Text($0).tag($0) }
+            }
+            Text("History stores text you copy, cut or load in KothaKey. Pinned items stay until you remove them.")
+              .font(.footnote)
+            Button("Clear clipboard history", role: .destructive) { Settings.clearClips() }
+          }
         }
         Section("Personalized learning") {
           Toggle("Learn from typing", isOn: $typingLearning)

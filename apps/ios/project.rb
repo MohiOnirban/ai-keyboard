@@ -30,7 +30,7 @@ end
     target.resources_build_phase.add_file_reference(ref)
   end
   target.build_configurations.each do |c|
-    c.build_settings.merge!('PRODUCT_BUNDLE_IDENTIFIER'=>bundle,'INFOPLIST_FILE'=>dir+'/Info.plist','CODE_SIGN_ENTITLEMENTS'=>'Kotha.entitlements','SWIFT_VERSION'=>'5.0','TARGETED_DEVICE_FAMILY'=>'1,2','CURRENT_PROJECT_VERSION'=>'3','MARKETING_VERSION'=>'0.2.0','LD_RUNPATH_SEARCH_PATHS'=>'$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks')
+    c.build_settings.merge!('PRODUCT_BUNDLE_IDENTIFIER'=>bundle,'INFOPLIST_FILE'=>dir+'/Info.plist','CODE_SIGN_ENTITLEMENTS'=>'Kotha.entitlements','SWIFT_VERSION'=>'5.0','TARGETED_DEVICE_FAMILY'=>'1,2','CURRENT_PROJECT_VERSION'=>'4','MARKETING_VERSION'=>'0.3.0','LD_RUNPATH_SEARCH_PATHS'=>'$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks')
     c.build_settings['SWIFT_ACTIVE_COMPILATION_CONDITIONS']='$(inherited) DEBUG' if c.name=='Debug'
   end
 end

@@ -53,6 +53,11 @@ final class DeckKey: UIButton {
   let face = UIView(), hint = UILabel()
   var alternate: (() -> Void)?
   var isTypingKey = false
+  var observeTap: ((CGPoint) -> Void)?
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    if let touch = touches.first { observeTap?(touch.location(in: self)) }
+    super.touchesBegan(touches, with: event)
+  }
   private let kind: Kind
   private weak var previewHost: UIView?
   private var previewText: String?
@@ -144,6 +149,51 @@ final class DeckKey: UIButton {
 }
 
 // Small single-weight, original toolbar glyphs constructed in the same 24-point grid.
+// A recognizer stays possible for ordinary taps and long-press accents. Crossing a
+// letter width cancels the initial key before its touch-up action can insert it.
+final class LetterGlideRecognizer: UIGestureRecognizer {
+  var pitch: CGFloat = 40
+  var samples: [CGPoint] = []
+  private var tracked: UITouch?
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+    guard tracked == nil, touches.count == 1, let touch = touches.first else {
+      state = state == .possible ? .failed : .cancelled
+      return
+    }
+    tracked = touch
+    samples = [touch.location(in: view)]
+  }
+  override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+    guard let tracked, touches.contains(tracked), let first = samples.first else { return }
+    for touch in event.coalescedTouches(for: tracked) ?? [tracked] {
+      let point = touch.location(in: view)
+      if let previous = samples.last, hypot(point.x - previous.x, point.y - previous.y) < pitch * 0.09 { continue }
+      if samples.count >= 160 {
+        samples = samples.enumerated().compactMap { $0.offset.isMultiple(of: 2) ? $0.element : nil }
+      }
+      samples.append(point)
+    }
+    guard let last = samples.last else { return }
+    if state == .possible, hypot(last.x - first.x, last.y - first.y) >= pitch * 0.82 { state = .began }
+    else if state == .began || state == .changed { state = .changed }
+  }
+  override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+    guard let tracked, touches.contains(tracked) else { return }
+    if state == .began || state == .changed {
+      samples.append(tracked.location(in: view))
+      state = .ended
+    } else { state = .failed }
+  }
+  override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+    state = state == .possible ? .failed : .cancelled
+  }
+  override func reset() {
+    tracked = nil
+    samples.removeAll(keepingCapacity: false)
+    super.reset()
+  }
+}
+
 enum Tool: String, CaseIterable {
   case grammar = "Fix Grammar"
   case tone = "Improve & Tone"

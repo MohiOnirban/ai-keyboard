@@ -141,12 +141,31 @@ internal fun SettingsPage(
         Toggle("English autocorrection", saved.correction) { settings.correction = it; version++ }
         Toggle("Next-word prediction", saved.nextWord) { settings.nextWord = it; version++ }
         Toggle("Automatic English capitalization", saved.capitalization) { settings.automaticCapitalization = it; version++ }
+        Toggle("Separate joined words", saved.automaticSpacing) { settings.automaticSpacing = it; version++ }
+        Toggle("Space after suggestions", saved.spaceAfterSuggestion) { settings.spaceAfterSuggestion = it; version++ }
+        Toggle("Suggest when moving the cursor", saved.cursorSuggestions) { settings.cursorSuggestions = it; version++ }
+        Toggle("Double-space period", saved.doubleSpacePeriod) { settings.doubleSpacePeriod = it; version++ }
+        Toggle("Glide typing", saved.glideTyping) { settings.glideTyping = it; version++ }
+        Toggle("Show glide trail", saved.gestureTrail) { settings.gestureTrail = it; version++ }
+        Toggle("Voice typing", saved.voiceTyping) { settings.voiceTyping = it; version++ }
         Toggle("Personalized learning", saved.learning) { settings.learning = it; version++ }
         Text("Press Backspace or tap Undo immediately to restore the original word.")
         Text("When enabled, words and correction choices from supported text fields stay on this device. Private and specialized fields are excluded.")
         OutlinedButton(enabled = saved.hasLearnedTyping, onClick = { confirmation = "learning" }) { Text("Clear learned typing") }
     }
     DictionarySettings(settings)
+    KothaSection("Clipboard") {
+        Toggle("Keep clips I save", saved.clipboardHistory) { settings.clipboardHistory = it; version++ }
+        if (saved.clipboardHistory) {
+            Choice("Keep unpinned clips", listOf("1 day", "7 days", "30 days"),
+                if (saved.retentionDays == 1) "1 day" else "${saved.retentionDays} days") {
+                settings.retentionDays = it.substringBefore(' ').toInt()
+                settings.clips()
+                version++
+            }
+            Text("Save items in the keyboard clipboard. Pinned clips stay until you delete them.")
+        }
+    }
     KothaSection("Favorite styles") {
         Text("Favorites appear first when you open the message assistant.")
         Communication.styles.forEach { style ->
@@ -253,6 +272,15 @@ private class SettingsView(settings: LocalSettings) {
     val correction = settings.correction
     val nextWord = settings.nextWord
     val capitalization = settings.automaticCapitalization
+    val automaticSpacing = settings.automaticSpacing
+    val spaceAfterSuggestion = settings.spaceAfterSuggestion
+    val cursorSuggestions = settings.cursorSuggestions
+    val doubleSpacePeriod = settings.doubleSpacePeriod
+    val glideTyping = settings.glideTyping
+    val gestureTrail = settings.gestureTrail
+    val voiceTyping = settings.voiceTyping
+    val clipboardHistory = settings.clipboardHistory
+    val retentionDays = settings.retentionDays
     val learning = settings.learning
     val hasLearnedTyping = settings.hasLearnedTyping
     val favorites = settings.favorites

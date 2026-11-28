@@ -1,0 +1,17 @@
+KothaKey word frequencies
+This adapted data file, wordfreq.tsv, is licensed under Creative Commons
+Attribution-ShareAlike 4.0 International.
+https://creativecommons.org/licenses/by-sa/4.0/
+
+Source: FrequencyWords by Hermit Dave and contributors.
+Source revision: 525f9b560de45753a5ea01069454e72e9aa541c6.
+https://github.com/hermitdave/FrequencyWords/tree/525f9b560de45753a5ea01069454e72e9aa541c6/content/2018
+Upstream source data: OpenSubtitles 2018, distributed through OPUS.
+https://opus.nlpl.eu/OpenSubtitles
+
+Changes: used the 2018 en_50k.txt and bn_50k.txt lists, normalized case and
+Unicode, excluded punctuation fragments and mixed-script tokens, combined
+duplicates, kept 10,000 English and 6,000 Bengali entries, and converted to
+tab-separated language, word and frequency. Subtitle frequencies are a
+ranking signal and do not establish regional or editorial correctness.
+See scripts/prediction-frequencies.py for reproduction.

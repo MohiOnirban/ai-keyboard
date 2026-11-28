@@ -1,13 +1,15 @@
 package com.kothakeys.keyboard
 
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import android.util.Log
 import org.json.JSONObject
-import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -48,9 +50,8 @@ internal data class GenerationRequest(
         }
 }
 
-internal class AiError(message: String, val status: Int = 0) : IOException(message)
-
 internal class AiTask {
+    var stage = AiStage.CONFIGURATION
     @Volatile private var connection: HttpURLConnection? = null
     @Volatile private var future: Future<*>? = null
     @Volatile var cancelled = false
@@ -85,31 +86,72 @@ internal class AiTask {
     }
 }
 
-internal class AiClient private constructor(context: Context) {
-    private val credential = CredentialStore(context, BuildConfig.BACKEND_URL)
+internal class AiClient private constructor(private val context: Context) {
+    private val connectionSettings = context.getSharedPreferences("kotha_ai_connection", Context.MODE_PRIVATE)
+    private val credentialLock = Any()
     private val workers = Executors.newFixedThreadPool(3)
     private val main = Handler(Looper.getMainLooper())
+    private val emulator = Build.HARDWARE in setOf("goldfish", "ranchu")
 
-    fun usage(result: (Result<Usage>) -> Unit) = submit(result) { job ->
-        withSession(job, retryUnauthorized = true) { token -> request(job, "GET", "/v1/usage", token).toUsage() }
+    @Volatile
+    private var endpoint = backendOverride() ?: BuildConfig.BACKEND_URL
+
+    fun backendOverride(): String? = if (BuildConfig.DEBUG) {
+        connectionSettings.getString("debug_endpoint", null)?.let {
+            if (it == USB_BACKEND) it else normalizeHttpsOrigin(it)
+        }
+    } else null
+
+    fun configuredBackend(): String = endpoint
+
+    fun backendAvailability(): AiFailure? = backendUnavailable(endpoint, emulator)
+
+    fun setBackendOverride(value: String?): Boolean {
+        if (!BuildConfig.DEBUG) return false
+        val origin = if (value == null) null else normalizeHttpsOrigin(value) ?: return false
+        applyBackendOverride(origin)
+        return true
     }
 
-    fun generate(input: GenerationRequest, result: (Result<Generation>) -> Unit) = submit(result) { job ->
-        if (input.text.isBlank() || input.text.length > 1600) throw AiError("Enter between 1 and 1,600 characters.")
+    fun useUsbBackend() {
+        if (BuildConfig.DEBUG) applyBackendOverride(USB_BACKEND)
+    }
+
+    private fun applyBackendOverride(base: String?) {
+        connectionSettings.edit().putString("debug_endpoint", base).apply()
+        endpoint = base ?: BuildConfig.BACKEND_URL
+    }
+
+    fun checkConnection(result: (Result<Unit>) -> Unit) = submit(result) { job, base ->
+        val response = request(job, base, "GET", "/health", readTimeout = 6000)
+        if (response.opt("status") != "ok") throw AiError(AiFailure.PARSING)
+    }
+
+    fun usage(result: (Result<Usage>) -> Unit) = submit(result) { job, base ->
+        withSession(job, base, retryUnauthorized = true) { token ->
+            request(job, base, "GET", "/v1/usage", token, readTimeout = 6000).toUsage()
+        }
+    }
+
+    fun generate(input: GenerationRequest, result: (Result<Generation>) -> Unit) = submit(result) { job, base ->
+        if (input.text.isBlank() || input.text.length > 1600) {
+            throw AiError(AiFailure.INVALID, message = "Enter between 1 and 1,600 characters.")
+        }
         val key = UUID.randomUUID().toString()
-        withSession(job, retryUnauthorized = false) { token ->
-            val data = request(job, "POST", "/v1/generate", token, input.toJson(), key)
-            val suggestion = data.getString("suggestion")
-            if (suggestion.isBlank() || suggestion.length > 4800) throw AiError("AI returned an unusable suggestion.")
+        withSession(job, base, retryUnauthorized = false) { token ->
+            val data = request(job, base, "POST", "/v1/generate", token, input.toJson(), key)
+            val suggestion = data.opt("suggestion") as? String ?: throw AiError(AiFailure.PARSING)
+            if (suggestion.isBlank() || suggestion.length > 4800) throw AiError(AiFailure.PARSING)
             Generation(suggestion, data.toUsage())
         }
     }
 
-    fun reset(result: (Result<Unit>) -> Unit) = submit(result) { job ->
-        synchronized(credential) {
+    fun reset(result: (Result<Unit>) -> Unit) = submit(result) { job, base ->
+        synchronized(credentialLock) {
+            val credential = CredentialStore(context, base)
             credential.read()?.let { token ->
                 try {
-                    request(job, "DELETE", "/v1/session", token, JSONObject())
+                    request(job, base, "DELETE", "/v1/session", token, JSONObject(), readTimeout = 6000)
                 } catch (error: AiError) {
                     if (error.status != 401) throw error
                 }
@@ -118,39 +160,57 @@ internal class AiClient private constructor(context: Context) {
         }
     }
 
-    private fun <T> submit(callback: (Result<T>) -> Unit, work: (AiTask) -> T): AiTask {
+    private fun <T> submit(callback: (Result<T>) -> Unit, work: (AiTask, String) -> T): AiTask {
         val task = AiTask()
+        val base = endpoint
         task.setFuture(workers.submit {
+            val started = SystemClock.elapsedRealtime()
             val result = runCatching {
                 task.checkActive()
-                work(task)
+                checkEndpoint(base)
+                work(task, base)
             }.recoverCatching {
-                if (it is AiError) throw it
-                throw AiError("Couldn’t reach AI. Check your connection and try again.")
+                val failure = connectionFailure(it)
+                if (!task.cancelled) {
+                    val elapsed = SystemClock.elapsedRealtime() - started
+                    Log.w("KothaKeyAI", "stage=${task.stage.name} code=${failure.failure.name} status=${failure.status} duration_ms=$elapsed")
+                }
+                throw failure
             }
-            main.post { if (!task.cancelled) callback(result) }
+            main.post {
+                if (!task.cancelled) {
+                    callback(if (endpoint == base) result else Result.failure(AiError(AiFailure.ENDPOINT_CHANGED)))
+                }
+            }
         })
         return task
     }
 
-    private fun <T> withSession(job: AiTask, retryUnauthorized: Boolean, action: (String) -> T): T {
-        val token = ensureSession(job)
+    private fun checkEndpoint(base: String) {
+        if (base != endpoint) throw AiError(AiFailure.ENDPOINT_CHANGED)
+        backendUnavailable(base, emulator)?.let { throw AiError(it) }
+    }
+
+    private fun <T> withSession(job: AiTask, base: String, retryUnauthorized: Boolean, action: (String) -> T): T {
+        val credential = CredentialStore(context, base)
+        val token = ensureSession(job, base, credential)
         return try {
             action(token)
         } catch (error: AiError) {
             if (error.status != 401) throw error
-            synchronized(credential) { if (credential.read() == token) credential.clear() }
+            synchronized(credentialLock) { if (credential.read() == token) credential.clear() }
             if (!retryUnauthorized) throw error
-            action(ensureSession(job))
+            action(ensureSession(job, base, credential))
         }
     }
 
-    private fun ensureSession(job: AiTask): String = synchronized(credential) {
+    private fun ensureSession(job: AiTask, base: String, credential: CredentialStore): String = synchronized(credentialLock) {
         job.checkActive()
-        credential.read() ?: request(job, "POST", "/v1/sessions", payload = JSONObject())
+        checkEndpoint(base)
+        credential.read() ?: request(job, base, "POST", "/v1/sessions", payload = JSONObject(), readTimeout = 6000)
             .getString("token")
             .also { token ->
-                if (token.length !in 20..1024 || token.any(Char::isWhitespace)) throw AiError("Couldn’t set up AI.")
+                if (!sessionPattern.matches(token)) throw AiError(AiFailure.PARSING)
                 credential.write(token)
                 job.checkActive()
             }
@@ -158,21 +218,23 @@ internal class AiClient private constructor(context: Context) {
 
     private fun request(
         job: AiTask,
+        base: String,
         method: String,
         path: String,
         token: String? = null,
         payload: JSONObject? = null,
-        idempotencyKey: String? = null
+        idempotencyKey: String? = null,
+        readTimeout: Int = 55_000
     ): JSONObject {
         job.checkActive()
-        val base = BuildConfig.BACKEND_URL
-        if (base.isEmpty()) throw AiError("AI is unavailable in this build.")
+        checkEndpoint(base)
+        job.stage = AiStage.forPath(path)
         val connection = URI.create(base + path).toURL().openConnection() as HttpURLConnection
         job.attach(connection)
         try {
             connection.requestMethod = method
             connection.connectTimeout = 6000
-            connection.readTimeout = 55_000
+            connection.readTimeout = readTimeout
             connection.instanceFollowRedirects = false
             connection.useCaches = false
             connection.setRequestProperty("Accept", "application/json")
@@ -187,7 +249,7 @@ internal class AiClient private constructor(context: Context) {
                 connection.outputStream.use { stream -> stream.write(bytes) }
             }
             val status = connection.responseCode
-            if (status !in 200..299) throw AiError(errorMessage(status), status)
+            if (status !in 200..299) throw httpFailure(status, connection.getHeaderField("kotha-error-code"))
             if (status == 204) return JSONObject()
             val response = connection.inputStream.bufferedReader(StandardCharsets.UTF_8).use { reader ->
                 val buffer = CharArray(4096)
@@ -196,7 +258,7 @@ internal class AiClient private constructor(context: Context) {
                         job.checkActive()
                         val length = reader.read(buffer)
                         if (length < 0) break
-                        if (this.length + length > 16384) throw AiError("AI returned an unusable response.")
+                        if (this.length + length > 16384) throw AiError(AiFailure.PARSING)
                         append(buffer, 0, length)
                     }
                 }
@@ -208,21 +270,16 @@ internal class AiClient private constructor(context: Context) {
         }
     }
 
-    private fun JSONObject.toUsage() = Usage(getInt("used"), getInt("limit")).also {
-        if (it.used < 0 || it.limit < 0) throw AiError("AI returned an unusable response.")
-    }
-
-    private fun errorMessage(status: Int) = when (status) {
-        400 -> "Check the message and try again."
-        401 -> "Your AI session expired. Try again."
-        409 -> "This request already reached AI. Try again if you still need a suggestion."
-        422 -> "AI couldn’t help with this request. You can try different wording."
-        429 -> "AI usage is limited right now. Check your allowance in Settings."
-        503 -> "AI is temporarily unavailable. You can keep typing."
-        else -> "AI couldn’t complete the request. Try again shortly."
+    private fun JSONObject.toUsage() = Usage(
+        opt("used") as? Int ?: throw AiError(AiFailure.PARSING),
+        opt("limit") as? Int ?: throw AiError(AiFailure.PARSING)
+    ).also {
+        if (it.used < 0 || it.limit < 0) throw AiError(AiFailure.PARSING)
     }
 
     companion object {
+        const val USB_BACKEND = "http://127.0.0.1:4000"
+        private val sessionPattern = Regex("[A-Za-z0-9_-]{43}")
         @Volatile private var instance: AiClient? = null
 
         fun get(context: Context): AiClient = instance ?: synchronized(this) {

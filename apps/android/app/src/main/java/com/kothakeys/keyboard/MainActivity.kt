@@ -22,11 +22,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -40,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,15 +64,22 @@ import androidx.core.view.WindowCompat
 class MainActivity : ComponentActivity() {
     private val settings by lazy { LocalSettings(this) }
     private var activation by mutableStateOf(Activation(false, false))
+    private var keyboardSettingsRequests by mutableStateOf(0)
+    private var settingsTheme by mutableStateOf("System")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent.getBooleanExtra(OPEN_SETTINGS, false)) keyboardSettingsRequests++
+        settingsTheme = settings.theme
         enableEdgeToEdge()
         setContent {
             CompanionRoot(
                 settings,
                 AiClient.get(this),
                 activation,
+                keyboardSettingsRequests,
+                settingsTheme,
+                { settingsTheme = it; settings.theme = it },
                 { startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS)) },
                 { getSystemService(InputMethodManager::class.java).showInputMethodPicker() }
             )
@@ -76,12 +88,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        settingsTheme = settings.theme
         updateActivation()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(OPEN_SETTINGS, false)) keyboardSettingsRequests++
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) updateActivation()
+        if (hasFocus) {
+            settingsTheme = settings.theme
+            updateActivation()
+        }
     }
 
     private fun updateActivation() {
@@ -93,6 +114,10 @@ class MainActivity : ComponentActivity() {
             selected?.let(ComponentName::unflattenFromString) == keyboard
         )
     }
+
+    internal companion object {
+        const val OPEN_SETTINGS = "com.kothakeys.keyboard.OPEN_SETTINGS"
+    }
 }
 
 private data class Activation(val enabled: Boolean, val selected: Boolean)
@@ -103,11 +128,16 @@ private fun CompanionRoot(
     settings: LocalSettings,
     client: AiClient,
     activation: Activation,
+    keyboardSettingsRequests: Int,
+    theme: String,
+    changeTheme: (String) -> Unit,
     enable: () -> Unit,
     pick: () -> Unit
 ) {
     var page by remember { mutableStateOf(Page.Start) }
-    var theme by remember { mutableStateOf(settings.theme) }
+    LaunchedEffect(keyboardSettingsRequests) {
+        if (keyboardSettingsRequests > 0) page = Page.Settings
+    }
     var usage by remember { mutableStateOf<Usage?>(null) }
     val dark = theme == "Dark" || theme == "System" && androidx.compose.foundation.isSystemInDarkTheme()
     val colors = KeyboardColors.from(dark)
@@ -162,10 +192,7 @@ private fun CompanionRoot(
                     when (page) {
                         Page.Start -> StartPage(activation, enable, pick) { page = Page.Playground }
                         Page.Playground -> Playground(settings, client) { usage = it }
-                        Page.Settings -> SettingsPage(settings, client, usage, { usage = it }) {
-                            theme = it
-                            settings.theme = it
-                        }
+                        Page.Settings -> SettingsPage(settings, client, usage, { usage = it }, changeTheme)
                     }
                 }
             }
@@ -200,7 +227,7 @@ private fun StartPage(activation: Activation, enable: () -> Unit, pick: () -> Un
     }
     KothaSection("Typing practice") {
         PracticeField()
-        Text("Tap 文 to cycle layouts or hold it to choose. In phonetic mode, type ami bhalo achi.")
+        Text("Hold the spacebar or open the tools menu to choose a typing language. In phonetic mode, type ami bhalo achi.")
     }
     KothaSection("Try the message assistant") {
         Text("You can try a rewrite here using your current keyboard.")
@@ -211,8 +238,14 @@ private fun StartPage(activation: Activation, enable: () -> Unit, pick: () -> Un
 @Composable
 private fun PracticeField() {
     val colors = MaterialTheme.colorScheme
+    val bringIntoView = remember { BringIntoViewRequester() }
+    var focused by remember { mutableStateOf(false) }
+    val imeHeight = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(focused, imeHeight) {
+        if (focused && imeHeight > 0) bringIntoView.bringIntoView()
+    }
     AndroidView(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().bringIntoViewRequester(bringIntoView),
         factory = { context ->
             EditText(context).apply {
                 hint = "Try typing here"
@@ -237,7 +270,10 @@ private fun PracticeField() {
                     setStroke((density * if (focused) 2 else 1).toInt(), (if (focused) colors.primary else colors.outline).toArgb())
                 }
             }
-            field.setOnFocusChangeListener { _, focused -> updateOutline(focused) }
+            field.setOnFocusChangeListener { _, hasFocus ->
+                focused = hasFocus
+                updateOutline(hasFocus)
+            }
             updateOutline(field.hasFocus())
         }
     )

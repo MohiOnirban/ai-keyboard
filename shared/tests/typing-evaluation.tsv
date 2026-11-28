@@ -1,0 +1,67 @@
+kind	language	context	input	expected
+spelling	en	hey how ya doing?	im	I'm
+spelling	en	please	dont	don't
+spelling	en	we	cant	can't
+spelling	en	she	didnt	didn't
+spelling	en	I will	recieve	receive
+spelling	en		helo	hello
+spelling	en	follow	teh	the
+spelling	en	I know	becau	because
+spelling	en	here is	anotherr	another
+spelling	en	we can	mesage	message
+spelling	en	can you	remmeber	remember
+spelling	en	later this	mroning	morning
+spelling	en	give me a	seconf	second
+spelling	en	take the	trqin	train
+spelling	en	please	callme	call me
+spelling	en	would you	liketo	like to
+spelling	en	leave it	therre	there
+spelling	en	I think	youre	you're
+spelling	en	we	wont	won't
+spelling	en	we can	reat	rest
+next	en	How are		you
+next	en	Thank		you
+next	en	I am going		to
+next	en	See you		soon
+next	en	I would		rather
+next	en	we can		try
+next	en	If you		want
+next	bn	কেমন		আছো
+next	bn	আমরা কি		আরেকটু
+next	bn	আমি		একটু
+next	bn	কাল সকালে		দোকানটা
+next	banglish	ami tomake		bhalobashi
+next	banglish	ami ektu		pore
+next	banglish	moi ektu		pore
+next	banglish	tui ki		koros
+completion	en	send the	repor	report
+completion	en	at the	sta	station
+completion	en	grab an	umb	umbrella
+completion	bn	তুমি	কেম	কেমন
+completion	bn	আমি	ফের	ফেরত
+completion	bn	আমার	বই	বইটা
+completion	banglish	ami ekhon kaj	kort	kortesi
+completion	banglish	tui	janai	janailei
+completion	banglish	tomar	shom	shomoy
+keep	en	ask	Fahim	Fahim
+keep	en	open	kotha.dev	kotha.dev
+keep	en	email	hi@example.com	hi@example.com
+keep	en	team	Qasim	Qasim
+keep	en	we can	meet	meet
+keep	en	the ancient	cant	cant
+keep	en	ordinary	form	form
+keep	en	it is	fine	fine
+keep	en	save your	work	work
+keep	bn	আমি	ভালো	ভালো
+keep	bn		কই	কই
+keep	banglish	ami	moi	moi
+keep	banglish	tui ki	koros	koros
+keep	banglish	tui ki	koris	koris
+keep	banglish	kaj	kortesi	kortesi
+keep	banglish	tumi	janailei	janailei
+keep	banglish	ajke	hoito	hoito
+keep	banglish	ami ekhon	busy	busy
+keep	banglish	ami office e	call	call
+personal	en	ask	taz	Tazbir
+personal	bn		ফার	ফারহানা
+personal	banglish	kal	moin	Moinuddin

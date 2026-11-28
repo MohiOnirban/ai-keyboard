@@ -11,9 +11,14 @@ type Usage = {
   outputTokens: number | null;
 };
 
+export type ProviderFailure = "provider_auth" | "provider_quota" | "provider_rate"
+  | "provider_restricted" | "provider_timeout" | "provider_dns" | "provider_tls"
+  | "provider_http" | "provider_response";
+
 export type Result = (
   | { kind: "suggestion"; text: string }
-  | { kind: "error" | "refusal" }
+  | { kind: "refusal" }
+  | { kind: "error"; reason?: ProviderFailure }
 ) & Usage;
 
 const noUsage: Usage = { billedMicros: null, inputTokens: null, outputTokens: null };
@@ -81,15 +86,49 @@ export function makeProvider(config: Config, fetcher = fetch): Generate {
       if (record(value) && (value.error_type === "refusal" || value.error_type === "content_policy_violation")) {
         return { kind: "refusal", ...usage };
       }
-      if (!response.ok || !record(value) || value.status !== "completed" || value.error != null) {
-        return { kind: "error", ...usage };
+      if (!response.ok) return { kind: "error", reason: providerStatus(response.status), ...usage };
+      if (!record(value)) return { kind: "error", reason: "provider_response", ...usage };
+      if (record(value.error) && typeof value.error.code === "number" && value.error.code >= 400) {
+        return { kind: "error", reason: providerStatus(value.error.code), ...usage };
+      }
+      if (value.status !== "completed" || value.error != null) {
+        return { kind: "error", reason: "provider_response", ...usage };
       }
       return readSuggestion(value, usage);
-    } catch {
-      // A timed-out or unreadable response may have accrued charges.
-      return { kind: "error", ...noUsage };
+    } catch (error) {
+      // Transport failures can still have accrued charges. Never expose the exception or its message.
+      return { kind: "error", reason: providerTransport(error), ...noUsage };
     }
   };
+}
+
+function providerStatus(status: number): ProviderFailure {
+  switch (status) {
+    case 401: return "provider_auth";
+    case 402: return "provider_quota";
+    case 403:
+    case 404: return "provider_restricted";
+    case 408:
+    case 524: return "provider_timeout";
+    case 429: return "provider_rate";
+    default: return "provider_http";
+  }
+}
+
+function providerTransport(error: unknown): ProviderFailure {
+  if (record(error) && (error.name === "TimeoutError" || error.name === "AbortError")) {
+    return "provider_timeout";
+  }
+  const code = record(error) && record(error.cause) ? error.cause.code : null;
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN") return "provider_dns";
+  if (code === "ETIMEDOUT" || code === "UND_ERR_CONNECT_TIMEOUT" ||
+      code === "UND_ERR_HEADERS_TIMEOUT" || code === "UND_ERR_BODY_TIMEOUT") return "provider_timeout";
+  if (typeof code === "string" && (code.startsWith("ERR_TLS_") || code.startsWith("ERR_SSL_")
+      || ["DEPTH_ZERO_SELF_SIGNED_CERT", "SELF_SIGNED_CERT_IN_CHAIN", "CERT_HAS_EXPIRED",
+        "UNABLE_TO_VERIFY_LEAF_SIGNATURE", "UNABLE_TO_GET_ISSUER_CERT_LOCALLY"].includes(code))) {
+    return "provider_tls";
+  }
+  return "provider_http";
 }
 
 async function readJson(response: Response): Promise<unknown> {
@@ -105,9 +144,17 @@ async function readJson(response: Response): Promise<unknown> {
       if (done) break;
       size += value.byteLength;
       if (size > MAX_RESPONSE_BYTES) return null;
-      body += decoder.decode(value, { stream: true });
+      try {
+        body += decoder.decode(value, { stream: true });
+      } catch {
+        return null;
+      }
     }
-    return JSON.parse(body + decoder.decode());
+    try {
+      return JSON.parse(body + decoder.decode());
+    } catch {
+      return null;
+    }
   } finally {
     // Cancel on oversized or malformed streams. On EOF, cancel is a no-op.
     void reader.cancel().catch(() => {});
@@ -130,7 +177,7 @@ function readUsage(value: unknown, config: Config): Usage {
 }
 
 function readSuggestion(value: Record<string, unknown>, usage: Usage): Result {
-  if (!Array.isArray(value.output)) return { kind: "error", ...usage };
+  if (!Array.isArray(value.output)) return { kind: "error", reason: "provider_response", ...usage };
   const content = value.output
     .filter((item) => record(item) && item.type === "message" && item.role === "assistant")
     .flatMap((item) => Array.isArray(item.content) ? item.content : []);
@@ -139,7 +186,7 @@ function readSuggestion(value: Record<string, unknown>, usage: Usage): Result {
   }
   if (content.length !== 1 || !record(content[0]) || content[0].type !== "output_text"
     || typeof content[0].text !== "string") {
-    return { kind: "error", ...usage };
+    return { kind: "error", reason: "provider_response", ...usage };
   }
   try {
     const parsed: unknown = JSON.parse(content[0].text);
@@ -149,7 +196,7 @@ function readSuggestion(value: Record<string, unknown>, usage: Usage): Result {
   } catch {
     // Parsing errors can contain provider output, so only return a fixed error.
   }
-  return { kind: "error", ...usage };
+  return { kind: "error", reason: "provider_response", ...usage };
 }
 
 function validSuggestion(value: unknown): value is string {

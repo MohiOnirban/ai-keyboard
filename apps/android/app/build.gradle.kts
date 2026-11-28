@@ -23,8 +23,8 @@ android {
         applicationId = "com.kothakeys.keyboard"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 3
+        versionName = "0.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -61,6 +61,12 @@ abstract class CopyPhoneticAssets : DefaultTask() {
     @get:InputFile
     abstract val rules: RegularFileProperty
 
+    @get:InputFile
+    abstract val predictions: RegularFileProperty
+
+    @get:InputFiles
+    abstract val lexicon: ConfigurableFileCollection
+
     @get:InputDirectory
     abstract val avro: DirectoryProperty
 
@@ -73,8 +79,9 @@ abstract class CopyPhoneticAssets : DefaultTask() {
     @TaskAction
     fun copyRules() {
         output.get().asFile.deleteRecursively()
-        val rulesFile = rules.get().asFile
-        rulesFile.copyTo(output.file(rulesFile.name).get().asFile, overwrite = true)
+        (listOf(rules.get().asFile, predictions.get().asFile) + lexicon.files).forEach { asset ->
+            asset.copyTo(output.file(asset.name).get().asFile, overwrite = true)
+        }
         listOf("grammar.json", "avro-lib.js", "LICENSE.txt", "NOTICE.txt").forEach { item ->
             avro.file(item).get().asFile.copyTo(output.file("avro/$item").get().asFile, overwrite = true)
         }
@@ -84,6 +91,10 @@ abstract class CopyPhoneticAssets : DefaultTask() {
 
 val copyPhonetic = tasks.register<CopyPhoneticAssets>("copyPhoneticAssets") {
     rules.set(rootProject.file("../../shared/phonetic.json"))
+    predictions.set(rootProject.file("../../shared/predict.tsv"))
+    lexicon.from(listOf("wordfreq.tsv", "wordfreq-NOTICE.txt", "wordfreq-LICENSE.txt").map {
+        rootProject.file("../../shared/$it")
+    })
     avro.set(rootProject.file("../../shared/avro"))
     adapter.set(rootProject.file("../../shared/android/Avro.kt"))
     output.set(layout.buildDirectory.dir("generated/phoneticAssets"))

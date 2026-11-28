@@ -10,7 +10,8 @@ const GENERATION_RETENTION = 45 * DAY;
 export type Reservation = { sessionId: string; requestId: string };
 export type Admission =
   | { status: "accepted"; reservation: Reservation }
-  | { status: "unauthorized" | "duplicate" | "rate" | "quota" | "busy" | "unavailable" };
+  | { status: "unauthorized" | "duplicate" | "rate" | "quota" | "busy" }
+  | { status: "unavailable"; budget?: true };
 
 export interface Outcome {
   successful: boolean;
@@ -130,7 +131,7 @@ export class Ledger {
         const reserve = BigInt(this.config.reserveMicros);
         if (BigInt(spend.daily) + reserve > BigInt(this.config.dailyBudgetMicros)
           || BigInt(spend.monthly) + reserve > BigInt(this.config.monthlyBudgetMicros)) {
-          return { status: "unavailable" };
+          return { status: "unavailable", budget: true };
         }
       }
 

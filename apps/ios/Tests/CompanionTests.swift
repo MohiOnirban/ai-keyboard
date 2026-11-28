@@ -96,7 +96,7 @@ final class CompanionTests: XCTestCase {
     for letter in "meeting" { app.buttons[String(letter)].firstMatch.tap() }
     app.buttons["Space"].tap()
     app.buttons["Fix Grammar"].tap()
-    app.buttons["Generate"].tap()
+    startIfNeeded(in: app)
     let insert = app.buttons["Insert"]
     XCTAssertTrue(insert.waitForExistence(timeout: 25), app.debugDescription)
     XCTAssertEqual(input.value as? String, "meeting ")
@@ -169,7 +169,7 @@ final class CompanionTests: XCTestCase {
     for letter in "meeting" { app.buttons[String(letter)].firstMatch.tap() }
     app.buttons["Space"].tap()
     app.buttons["Fix Grammar"].tap()
-    app.buttons["Generate"].tap()
+    startIfNeeded(in: app)
     let insert = app.buttons["Insert"]
     XCTAssertTrue(insert.waitForExistence(timeout: 20), app.debugDescription)
     input.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.1)).tap()
@@ -211,19 +211,37 @@ final class CompanionTests: XCTestCase {
     XCTAssertEqual(z.minX - q.minX, q.width * 1.5, accuracy: 1.5)
     XCTAssertGreaterThan(app.buttons["Shift"].frame.width, q.width)
     XCTAssertGreaterThan(app.buttons["Backspace"].frame.width, q.width)
-    XCTAssertGreaterThan(app.buttons["Space"].frame.width, q.width * 3)
+    XCTAssertEqual(app.buttons["Space"].frame.width, q.width * 5, accuracy: 1)
+    XCTAssertEqual(app.buttons["Return"].frame.width, q.width * 2.5, accuracy: 1)
+    XCTAssertTrue(app.buttons["emoji-key"].exists)
     print("KOTHA_GEOMETRY q=\(q) a=\(a) z=\(z) space=\(app.buttons["Space"].frame)")
     shot("01-english-light", app)
     app.buttons["q"].press(forDuration: 0.7)
     XCTAssertEqual(input.value as? String, "1")
-    app.buttons["?123"].tap()
+    app.buttons["123"].tap()
     shot("02-symbols", app)
-    app.buttons["=\\<"].tap()
+    app.buttons["#+="].tap()
     shot("03-secondary-symbols", app)
     app.buttons["123"].tap()
+    XCTAssertTrue(app.buttons["£"].exists)
+    openNumeric(in: app)
     shot("04-numeric", app)
     XCTAssertEqual(app.buttons["0"].frame.midX, app.buttons["2"].frame.midX, accuracy: 1)
+    XCTAssertEqual(app.buttons["1"].frame.width, app.buttons["2"].frame.width, accuracy: 1)
+    XCTAssertEqual(app.buttons["2"].frame.width, app.buttons["3"].frame.width, accuracy: 1)
+    XCTAssertEqual(app.buttons["0"].frame.height, q.height, accuracy: 1)
+    XCTAssertEqual(app.buttons["Backspace"].frame.midY, app.buttons["0"].frame.midY, accuracy: 1)
     app.buttons["0"].tap()
+    app.buttons["Tools"].tap()
+    XCTAssertTrue(app.buttons["Theme"].exists)
+    XCTAssertTrue(app.buttons["Clipboard"].exists)
+    XCTAssertTrue(app.buttons["Emoji"].exists)
+    XCTAssertTrue(app.buttons["Voice input"].exists)
+    XCTAssertEqual(app.buttons["Theme"].frame.minY, app.buttons["Clipboard"].frame.minY, accuracy: 1)
+    XCTAssertEqual(app.buttons["Theme"].frame.minX, app.buttons["Emoji"].frame.minX, accuracy: 1)
+    shot("phase2-tools-dashboard", app)
+    app.buttons["Close tools"].tap()
+    XCTAssertTrue(app.buttons["0"].exists)
     app.buttons["ABC"].tap()
     chooseLayout("বাংলা", in: app)
     shot("05-direct-bangla", app)
@@ -279,8 +297,7 @@ final class CompanionTests: XCTestCase {
     let input = showExtension(in: app)
     chooseLayout("English", in: app)
     for ch in "im on teh bus" { app.buttons[ch == " " ? "Space" : String(ch)].firstMatch.tap() }
-    // A punctuation key returns from local completions to the toolbar.
-    app.buttons["."].tap()
+    typeOnKotha(".", in: app)
     let draft = input.value as? String
     let top = app.buttons["Fix Grammar"].frame.minY
     let bottom = app.buttons["Space"].frame.maxY
@@ -290,8 +307,11 @@ final class CompanionTests: XCTestCase {
       XCTAssertTrue(back.exists)
       XCTAssertFalse(app.buttons["q"].exists)
       XCTAssertEqual(back.frame.minY, top, accuracy: 1)
-      XCTAssertEqual(app.buttons["Generate"].frame.maxY, bottom, accuracy: 1)
-      shot("ai-\(i)-input", app)
+      let submit = generationButton(in: app)
+      if submit.exists {
+        XCTAssertEqual(submit.frame.maxY, bottom, accuracy: 1)
+        shot("ai-\(i)-input", app)
+      }
       if label == "Translation" {
         app.buttons["Edit input"].tap()
         for _ in (draft ?? "") { app.buttons["Backspace"].tap() }
@@ -299,11 +319,11 @@ final class CompanionTests: XCTestCase {
           if ch == "H" { app.buttons["Shift"].tap() }
           app.buttons[ch == " " ? "Space" : String(ch)].firstMatch.tap()
         }
-        app.buttons["?123"].tap()
+        app.buttons["123"].tap()
         app.buttons["?"].tap()
         app.buttons["Done"].tap()
       }
-      app.buttons["Generate"].tap()
+      startIfNeeded(in: app)
       let generating = app.staticTexts["Generating…"]
       if generating.waitForExistence(timeout: 2) {
         XCTAssertEqual(app.buttons["Cancel"].frame.maxY, bottom, accuracy: 1)
@@ -319,15 +339,15 @@ final class CompanionTests: XCTestCase {
       XCTAssertTrue(app.buttons["q"].exists)
       XCTAssertEqual(input.value as? String, draft)
     }
-    app.buttons["Emoji"].tap()
+    app.buttons["emoji-key"].tap()
     shot("utility-emoji", app)
     app.buttons["Return to keyboard"].tap()
     app.buttons["Clipboard"].tap()
     shot("utility-clipboard", app)
     app.buttons["Return to keyboard"].tap()
-    app.buttons["More options"].tap()
+    app.buttons["Tools"].tap()
     shot("utility-more", app)
-    app.buttons["Return to keyboard"].tap()
+    app.buttons["Close tools"].tap()
     print("KOTHA_STABLE top=\(top) bottom=\(bottom) across all four tools")
   }
 
@@ -341,15 +361,17 @@ final class CompanionTests: XCTestCase {
     for c in "teh." { app.buttons[String(c)].firstMatch.tap() }
     input.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.12)).doubleTap()
     app.buttons["Fix Grammar"].tap()
-    XCTAssertTrue(
-      app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Selected passage"))
-        .firstMatch.exists, app.debugDescription)
-    app.buttons["Generate"].tap()
+    if generationButton(in: app).exists {
+      XCTAssertTrue(
+        app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Selected passage"))
+          .firstMatch.exists, app.debugDescription)
+      startIfNeeded(in: app)
+    }
     if app.staticTexts["Generating…"].waitForExistence(timeout: 2) {
       app.buttons["Cancel"].tap()
       XCTAssertEqual(input.value as? String, "teh.")
       app.buttons["Fix Grammar"].tap()
-      app.buttons["Generate"].tap()
+      startIfNeeded(in: app)
     }
     let replace = app.buttons["Replace Text"]
     XCTAssertTrue(replace.waitForExistence(timeout: 20), app.debugDescription)
@@ -367,18 +389,18 @@ final class CompanionTests: XCTestCase {
     configureKeyboard(in: app, fullAccess: true)
     let input = showExtension(in: app)
     chooseLayout("English", in: app)
-    app.buttons["?123"].tap()
-    app.buttons["123"].tap()
+    openNumeric(in: app)
     XCTAssertEqual(app.buttons["0"].frame.midX, app.buttons["2"].frame.midX, accuracy: 1)
     shot("04-numeric", app)
-    app.buttons["?123"].tap()
+    app.buttons["ABC"].tap()
+    app.buttons["123"].tap()
     XCTAssertTrue(app.buttons["@"].exists)
     app.buttons["ABC"].tap()
     captureLandscape(in: app)
-    for c in "i like you." { app.buttons[c == " " ? "Space" : String(c)].firstMatch.tap() }
+    typeOnKotha("i like you.", in: app)
     let draft = input.value as? String
     app.buttons["Improve & Tone"].tap()
-    app.buttons["Generate"].tap()
+    startIfNeeded(in: app)
     XCTAssertTrue(app.buttons["Insert"].waitForExistence(timeout: 20))
     let strip = app.scrollViews.containing(.button, identifier: "My Style").firstMatch
     let romantic = app.buttons["Romantic"].firstMatch
@@ -430,6 +452,422 @@ final class CompanionTests: XCTestCase {
     for _ in 0..<5 where !appearance.isHittable { app.swipeUp() }
     appearance.tap()
     app.buttons["System"].firstMatch.tap()
+  }
+
+  func testPhaseElevenOfflinePredictionsAutocorrectAndDictionary() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: false)
+    app.tabBars.buttons["Settings"].tap()
+    configureAutocorrect(false, in: app)
+
+    let input = showExtension(in: app)
+    chooseLayout("English", in: app)
+    app.buttons["Tools"].tap()
+    app.buttons["dashboard-settings"].tap()
+    for title in ["Predictive suggestions", "Next-word prediction"] {
+      let setting = app.buttons[title]
+      if setting.value as? String == "Off" { setting.tap() }
+    }
+    app.buttons["Return to keyboard"].tap()
+    let first = app.buttons["candidate-0"]
+    XCTAssertTrue(first.exists)
+    XCTAssertGreaterThan(first.frame.minY, app.buttons["Fix Grammar"].frame.minY)
+    XCTAssertLessThan(first.frame.maxY, app.buttons["q"].frame.minY)
+    typeOnKotha("teh", in: app)
+    XCTAssertTrue(app.buttons["the"].exists, app.debugDescription)
+    XCTAssertTrue(app.buttons["Fix Grammar"].exists)
+    shot("phase11-english-correction", app)
+    app.buttons["the"].tap()
+    XCTAssertEqual(input.value as? String, "the ")
+    typeOnKotha("thank ", in: app)
+    XCTAssertTrue(app.buttons["you"].exists, app.debugDescription)
+    app.buttons["you"].tap()
+    XCTAssertEqual(input.value as? String, "the thank you ")
+    app.buttons["Tools"].tap()
+    app.buttons["Voice input"].tap()
+    XCTAssertTrue(app.buttons["Switch keyboard"].exists)
+    shot("phase11-dictation", app)
+    app.buttons["Switch keyboard"].tap()
+    XCTAssertTrue(app.buttons["Fix Grammar"].waitForNonExistence(timeout: 5))
+
+    app.terminate()
+    app.launch()
+    app.tabBars.buttons["Settings"].tap()
+    configureAutocorrect(true, in: app)
+    let dictionary = app.buttons["Personal dictionary"]
+    tapAfterScrolling(dictionary, in: app)
+    let entry = app.textFields["Add a word"]
+    entry.tap()
+    if app.buttons["Fix Grammar"].exists {
+      chooseLayout("English", in: app)
+      typeOnKotha("zanovia", in: app)
+    } else {
+      entry.typeText("zanovia")
+    }
+    app.buttons["Save word"].tap()
+    XCTAssertTrue(app.staticTexts["zanovia"].exists)
+
+    _ = showExtension(in: app)
+    chooseLayout("English", in: app)
+    let previous = input.value as? String ?? ""
+    typeOnKotha("teh ", in: app)
+    XCTAssertEqual(input.value as? String, previous + "the ")
+    let undo = app.buttons["Undo · teh"]
+    XCTAssertTrue(undo.exists, app.debugDescription)
+    shot("phase11-undo", app)
+    undo.tap()
+    XCTAssertEqual(input.value as? String, previous + "teh ")
+    typeOnKotha("zan", in: app)
+    XCTAssertTrue(app.buttons["zanovia"].exists, app.debugDescription)
+    app.buttons["zanovia"].tap()
+    XCTAssertEqual(input.value as? String, previous + "teh zanovia ")
+
+    app.terminate()
+    app.launch()
+    app.tabBars.buttons["Settings"].tap()
+    let saved = app.staticTexts["zanovia"]
+    tapAfterScrolling(app.buttons["Personal dictionary"], in: app)
+    saved.swipeLeft()
+    let remove = app.buttons["Delete"].firstMatch
+    if remove.exists { remove.tap() }
+    XCTAssertFalse(saved.exists)
+    app.navigationBars["Personal dictionary"].buttons["Settings"].tap()
+    configureAutocorrect(false, in: app)
+  }
+
+  func testPhaseTwoPredictionAndTools() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: false)
+    let input = showExtension(in: app)
+    chooseLayout("English", in: app)
+
+    let tools = app.buttons["Tools"]
+    XCTAssertLessThan(tools.frame.midX, app.buttons["Fix Grammar"].frame.midX)
+    let microphone = app.buttons["toolbar-Voice input"]
+    if microphone.exists {
+      XCTAssertGreaterThan(microphone.frame.midX, app.buttons["Translation"].frame.midX)
+    }
+    tools.tap()
+    app.buttons["dashboard-settings"].tap()
+    let predictive = app.buttons["Predictive suggestions"]
+    if predictive.value as? String == "Off" { predictive.tap() }
+    let next = app.buttons["Next-word prediction"]
+    if next.value as? String == "On" { next.tap() }
+    let autocorrect = app.buttons["Autocorrect"]
+    if autocorrect.value as? String == "On" { autocorrect.tap() }
+    let caps = app.buttons["Auto-capitalization"]
+    if caps.value as? String == "On" { caps.tap() }
+    app.buttons["Return to keyboard"].tap()
+    let firstSlot = app.buttons["candidate-0"]
+    XCTAssertTrue(!firstSlot.exists || !firstSlot.isEnabled)
+    typeOnKotha("hey how ya doing", in: app)
+    app.buttons["123"].tap()
+    app.buttons["?"].tap()
+    app.buttons["ABC"].tap()
+    typeOnKotha(" im", in: app)
+    let contraction = app.buttons["I'm"]
+    XCTAssertTrue(contraction.waitForExistence(timeout: 5), app.debugDescription)
+    XCTAssertEqual(app.buttons["candidate-0"].label, "I'm")
+    XCTAssertEqual(app.buttons["candidate-1"].label, "im")
+    shot("phase2-contraction-suggestions", app)
+    contraction.tap()
+    XCTAssertEqual(input.value as? String, "hey how ya doing? I'm ")
+    XCTAssertTrue(!firstSlot.exists || !firstSlot.isEnabled)
+
+    let space = app.buttons["Space"]
+    let grip = space.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+    grip.press(forDuration: 0.62, thenDragTo: grip.withOffset(CGVector(dx: -18, dy: 0)))
+    typeOnKotha(",", in: app)
+    XCTAssertEqual(input.value as? String, "hey how ya doing? I'm, ")
+
+    openNumeric(in: app)
+    typeOnKotha("123", in: app)
+    XCTAssertEqual(input.value as? String, "hey how ya doing? I'm,123 ")
+    app.buttons["ABC"].tap()
+
+    tools.tap()
+    app.buttons["dashboard-settings"].tap()
+    next.tap()
+    caps.tap()
+    app.buttons["Return to keyboard"].tap()
+    typeOnKotha(".", in: app)
+    app.buttons["Space"].tap()
+    XCTAssertTrue(app.buttons["H"].exists)
+    app.buttons["H"].tap()
+    XCTAssertTrue((input.value as? String)?.contains(". H") == true)
+    tools.tap()
+    app.buttons["dashboard-settings"].tap()
+    caps.tap()
+    app.buttons["Return to keyboard"].tap()
+  }
+
+  func testNativeAppleSameEditorComparison() throws {
+    #if !targetEnvironment(simulator)
+      throw XCTSkip("Capture comparisons on the simulator")
+    #endif
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: false)
+    _ = showExtension(in: app)
+    chooseLayout("English", in: app)
+    XCTAssertTrue(app.buttons["Tools"].exists)
+    app.buttons["Shift"].tap()
+    shot("compare-kotha-alphabet", app)
+    app.buttons["123"].tap()
+    shot("compare-kotha-symbols", app)
+    app.buttons["#+="].tap()
+    shot("compare-kotha-secondary", app)
+    app.buttons["ABC"].tap()
+
+    let globe = nextKeyboard(in: app)
+    XCTAssertTrue(globe.exists)
+    globe.tap()
+    let alphabet = app.keys.matching(NSPredicate(format: "label =[c] %@", "q")).firstMatch
+    for _ in 0..<5 where !alphabet.waitForExistence(timeout: 1) {
+      if globe.isHittable { globe.tap() }
+    }
+    XCTAssertTrue(alphabet.waitForExistence(timeout: 5), app.debugDescription)
+    shot("compare-apple-alphabet", app)
+
+    let nativeKeyboard = app.keyboards.firstMatch
+    let space = nativeKeyboard.keys.matching(NSPredicate(format: "label =[c] %@", "space")).firstMatch
+    XCTAssertTrue(space.isHittable, app.debugDescription)
+    // The system numbers key occupies the first position in the spacebar's row.
+    let keyboardFrame = nativeKeyboard.frame
+    let nativeNumbers = app.coordinate(withNormalizedOffset: .zero).withOffset(
+      CGVector(dx: keyboardFrame.minX - app.frame.minX + keyboardFrame.width * 0.065,
+        dy: space.frame.midY - app.frame.minY))
+    nativeNumbers.tap()
+    XCTAssertTrue(nativeKeyboard.keys["1"].waitForExistence(timeout: 5), app.debugDescription)
+    shot("compare-apple-symbols", app)
+
+    let question = nativeKeyboard.keys["?"]
+    XCTAssertTrue(question.isHittable, app.debugDescription)
+    let nativeMoreSymbols = app.coordinate(withNormalizedOffset: .zero).withOffset(
+      CGVector(dx: keyboardFrame.minX - app.frame.minX + keyboardFrame.width * 0.065,
+        dy: question.frame.midY - app.frame.minY))
+    nativeMoreSymbols.tap()
+    XCTAssertTrue(nativeKeyboard.keys["["].waitForExistence(timeout: 5), app.debugDescription)
+    shot("compare-apple-secondary", app)
+    selectExtension(in: app)
+  }
+
+
+  func testNativeKeypressGesturesAndEmoji() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: false)
+    let input = showExtension(in: app)
+    chooseLayout("English", in: app)
+
+    app.buttons["e"].press(forDuration: 0.7)
+    let accent = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "é")).firstMatch
+    XCTAssertTrue(accent.waitForExistence(timeout: 5), app.debugDescription)
+    accent.tap()
+    XCTAssertEqual(input.value as? String, "é")
+    let shift = app.buttons["Shift"]
+    shift.doubleTap()
+    XCTAssertEqual(shift.value as? String, "Caps Lock")
+    app.buttons["H"].tap()
+    app.buttons["I"].tap()
+    XCTAssertEqual(input.value as? String, "éHI")
+    app.buttons["Shift"].tap()
+    app.buttons["Backspace"].press(forDuration: 0.88)
+    XCTAssertLessThan((input.value as? String ?? "").count, 3)
+
+    app.buttons["emoji-key"].tap()
+    let emoji = app.buttons["🙂"]
+    XCTAssertTrue(emoji.exists)
+    emoji.tap()
+    XCTAssertTrue((input.value as? String)?.contains("🙂") == true)
+    shot("native-emoji", app)
+    app.buttons["ABC"].tap()
+    XCTAssertTrue(app.buttons["q"].exists)
+    app.buttons["Return"].tap()
+    XCTAssertTrue((input.value as? String)?.hasSuffix("\n") == true)
+  }
+
+  func testPhaseTwoLearningAndClear() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: true)
+    app.tabBars.buttons["Settings"].tap()
+    let learning = app.switches["Learn from typing"]
+    setPreference(learning, enabled: true, in: app)
+    clearLearnedWords(in: app)
+
+    let input = showExtension(in: app)
+    chooseLayout("English", in: app)
+    typeOnKotha("zaqv zaqv za", in: app)
+    XCTAssertEqual(input.value as? String, "zaqv zaqv za")
+    let learned = app.buttons["zaqv"]
+    XCTAssertTrue(learned.waitForExistence(timeout: 5), app.debugDescription)
+    learned.tap()
+    XCTAssertEqual(input.value as? String, "zaqv zaqv zaqv ")
+
+    app.terminate()
+    app.launch()
+    app.tabBars.buttons["Settings"].tap()
+    clearLearnedWords(in: app)
+    _ = showExtension(in: app)
+    typeOnKotha("za", in: app)
+    let available = XCTNSPredicateExpectation(
+      predicate: NSPredicate { _, _ in app.buttons["candidate-0"].isEnabled }, object: app)
+    XCTAssertEqual(XCTWaiter().wait(for: [available], timeout: 5), .completed)
+    XCTAssertFalse(learned.exists)
+    app.terminate()
+    app.launch()
+    app.tabBars.buttons["Settings"].tap()
+    setPreference(learning, enabled: false, in: app)
+  }
+
+  private func clearLearnedWords(in app: XCUIApplication) {
+    let clear = app.buttons["Clear learned words"].firstMatch
+    for _ in 0..<6 {
+      if clear.isHittable, clear.frame.midY < app.frame.maxY - 108 { break }
+      app.swipeUp()
+    }
+    XCTAssertTrue(clear.isHittable, app.debugDescription)
+    clear.tap()
+    let confirm = app.sheets.buttons["Clear learned words"].firstMatch
+    XCTAssertTrue(confirm.waitForExistence(timeout: 4), app.debugDescription)
+    confirm.tap()
+  }
+
+  private func setPreference(_ control: XCUIElement, enabled: Bool, in app: XCUIApplication) {
+    for _ in 0..<6 where !control.isHittable { app.swipeUp() }
+    if (control.value as? String == "1") != enabled {
+      control.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+    }
+    XCTAssertEqual(control.value as? String, enabled ? "1" : "0")
+  }
+
+  func testPhaseElevenConsentAndDirectAI() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: true)
+    app.tabBars.buttons["Settings"].tap()
+    let reset = app.buttons["Reset AI shortcut consent"]
+    for _ in 0..<3 where !reset.exists && !app.buttons["Reset anonymous session"].isHittable {
+      app.swipeUp()
+    }
+    if reset.exists { tapAfterScrolling(reset, in: app) }
+    tapAfterScrolling(app.buttons["Reset anonymous session"], in: app)
+    XCTAssertTrue(app.staticTexts["Session reset."].waitForExistence(timeout: 8))
+
+    let input = showExtension(in: app)
+    chooseLayout("English", in: app)
+    typeOnKotha("can you send teh files.", in: app)
+    let draft = input.value as? String
+    app.buttons["Fix Grammar"].tap()
+    let consent = app.buttons["Allow & Generate"]
+    let generating = app.staticTexts["Generating…"]
+    XCTAssertTrue(consent.exists)
+    XCTAssertFalse(generating.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(
+      format: "label BEGINSWITH %@", "AI sends the draft below")).firstMatch.exists)
+    shot("phase11-ai-consent", app)
+    consent.tap()
+    if generating.waitForExistence(timeout: 2) {
+      shot("phase11-grammar-loading", app)
+      app.buttons["Cancel"].tap()
+      XCTAssertEqual(input.value as? String, draft)
+      app.buttons["Fix Grammar"].tap()
+      XCTAssertFalse(consent.exists)
+    }
+    let insert = app.buttons["Insert"]
+    XCTAssertTrue(insert.waitForExistence(timeout: 22), app.debugDescription)
+    XCTAssertEqual(input.value as? String, draft)
+    shot("phase11-grammar-preview", app)
+    app.buttons["Return to keyboard"].tap()
+
+    app.buttons["Improve & Tone"].tap()
+    app.buttons["Professional"].firstMatch.tap()
+    app.buttons["Polite"].firstMatch.tap()
+    XCTAssertTrue(insert.waitForExistence(timeout: 22), app.debugDescription)
+    XCTAssertEqual(input.value as? String, draft)
+    let obsolete = app.staticTexts.containing(NSPredicate(
+      format: "label BEGINSWITH %@", "Could you please")).firstMatch
+    XCTAssertFalse(obsolete.exists)
+    shot("phase11-tone-preview", app)
+    app.buttons["Return to keyboard"].tap()
+    XCTAssertFalse(insert.exists)
+    XCTAssertEqual(input.value as? String, draft)
+  }
+
+  func testPhaseElevenToneUsesEditedDraftAfterFailure() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launch()
+    configureKeyboard(in: app, fullAccess: true)
+    let input = showExtension(in: app)
+    chooseLayout("English", in: app)
+    typeOnKotha("mock failure seed.", in: app)
+    XCTAssertEqual(input.value as? String, "mock failure seed.")
+
+    app.buttons["Improve & Tone"].tap()
+    app.buttons["Professional"].firstMatch.tap()
+    startIfNeeded(in: app)
+    let failed = app.staticTexts["The AI provider returned an unusable response."]
+    XCTAssertTrue(failed.waitForExistence(timeout: 15), app.debugDescription)
+
+    app.buttons["Edit input"].tap()
+    typeOnKotha(" edited", in: app)
+    app.buttons["Done"].tap()
+    app.buttons["Polite"].firstMatch.tap()
+    XCTAssertTrue(app.buttons["Insert"].waitForExistence(timeout: 20), app.debugDescription)
+    let result = app.staticTexts.containing(NSPredicate(
+      format: "label CONTAINS[c] %@", "seed. edited")).firstMatch
+    XCTAssertTrue(result.exists, app.debugDescription)
+    XCTAssertEqual(input.value as? String, "mock failure seed.")
+    shot("phase11-tone-edited-retry", app)
+  }
+
+  private func generationButton(in app: XCUIApplication) -> XCUIElement {
+    app.buttons.matching(
+      NSPredicate(format: "label == %@ OR label == %@", "Generate", "Allow & Generate")
+    ).firstMatch
+  }
+
+  private func startIfNeeded(in app: XCUIApplication) {
+    let button = generationButton(in: app)
+    if button.exists { button.tap() }
+  }
+
+  private func typeOnKotha(_ text: String, in app: XCUIApplication) {
+    for c in text {
+      let key = app.buttons[c == " " ? "Space" : String(c)].firstMatch
+      if ".?!,;:".contains(c), !key.exists {
+        app.buttons["123"].tap()
+        key.tap()
+        app.buttons["ABC"].tap()
+      } else {
+        key.tap()
+      }
+    }
+  }
+
+  private func openNumeric(in app: XCUIApplication) {
+    app.buttons["Tools"].tap()
+    app.buttons["Keyboard layout"].tap()
+    app.buttons["Numbers"].tap()
+  }
+
+  private func configureAutocorrect(_ enabled: Bool, in app: XCUIApplication) {
+    let control = app.switches["Autocorrect"]
+    for _ in 0..<5 where !control.isHittable { app.swipeUp() }
+    if (control.value as? String == "1") != enabled {
+      control.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+    }
+    XCTAssertEqual(control.value as? String, enabled ? "1" : "0")
   }
 
   private func configureKeyboard(in app: XCUIApplication, fullAccess desired: Bool) {
@@ -502,8 +940,8 @@ final class CompanionTests: XCTestCase {
   }
 
   private func chooseLayout(_ name: String, in app: XCUIApplication) {
-    let choices = app.buttons["Typing language"]
-    if choices.exists { choices.tap() } else { app.buttons["Space"].press(forDuration: 0.8) }
+    app.buttons["Tools"].tap()
+    app.buttons["Typing language"].tap()
     app.buttons[name].firstMatch.tap()
   }
 

@@ -126,6 +126,13 @@ struct Playground: View {
 struct Preferences: View {
   @State private var status = ""
   @State private var version = UUID()
+  @AppStorage("haptics", store: Settings.prefs) private var haptics = false
+  @AppStorage("predictiveSuggestions", store: Settings.prefs) private var predictiveSuggestions = true
+  @AppStorage("nextWordPrediction", store: Settings.prefs) private var nextWordPrediction = true
+  @AppStorage("autocorrect", store: Settings.prefs) private var autocorrect = false
+  @AppStorage("automaticCapitalization", store: Settings.prefs) private var automaticCapitalization = false
+  @AppStorage("typingLearning", store: Settings.prefs) private var typingLearning = false
+  @State private var confirmClearHistory = false
   func value(_ key: String, _ initial: String = "") -> Binding<String> {
     Binding(
       get: { Settings.get(key, initial) },
@@ -181,14 +188,28 @@ struct Preferences: View {
         Section("Keyboard") {
           picker("Keyboard height", "height", ["Standard", "Compact", "Tall"])
           picker("Appearance", "theme", ["System", "Light", "Dark"])
-          Toggle(
-            "Haptics",
-            isOn: Binding(
-              get: { Settings.prefs.bool(forKey: "haptics") },
-              set: {
-                Settings.prefs.set($0, forKey: "haptics")
-                version = UUID()
-              }))
+          Toggle("Haptics", isOn: $haptics)
+        }
+        Section("Offline typing") {
+          Toggle("Predictive suggestions", isOn: $predictiveSuggestions)
+          Toggle("Next-word prediction", isOn: $nextWordPrediction)
+          Toggle("Autocorrect", isOn: $autocorrect)
+          Text("Space applies high-confidence English corrections. Tap Undo or Backspace to restore your spelling.")
+            .font(.footnote)
+          Toggle("Auto-capitalization", isOn: $automaticCapitalization)
+          NavigationLink("Personal dictionary") { PersonalDictionary() }
+        }
+        Section("Personalized learning") {
+          Toggle("Learn from typing", isOn: $typingLearning)
+          Text("With Full Access, the keyboard can remember individual words and accepted or undone suggestions on this device. You can turn learning off or clear its history here.")
+            .font(.footnote)
+          Button("Clear learned words", role: .destructive) { confirmClearHistory = true }
+            .confirmationDialog("Clear learned words?", isPresented: $confirmClearHistory) {
+              Button("Clear learned words", role: .destructive) {
+                Settings.clearTypingHistory()
+                status = "Learned words cleared."
+              }
+            }
         }
         Section("Usage and privacy") {
           Button("Check daily allowance") {
@@ -202,6 +223,13 @@ struct Preferences: View {
           Text(
             "Ordinary typing stays on this device. AI requests go through the backend and, in live mode, OpenRouter and its model provider. Their processing and retention policies apply. The backend keeps usage and cost records without message text."
           )
+          if Settings.aiConsent {
+            Button("Reset AI shortcut consent") {
+              Settings.prefs.removeObject(forKey: "aiConsent")
+              version = UUID()
+              status = "AI shortcuts will ask for consent again."
+            }
+          }
           Button("Clear preferences") {
             Settings.prefs.removePersistentDomain(forName: Settings.group)
             version = UUID()
@@ -219,5 +247,49 @@ struct Preferences: View {
         }
       }.id(version).navigationTitle("Settings")
     }
+  }
+}
+
+struct PersonalDictionary: View {
+  @State private var words = Settings.personalWords
+  @State private var newWord = ""
+  @FocusState private var editingWord: Bool
+
+  private var entry: String? {
+    guard let word = Predictor.normalizedEntry(newWord),
+      !words.contains(where: { Predictor.normalized($0) == Predictor.normalized(word) })
+    else { return nil }
+    return word
+  }
+  var body: some View {
+    Form {
+      Section {
+        TextField("Add a word", text: $newWord)
+          .focused($editingWord)
+          .textInputAutocapitalization(.never)
+          .autocorrectionDisabled()
+        Button("Save word") {
+          guard let entry, words.count < 250 else { return }
+          words.append(entry)
+          words.sort()
+          Settings.prefs.set(words, forKey: "personalWords")
+          newWord = ""
+          editingWord = false
+        }.disabled(entry == nil || words.count >= 250)
+      } footer: {
+        Text("Saved words appear in offline completions and autocorrect keeps them as typed. Add up to 250 words on this device.")
+      }
+      if !words.isEmpty {
+        Section("Saved words") {
+          ForEach(words, id: \.self) { Text($0) }
+            .onDelete {
+              words.remove(atOffsets: $0)
+              Settings.prefs.set(words, forKey: "personalWords")
+            }
+        }
+      }
+    }
+    .navigationTitle("Personal dictionary")
+    .toolbar { EditButton() }
   }
 }

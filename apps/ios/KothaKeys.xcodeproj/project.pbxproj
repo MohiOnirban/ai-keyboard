@@ -30,6 +30,12 @@
 		AA99112233C92CDCF56F53C7 /* KeyboardDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA991122334FF879C79E5E44 /* KeyboardDesign.swift */; };
 		D144437104BCB4ECB8401F24 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE780A2C4F30E2104FC061B6 /* Foundation.framework */; };
 		F67515C60191454E14F610EC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE780A2C4F30E2104FC061B6 /* Foundation.framework */; };
+		A10100000000000000000011 /* Predictor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10100000000000000000021 /* Predictor.swift */; };
+		A10100000000000000000012 /* Predictor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10100000000000000000021 /* Predictor.swift */; };
+		A10100000000000000000013 /* predict.tsv in Resources */ = {isa = PBXBuildFile; fileRef = A10100000000000000000022 /* predict.tsv */; };
+		A10100000000000000000014 /* wordfreq.tsv in Resources */ = {isa = PBXBuildFile; fileRef = A10100000000000000000024 /* wordfreq.tsv */; };
+		A10100000000000000000015 /* wordfreq-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = A10100000000000000000025 /* wordfreq-LICENSE.txt */; };
+		A10100000000000000000016 /* wordfreq-NOTICE.txt in Resources */ = {isa = PBXBuildFile; fileRef = A10100000000000000000026 /* wordfreq-NOTICE.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +86,11 @@
 		DE780A2C4F30E2104FC061B6 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		EED2D8AC3BC6A86B49BBE5E9 /* Phonetic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Phonetic.swift; sourceTree = "<group>"; };
 		F3FCD29CAD1C52CFA7568125 /* phonetic.json */ = {isa = PBXFileReference; includeInIndex = 1; name = phonetic.json; path = ../../shared/phonetic.json; sourceTree = "<group>"; };
+		A10100000000000000000021 /* Predictor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Predictor.swift; sourceTree = "<group>"; };
+		A10100000000000000000022 /* predict.tsv */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = predict.tsv; path = ../../shared/predict.tsv; sourceTree = "<group>"; };
+		A10100000000000000000024 /* wordfreq.tsv */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = wordfreq.tsv; path = ../../shared/wordfreq.tsv; sourceTree = "<group>"; };
+		A10100000000000000000025 /* wordfreq-LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = wordfreq-LICENSE.txt; path = ../../shared/wordfreq-LICENSE.txt; sourceTree = "<group>"; };
+		A10100000000000000000026 /* wordfreq-NOTICE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = wordfreq-NOTICE.txt; path = ../../shared/wordfreq-NOTICE.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -145,6 +156,10 @@
 				2979976E7952E590058188B8 /* Frameworks */,
 				DA92EB19A43999AE1A51BF5E /* Common */,
 				F3FCD29CAD1C52CFA7568125 /* phonetic.json */,
+				A10100000000000000000022 /* predict.tsv */,
+				A10100000000000000000024 /* wordfreq.tsv */,
+				A10100000000000000000025 /* wordfreq-LICENSE.txt */,
+				A10100000000000000000026 /* wordfreq-NOTICE.txt */,
 				BBF6B72C951B05174C7D429C /* App */,
 				CEE295863EA10FB1184D18A1 /* avro-lib.js */,
 				DE59F3F618894FF5AB961E53 /* Assets.xcassets */,
@@ -185,6 +200,7 @@
 			isa = PBXGroup;
 			children = (
 				EED2D8AC3BC6A86B49BBE5E9 /* Phonetic.swift */,
+				A10100000000000000000021 /* Predictor.swift */,
 				793EB71A969FA4F274697567 /* Service.swift */,
 				63099AC7762D409D89E775F0 /* PrivacyInfo.xcprivacy */,
 			);
@@ -293,6 +309,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				82F0226D12FBC093D898DF7E /* phonetic.json in Resources */,
+				A10100000000000000000013 /* predict.tsv in Resources */,
+				A10100000000000000000014 /* wordfreq.tsv in Resources */,
+				A10100000000000000000015 /* wordfreq-LICENSE.txt in Resources */,
+				A10100000000000000000016 /* wordfreq-NOTICE.txt in Resources */,
 				17FE3C5D164F6878A3472A9B /* avro-lib.js in Resources */,
 				32B5DED9FD5AD4D6C19B316B /* LICENSE.txt in Resources */,
 				09A7E2B84CFB45D2244E2E07 /* NOTICE.txt in Resources */,
@@ -321,6 +341,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C08DC646A25ACFDC1CF3C9D /* Phonetic.swift in Sources */,
+				A10100000000000000000011 /* Predictor.swift in Sources */,
 				C3CD5C1736A0A1C7D6C1A19B /* Service.swift in Sources */,
 				71209258FD703FA23A7E0A70 /* App.swift in Sources */,
 			);
@@ -331,6 +352,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4936959065E1186A036BACE5 /* Phonetic.swift in Sources */,
+				A10100000000000000000012 /* Predictor.swift in Sources */,
 				28D415CFFA1A51432E58C8EE /* Service.swift in Sources */,
 				CD1494D753C92CDCF56F53C7 /* KeyboardController.swift in Sources */,
 				AA99112233C92CDCF56F53C7 /* KeyboardDesign.swift in Sources */,
@@ -369,11 +391,11 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = Kotha.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				INFOPLIST_FILE = Keyboard/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.kothakeys.app.keyboard;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -402,11 +424,11 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = Kotha.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				INFOPLIST_FILE = Keyboard/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.kothakeys.app.keyboard;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -423,11 +445,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = Kotha.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.kothakeys.app;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -572,11 +594,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = Kotha.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.kothakeys.app;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;

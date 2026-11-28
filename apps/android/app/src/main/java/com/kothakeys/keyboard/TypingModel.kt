@@ -35,23 +35,9 @@ internal class Phonetics(overrides: JSONObject, private val avro: Avro) {
     }
 }
 
-private val englishTypos = mapOf("teh" to "the", "adn" to "and", "thier" to "their", "recieve" to "receive")
-private val englishWords = listOf("hello", "thanks", "thank", "today", "tomorrow", "good", "great", "please", "sorry", "okay", "there", "their", "what", "when", "where", "would", "with", "will", "want")
-
-internal fun englishCorrection(word: String): String? =
-    englishTypos[word.lowercase(Locale.ROOT)]?.let { matchWordCase(it, word) }
-
-internal fun englishCandidates(word: String): List<String> {
-    if (word.length < 2) return emptyList()
-    val lower = word.lowercase(Locale.ROOT)
-    return (listOfNotNull(englishCorrection(word)) + englishWords.asSequence()
-        .filter { it != lower && it.startsWith(lower) }
-        .map { matchWordCase(it, word) })
-        .distinct().take(3)
-}
-
-private fun matchWordCase(value: String, source: String): String = when {
-    source.all(Char::isUpperCase) -> value.uppercase(Locale.ROOT)
+internal fun matchWordCase(value: String, source: String): String = when {
+    source.isEmpty() -> value
+    source.length > 1 && source.all(Char::isUpperCase) -> value.uppercase(Locale.ROOT)
     source.first().isUpperCase() -> value.replaceFirstChar(Char::uppercase)
     else -> value
 }
@@ -61,7 +47,7 @@ internal data class KeySpec(val text: String, val alternate: String? = null) {
         get() = if (text.length == 1 && Character.getType(text[0]) in 6..8) "◌$text" else text
 }
 
-private fun row(letters: String, alternates: List<String> = emptyList()) =
+private fun row(letters: String, alternates: List<String?> = emptyList()) =
     letters.split(' ').mapIndexed { index, value -> KeySpec(value, alternates.getOrNull(index)) }
 
 internal object KeyboardLayouts {
@@ -85,12 +71,12 @@ internal object KeyboardLayouts {
     val symbols = listOf(
         row("1 2 3 4 5 6 7 8 9 0"),
         row("@ # $ _ & - + ( ) /", listOf("©", "®", "৳", "%", "§", "−", "=", "[", "]", "÷")),
-        row("* ! ? : ; \" '"),
+        row("* \" ' : ; ! ?"),
     )
     val symbolsExtra = listOf(
-        row("~ ` | \\ ^ _ < > [ ]"),
-        row("{ } € £ ৳ ₹ ¥ ° • §"),
-        row("÷ × ± ≠ ≤ ≥ …", listOf("©", "®", "™", "×", "«", "»", "·")),
+        row("~ ` | • √ π ÷ × § ∆", listOf(null, null, null, "·", "±", null, "≤", "≥")),
+        row("£ ¢ € ¥ ^ ° = { } \\", listOf("৳", "₹", null, null, null, null, "≠", "<", ">")),
+        row("% © ® ™ ✓ [ ]", listOf("‰", "«", "»", "…")),
     )
     val emoji = listOf(
         row("😀 😂 🥹 😊 😅 🙂 🙃 😍 🥰 😘"),

@@ -11,6 +11,9 @@ common = project.main_group.new_group('Common','Common')
 shared = Dir['Common/*.swift'].map{|f| common.new_file(File.basename(f))}
 privacy = common.new_file('PrivacyInfo.xcprivacy')
 rules = project.main_group.new_file('../../shared/phonetic.json')
+%w[predict.tsv wordfreq.tsv wordfreq-LICENSE.txt wordfreq-NOTICE.txt].each do |name|
+  ext.resources_build_phase.add_file_reference(project.main_group.new_file('../../shared/' + name))
+end
 branding = project.main_group.new_file('../../shared/branding/Assets.xcassets')
 app.resources_build_phase.add_file_reference(branding)
 app.build_configurations.each do |configuration|
@@ -27,7 +30,7 @@ end
     target.resources_build_phase.add_file_reference(ref)
   end
   target.build_configurations.each do |c|
-    c.build_settings.merge!('PRODUCT_BUNDLE_IDENTIFIER'=>bundle,'INFOPLIST_FILE'=>dir+'/Info.plist','CODE_SIGN_ENTITLEMENTS'=>'Kotha.entitlements','SWIFT_VERSION'=>'5.0','TARGETED_DEVICE_FAMILY'=>'1,2','CURRENT_PROJECT_VERSION'=>'1','MARKETING_VERSION'=>'0.1','LD_RUNPATH_SEARCH_PATHS'=>'$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks')
+    c.build_settings.merge!('PRODUCT_BUNDLE_IDENTIFIER'=>bundle,'INFOPLIST_FILE'=>dir+'/Info.plist','CODE_SIGN_ENTITLEMENTS'=>'Kotha.entitlements','SWIFT_VERSION'=>'5.0','TARGETED_DEVICE_FAMILY'=>'1,2','CURRENT_PROJECT_VERSION'=>'3','MARKETING_VERSION'=>'0.2.0','LD_RUNPATH_SEARCH_PATHS'=>'$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks')
     c.build_settings['SWIFT_ACTIVE_COMPILATION_CONDITIONS']='$(inherited) DEBUG' if c.name=='Debug'
   end
 end

@@ -1,6 +1,8 @@
 package com.kothakeys.keyboard
 
 import android.app.Instrumentation
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Bitmap
@@ -8,17 +10,21 @@ import android.graphics.Rect
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
+import android.text.InputType
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.EditText
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -77,6 +83,173 @@ open class KeyboardJourneyTest {
         }
     }
 
+    @Test fun phase11SuggestionsToolbarUndoAndDictionaryWorkOffline() {
+        setupKeyboard()
+        val settings = LocalSettings(instrumentation.targetContext)
+        command("svc wifi disable")
+        command("svc data disable")
+        try {
+            focusPracticeField()
+            eventually("visible practice editor") {
+                visibleRoots(false).firstNotNullOfOrNull { root ->
+                    root.first { it.className == "android.widget.EditText" }
+                }
+            }
+            selectLayout(TypingLanguage.English)
+            val frame = keyboardFrame()
+            type("teh")
+            val toolbar = bounds(waitFor("Fix Grammar", keyboard = true))
+            val candidate = bounds(waitFor("Suggestion the", keyboard = true))
+            val q = bounds(waitFor("q", keyboard = true))
+            assertTrue(toolbar.bottom <= candidate.top && candidate.bottom <= q.top)
+            waitFor("Voice input", keyboard = true)
+            assertEquals(frame, keyboardFrame())
+            capture("25-suggestions-toolbar")
+
+            clickKeyboardControl("Space")
+            editedText("the ")
+            clickKeyboardControl("Backspace")
+            editedText("teh")
+            setPracticeText("")
+            type("teh", "Space")
+            clickKeyboardControl("Undo")
+            editedText("teh ")
+
+            instrumentation.runOnMainSync { settings.correction = false }
+            setPracticeText("")
+            type("teh", "Space")
+            editedText("teh ")
+            setPracticeText("thank ")
+            clickKeyboardControl("Suggestion you")
+            editedText("thank you ")
+
+            instrumentation.runOnMainSync {
+                assertTrue(settings.saveDictionaryWord("Fahima"))
+                assertTrue(settings.saveDictionaryWord("Fahimah", "Fahima"))
+            }
+            setPracticeText("")
+            type("fah")
+            clickKeyboardControl("Suggestion Fahimah")
+            editedText("Fahimah")
+            instrumentation.runOnMainSync { settings.removeDictionaryWord("Fahimah") }
+            setPracticeText("")
+            type("fah")
+            assertNull(keyboardNode("Suggestion Fahimah"))
+            clickKeyboardControl("Voice input")
+            waitFor("Return to keyboard", keyboard = true)
+            capture("26-voice")
+            clickKeyboardControl("Return to keyboard")
+            setPracticeText("")
+            instrumentation.runOnMainSync {
+                val field = checkNotNull(activity.window.decorView.practiceField())
+                field.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                activity.getSystemService(android.view.inputmethod.InputMethodManager::class.java).restartInput(field)
+            }
+            waitFor("Private field", keyboard = true)
+            assertNull(keyboardNode("Fix Grammar"))
+            assertNull(keyboardNode("Voice input"))
+            type("teh", "Space")
+            editedText("teh ")
+            assertNull(keyboardNode("Suggestion the"))
+            capture("27-private-field")
+        } finally {
+            instrumentation.runOnMainSync {
+                settings.correction = true
+                settings.removeDictionaryWord("Fahima")
+                settings.removeDictionaryWord("Fahimah")
+            }
+            command("svc wifi enable")
+            command("svc data enable")
+            instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        }
+    }
+
+    @Test fun phase2PersonalLearningControlsAndSecureFields() {
+        setupKeyboard()
+        val settings = LocalSettings(instrumentation.targetContext)
+        focusPracticeField()
+        try {
+            instrumentation.runOnMainSync {
+                settings.clearLearnedTyping()
+                settings.learning = true
+                settings.automaticCapitalization = true
+            }
+            setPracticeText("hey how ya doing? ")
+            type("im")
+            editedText("hey how ya doing? Im")
+            waitFor("Suggestion I'm", keyboard = true)
+            capture("33-contraction-suggestion")
+            clickKeyboardControl("Space")
+            editedText("hey how ya doing? I'm ")
+            clickKeyboardControl("Undo")
+            editedText("hey how ya doing? Im ")
+            setPracticeText("hey how ya doing? ")
+            type("im", "Space")
+            editedText("hey how ya doing? Im ")
+
+            instrumentation.runOnMainSync {
+                settings.automaticCapitalization = false
+                settings.correction = false
+            }
+            setPracticeText("")
+            type("quandivox", "Space")
+            type("quandivox", "Space")
+            setPracticeText("")
+            type("quandi")
+            waitFor("Suggestion quandivox", keyboard = true)
+            clickKeyboardControl("Suggestion quandivox")
+            editedText("quandivox")
+            val persisted = LocalSettings(instrumentation.targetContext)
+            assertEquals(5, persisted.predictionProfile(TypingLanguage.English).learned["quandivox"])
+
+            instrumentation.runOnMainSync { settings.learning = false }
+            setPracticeText("")
+            type("quandi")
+            assertNull(keyboardNode("Suggestion quandivox"))
+            clickKeyboardControl("Space")
+            editedText("quandi ")
+            instrumentation.runOnMainSync {
+                settings.correction = true
+                settings.nextWord = false
+                settings.clearLearnedTyping()
+            }
+            setPracticeText("")
+            type("thank", "Space")
+            editedText("thank ")
+            assertNull(keyboardNode("Suggestion you"))
+            instrumentation.runOnMainSync { settings.nextWord = true }
+            setPracticeText("")
+            type("thank", "Space")
+            editedText("thank ")
+            waitFor("Suggestion you", keyboard = true)
+
+            instrumentation.runOnMainSync { settings.learning = true }
+            setPracticeText("https://example.")
+            type("teh", "Space")
+            editedText("https://example.teh ")
+            assertFalse(persisted.hasLearnedTyping)
+            setPracticeText("")
+            instrumentation.runOnMainSync {
+                val field = checkNotNull(activity.window.decorView.practiceField())
+                field.imeOptions = field.imeOptions or android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+                activity.getSystemService(android.view.inputmethod.InputMethodManager::class.java).restartInput(field)
+            }
+            waitFor("Private field", keyboard = true)
+            type("privateword", "Space")
+            editedText("privateword ")
+            assertFalse(persisted.hasLearnedTyping)
+        } finally {
+            instrumentation.runOnMainSync {
+                settings.clearLearnedTyping()
+                settings.learning = false
+                settings.correction = true
+                settings.nextWord = true
+                settings.automaticCapitalization = false
+            }
+            instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        }
+    }
+
     @Test fun requestedPhraseAndPrefixCompletionWorkOffline() {
         setupKeyboard()
         command("svc wifi disable")
@@ -91,7 +264,7 @@ open class KeyboardJourneyTest {
             waitFor("a", keyboard = true)
             type("mi", "Space", physical = true)
             type("tomak", physical = true)
-            touchKey("তোমাকে")
+            touchKey("Suggestion তোমাকে")
             touchKey("Space")
             type("bhalobashi", "Space", physical = true)
             editedText("আমি তোমাকে ভালোবাসি ")
@@ -118,10 +291,7 @@ open class KeyboardJourneyTest {
         clickKeyboardControl("Replace Text")
         editedText(suggestion)
 
-        showToolbar()
-        clickKeyboardControl("More options")
-        selectAll()
-        clickKeyboardControl("Return to keyboard")
+        selectAllFromTools()
         openFeature("Ask AI")
         clickKeyboardControl("Generate")
         waitFor("Replace Text", keyboard = true)
@@ -134,7 +304,7 @@ open class KeyboardJourneyTest {
     }
 
     protected fun setupKeyboard() {
-        assumeTrue("requires an isolated Android 35 emulator", Build.HARDWARE.contains("ranchu") && Build.VERSION.SDK_INT >= 35)
+        assumeTrue("requires an isolated Android 35 or newer emulator", Build.HARDWARE.contains("ranchu") && Build.VERSION.SDK_INT >= 35)
         val flags = automation.serviceInfo
         flags.flags = flags.flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
             android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
@@ -143,6 +313,11 @@ open class KeyboardJourneyTest {
         instrumentation.runOnMainSync {
             LocalSettings(context).apply {
                 typingLanguage = startingLanguage ?: TypingLanguage.English
+                correction = true
+                suggestions = true
+                nextWord = true
+                automaticCapitalization = false
+                learning = false
                 theme = "Light"
                 keyboardHeight = KeyboardHeight.Standard
             }
@@ -150,10 +325,13 @@ open class KeyboardJourneyTest {
         if (InstrumentationRegistry.getArguments().getString("kothaMock") == "true" &&
             BuildConfig.BACKEND_URL == "http://10.0.2.2:4000") {
             val ready = CountDownLatch(1)
-            AiClient.get(context).usage { ready.countDown() }
+            val client = AiClient.get(context)
+            client.setBackendOverride(null)
+            client.usage { ready.countDown() }
             assertTrue("mock session ready", ready.await(12, TimeUnit.SECONDS))
         }
         val component = ComponentName(context, KothaIme::class.java).flattenToShortString()
+        command("settings put secure show_ime_with_hard_keyboard 1")
         command("ime enable $component")
         command("ime set $component")
         val launch = Intent(instrumentation.targetContext, MainActivity::class.java)
@@ -185,13 +363,8 @@ open class KeyboardJourneyTest {
     }
 
     protected fun openFeature(name: String) {
-        showToolbar()
-        if (keyboardNode(name) == null) clickKeyboardControl("More options")
+        if (keyboardNode(name) == null) clickKeyboardControl("Tools menu")
         clickKeyboardControl(name)
-    }
-
-    private fun showToolbar() {
-        if (keyboardNode("Show keyboard toolbar") != null) clickKeyboardControl("Show keyboard toolbar")
     }
 
     private fun setPracticeText(value: String) {
@@ -218,8 +391,15 @@ open class KeyboardJourneyTest {
     }
 
     private fun capture(name: String) {
-        if (InstrumentationRegistry.getArguments().getString("phase1Evidence") != "true") return
-        val dir = checkNotNull(instrumentation.targetContext.getExternalFilesDir("phase1"))
+        val arguments = InstrumentationRegistry.getArguments()
+        val folder = when {
+            arguments.getString("phase2Evidence") == "true" -> "phase2"
+            arguments.getString("geometryEvidence") == "true" -> "geometry"
+            arguments.getString("phase11Evidence") == "true" -> "phase11"
+            arguments.getString("phase1Evidence") == "true" -> "phase1"
+            else -> return
+        }
+        val dir = checkNotNull(instrumentation.targetContext.getExternalFilesDir(folder))
         val bitmap = checkNotNull(automation.takeScreenshot())
         try {
             File(dir, "$name.png").outputStream().use {
@@ -230,10 +410,73 @@ open class KeyboardJourneyTest {
         }
     }
 
+    @Test fun urlKeyboardKeepsReferenceGeometryAndEditorAction() {
+        setupKeyboard()
+        focusPracticeField()
+        selectLayout(TypingLanguage.English)
+        val editorAction = CountDownLatch(1)
+        instrumentation.runOnMainSync {
+            val field = checkNotNull(activity.window.decorView.practiceField())
+            field.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            field.setSingleLine(true)
+            field.imeOptions = EditorInfo.IME_ACTION_DONE
+            field.setOnEditorActionListener { _, action, _ ->
+                if (action == EditorInfo.IME_ACTION_DONE) {
+                    editorAction.countDown()
+                    true
+                } else false
+            }
+            activity.getSystemService(InputMethodManager::class.java).restartInput(field)
+        }
+        waitFor("Email / URL", keyboard = true)
+        val (q, a) = eventually("adjacent URL rows in the same IME frame") {
+            val top = keyboardNode("q")?.let(::bounds) ?: return@eventually null
+            val middle = keyboardNode("a")?.let(::bounds) ?: return@eventually null
+            (top to middle).takeIf { top.bottom == middle.top }
+        }
+        val space = settledKeyBounds("Space")
+        val emoji = settledKeyBounds("Emoji shortcut")
+        val slash = settledKeyBounds("/")
+        val done = settledKeyBounds("Enter: Done")
+        capture("url-standard-reference")
+        assertNull(keyboardNode("Fix Grammar"))
+        assertTrue("row pitch is close to 85 units per 600 units of width: q=$q a=$a",
+            abs((a.top - q.top) / q.width().toFloat() - 85f / 60) < 0.08f)
+        assertTrue("spacebar spans four regular columns", abs(space.width() - q.width() * 4) <= 5)
+        assertTrue("context action spans one and a half columns", abs(done.width() * 2 - q.width() * 3) <= 5)
+        assertTrue("emoji is between slash and space", slash.right == emoji.left && emoji.right == space.left)
+        if (InstrumentationRegistry.getArguments().getString("geometryPlatformReference") == "true") {
+            val packageName = "com.google.android.inputmethod.latin"
+            val component = "$packageName/com.android.inputmethod.latin.LatinIME"
+            val ours = ComponentName(instrumentation.targetContext, KothaIme::class.java).flattenToShortString()
+            try {
+                command("ime set $component")
+                eventually("reference keyboard shown") {
+                    visibleRoots(true).firstOrNull { it.packageName?.toString() == packageName }
+                }
+                SystemClock.sleep(750)
+                capture("url-gboard-same-emulator")
+            } finally {
+                command("ime set $ours")
+                waitFor("Emoji shortcut", keyboard = true)
+            }
+        }
+        clickKeyboardControl("Emoji shortcut")
+        waitFor("🇧🇩", keyboard = true)
+        clickKeyboardControl("Return to keyboard")
+        clickKeyboardControl("Enter: Done")
+        assertTrue("Done dispatches the host action", editorAction.await(2, TimeUnit.SECONDS))
+    }
+
     @Test fun phaseOneGridAndModeHeight() {
         setupKeyboard()
         focusPracticeField()
         selectLayout(TypingLanguage.English)
+        assertTrue("long press Space opens the language chooser",
+            waitFor("Space", keyboard = true).performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK))
+        waitFor("Raw Banglish", keyboard = true)
+        clickKeyboardControl("English")
+        waitFor("q", keyboard = true)
         val frame = keyboardFrame()
         val q = bounds(waitFor("q", keyboard = true))
         val a = bounds(waitFor("a", keyboard = true))
@@ -262,15 +505,17 @@ open class KeyboardJourneyTest {
         }
         setPracticeText("")
         clickKeyboardControl("Toggle numbers and symbols")
-        waitFor("More symbols", keyboard = true)
+        val symbolPitch = settledKeyBounds("@").top - settledKeyBounds("1").top
+        assertTrue("symbols and alphabet share a row pitch", abs(a.top - q.top - symbolPitch) <= 1)
         capture("04-symbols")
         clickKeyboardControl("More symbols")
         waitFor("Primary symbols", keyboard = true)
         capture("05-secondary-symbols")
         clickKeyboardControl("Numeric keypad")
-        val zero = bounds(waitFor("0", keyboard = true))
-        val two = bounds(waitFor("2", keyboard = true))
+        val zero = settledKeyBounds("0")
+        val two = settledKeyBounds("2")
         assertTrue("zero aligns under the middle numeric column", abs(zero.centerX() - two.centerX()) <= 1)
+        assertTrue("number and symbol rows share a pitch", abs(symbolPitch - settledKeyBounds("5").top + two.top) <= 1)
         assertEquals(frame, keyboardFrame())
         capture("06-numeric")
         clickKeyboardControl("Alphabet layout")
@@ -282,18 +527,116 @@ open class KeyboardJourneyTest {
         capture("13-raw-banglish")
     }
 
+    @Test fun phaseTwoToolsAndNumericEntry() {
+        setupKeyboard()
+        focusPracticeField()
+        selectLayout(TypingLanguage.English)
+        val frame = keyboardFrame()
+        val toolbarFeatures = listOf("Tools menu", "Fix Grammar", "Improve & Tone", "Ask AI",
+            "Translation", "Emoji", "Clipboard", "Voice input")
+        val visibleFeatures = toolbarFeatures.mapNotNull { keyboardNode(it)?.let(::bounds) }
+        assertTrue("toolbar follows the tools, AI, utility and voice order",
+            visibleFeatures.zipWithNext().all { (left, right) -> left.right <= right.left })
+        clickKeyboardControl("Toggle numbers and symbols")
+        clickKeyboardControl("More symbols")
+        clickKeyboardControl("Tools menu")
+        assertEquals(frame, keyboardFrame())
+        val tools = listOf("Theme", "Clipboard", "Emoji", "Typing language", "Text editing",
+            "Keyboard layout", "Voice input", "Settings").map(::settledKeyBounds)
+        tools.chunked(2).forEach { (left, right) ->
+            assertEquals(left.top, right.top)
+            assertTrue(left.right <= right.left && abs(left.width() - right.width()) <= 1)
+        }
+        capture("31-tools")
+        clickKeyboardControl("Close tools")
+        clickKeyboardControl("Numeric keypad")
+        for (key in listOf("1", "Plus", "2", "Minus", "3", "Multiply", "4", "Divide", "5",
+            "Percent", "Space", "0", "Equals", "6", "Comma", "Decimal point", "Backspace")) {
+            clickKeyboardControl(key)
+        }
+        editedText("1+2-3*4/5% 0=6,")
+        clickKeyboardControl("Symbol layout")
+        waitFor("More symbols", keyboard = true)
+        clickKeyboardControl("Tools menu")
+        clickKeyboardControl("Keyboard layout")
+        clickKeyboardControl("Alphabet")
+        waitFor("q", keyboard = true)
+        setPracticeText("ab")
+        clickKeyboardControl("Tools menu")
+        clickKeyboardControl("Text editing")
+        clickKeyboardControl("Move cursor left")
+        clickKeyboardControl("Back to tools")
+        clickKeyboardControl("Close tools")
+        clickKeyboardControl("x")
+        editedText("axb")
+        setPracticeText("")
+        val q = waitFor("q", keyboard = true)
+        assertTrue(q.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK))
+        editedText("1")
+
+        instrumentation.runOnMainSync {
+            activity.getSystemService(ClipboardManager::class.java)
+                .setPrimaryClip(ClipData.newPlainText("Synthetic clipboard", " synthetic clipboard"))
+        }
+        clickKeyboardControl("Tools menu")
+        clickKeyboardControl("Clipboard")
+        clickKeyboardControl("Paste clipboard")
+        editedText("1 synthetic clipboard")
+        instrumentation.runOnMainSync { activity.getSystemService(ClipboardManager::class.java).clearPrimaryClip() }
+        clickKeyboardControl("Back to tools")
+        clickKeyboardControl("Theme")
+        clickKeyboardControl("Dark")
+        assertEquals("Dark", LocalSettings(instrumentation.targetContext).theme)
+        clickKeyboardControl("Light")
+        clickKeyboardControl("Back to tools")
+        clickKeyboardControl("Settings")
+        waitFor("Free daily AI usage")
+    }
+
+    @Test fun phaseTwoHandsOffToAndroidVoiceProvider() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("phase2Voice") == "true")
+        setupKeyboard()
+        focusPracticeField()
+        val manager = instrumentation.targetContext.getSystemService(InputMethodManager::class.java)
+        val voicePackages = manager.enabledInputMethodList.filter { method ->
+            manager.getEnabledInputMethodSubtypeList(method, true).any { it.mode.equals("voice", true) }
+        }.map { it.packageName }.toSet()
+        assertTrue("test emulator has an enabled Android voice provider", voicePackages.isNotEmpty())
+        try {
+            openFeature("Voice input")
+            clickKeyboardControl("Start voice input")
+            val provider = eventually("Android voice provider window") {
+                visibleRoots(true).firstOrNull { it.packageName?.toString() in voicePackages }
+            }
+            assertTrue(provider.packageName?.toString() in voicePackages)
+            capture("32-android-voice-provider")
+        } finally {
+            val component = ComponentName(instrumentation.targetContext, KothaIme::class.java).flattenToShortString()
+            command("ime set $component")
+        }
+    }
+
     @Test fun phaseOneAiPanelsUseMockWithoutOverwritingDraft() {
         val arguments = InstrumentationRegistry.getArguments()
         val delayedMock = arguments.getString("phase1LoadingEvidence") == "true" && BuildConfig.BACKEND_URL == "http://127.0.0.1:4133"
         assumeTrue(BuildConfig.BACKEND_URL == "http://10.0.2.2:4000" || delayedMock)
         assumeTrue(arguments.getString("kothaMock") == "true")
         setupKeyboard()
+        val settings = LocalSettings(instrumentation.targetContext)
+        instrumentation.runOnMainSync { settings.revokeQuickAi() }
         focusPracticeField()
         val frame = keyboardFrame()
 
         setPracticeText("im on teh bus")
         openFeature("Fix Grammar")
-        clickWithoutDelay("Check grammar")
+        waitFor("Allow and continue", keyboard = true)
+        capture("14-fix-grammar-consent")
+        clickKeyboardControl("Not now")
+        assertNull(keyboardNode("Replace Text"))
+        assertEquals("im on teh bus", practiceText())
+        clickKeyboardControl("Return to keyboard")
+        openFeature("Fix Grammar")
+        clickWithoutDelay("Allow and continue")
         captureLoading("Checking grammar…", "14-fix-grammar-loading")
         assertEquals(frame, keyboardFrame())
         waitFor("Replace Text", keyboard = true)
@@ -303,10 +646,14 @@ open class KeyboardJourneyTest {
         clickKeyboardControl("Replace Text")
         editedText("I'm on the bus.")
 
+        setPracticeText("im on teh bus")
+        openFeature("Fix Grammar")
+        waitFor("Replace Text", keyboard = true)
+        assertNull(keyboardNode("Allow and continue"))
+        clickKeyboardControl("Return to keyboard")
         setPracticeText("can you check this today?")
         openFeature("Improve & Tone")
-        clickKeyboardControl("Professional")
-        clickWithoutDelay("Generate")
+        clickWithoutDelay("Professional")
         captureLoading("Generating…", "16-improve-tone-loading")
         waitFor("Replace Text", keyboard = true)
         assertTrue(previewText().isNotBlank())
@@ -336,6 +683,59 @@ open class KeyboardJourneyTest {
         assertTrue(previewText().isNotBlank())
         assertEquals("How are you?", practiceText())
         capture("21-ask-ai-preview")
+    }
+
+    @Test fun usbGrammarPreservesDraft() {
+        assumeTrue("opt in with kothaUsbGrammar=true", InstrumentationRegistry.getArguments().getString("kothaUsbGrammar") == "true")
+        setupKeyboard()
+        val context = instrumentation.targetContext
+        val settings = LocalSettings(context)
+        val client = AiClient.get(context)
+        val originalOverride = client.backendOverride()
+        val originalEndpoint = client.configuredBackend()
+        val originalConsent = settings.quickAiConsentFor(originalEndpoint)
+        val draft = "she have two blue pens"
+        try {
+            instrumentation.runOnMainSync {
+                client.useUsbBackend()
+                settings.revokeQuickAi()
+            }
+            val ready = CountDownLatch(1)
+            var failure: Throwable? = null
+            client.usage { result ->
+                failure = result.exceptionOrNull()
+                ready.countDown()
+            }
+            assertTrue("USB usage preflight completed", ready.await(20, TimeUnit.SECONDS))
+            assertNull("USB usage preflight failed", failure)
+            focusPracticeField()
+            selectEnglishLayout()
+            val words = draft.split(' ')
+            words.forEachIndexed { index, word ->
+                type(word, if (index == words.lastIndex) null else "Space")
+            }
+            editedText(draft)
+            openFeature("Fix Grammar")
+            waitFor("Allow and continue", keyboard = true)
+            capture("28-usb-grammar-consent")
+            clickWithoutDelay("Allow and continue")
+            waitFor("Replace Text", keyboard = true, timeoutMillis = 65_000)
+            val suggestion = previewText()
+            assertTrue(suggestion.isNotBlank())
+            assertEquals(draft, practiceText())
+            capture("29-usb-grammar-preview")
+            clickKeyboardControl("Replace Text")
+            editedText(suggestion)
+            capture("30-usb-grammar-applied")
+        } finally {
+            instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+            instrumentation.runOnMainSync {
+                if (originalOverride == AiClient.USB_BACKEND) client.useUsbBackend()
+                else client.setBackendOverride(originalOverride)
+                settings.revokeQuickAi()
+                if (originalConsent) settings.allowQuickAi(originalEndpoint)
+            }
+        }
     }
 
     @Test fun phaseOneDarkThemeAndHeightPreference() {
@@ -411,20 +811,13 @@ open class KeyboardJourneyTest {
     }
 
     private fun selectLayout(desired: TypingLanguage) {
-        var current = eventually("current typing layout") {
-            TypingLanguage.entries.firstOrNull { keyboardNode(it.label) != null }
+        if (keyboardNode(desired.label) == null) {
+            clickKeyboardControl("Tools menu")
+            clickKeyboardControl("Typing language")
+            val labels = listOf("English", "Direct Bangla", "Bangla phonetic", "Raw Banglish")
+            clickKeyboardControl(labels[desired.ordinal])
+            waitFor(desired.label, keyboard = true)
         }
-        repeat(TypingLanguage.entries.size - 1) {
-            if (current == desired) {
-                editedText("")
-                return
-            }
-            val expected = TypingLanguage.entries[(current.ordinal + 1) % TypingLanguage.entries.size]
-            clickKeyboardControl("Change typing language")
-            waitFor(expected.label, keyboard = true)
-            current = expected
-        }
-        check(current == desired) { "Could not switch to ${desired.label}" }
         editedText("")
     }
 
@@ -440,21 +833,25 @@ open class KeyboardJourneyTest {
     private fun selectAll() {
         clickKeyboardControl("Select all")
         eventually("entire draft selected") {
-            visibleRoots(false).firstNotNullOfOrNull { root ->
-                root.first(includeHidden = true) { node ->
-                    val length = node.text?.length ?: 0
-                    node.className == "android.widget.EditText" && length > 0 &&
-                        node.textSelectionStart == 0 && node.textSelectionEnd == length
-                }
+            var selected = false
+            instrumentation.runOnMainSync {
+                val field = checkNotNull(activity.window.decorView.practiceField())
+                selected = field.length() > 0 && field.selectionStart == 0 && field.selectionEnd == field.length()
             }
+            true.takeIf { selected }
         }
     }
 
-    private fun clear() {
-        showToolbar()
-        clickKeyboardControl("More options")
+    private fun selectAllFromTools() {
+        clickKeyboardControl("Tools menu")
+        clickKeyboardControl("Text editing")
         selectAll()
-        clickKeyboardControl("Return to keyboard")
+        clickKeyboardControl("Back to tools")
+        clickKeyboardControl("Close tools")
+    }
+
+    private fun clear() {
+        selectAllFromTools()
         clickKeyboardControl("Backspace")
         editedText("")
     }

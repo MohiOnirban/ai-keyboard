@@ -16,6 +16,7 @@ internal class AiPanel(
     private val copy: (String) -> Unit,
     private val use: (RewriteTarget, String) -> Boolean,
     private val insert: (String) -> Boolean,
+    private val isCurrentTarget: (RewriteTarget) -> Boolean,
 ) {
     var editing = false
         private set
@@ -35,6 +36,8 @@ internal class AiPanel(
     private val alternatives = mutableListOf<String>()
     private var status: String? = null
     private var task: AiTask? = null
+    private var requestVersion = 0
+    private var consentOrigin: String? = null
     private var stale = false
     private var moreOptions = false
 
@@ -51,11 +54,12 @@ internal class AiPanel(
             ContentMode.Translation -> "translation"
             else -> ""
         }
+        if (feature == ContentMode.Grammar && target != null) generate()
     }
 
     fun reset() {
-        task?.cancel()
-        task = null
+        cancelTask()
+        consentOrigin = null
         editing = false
         feature = ContentMode.Ask
         mode = "Rewrite"
@@ -73,6 +77,22 @@ internal class AiPanel(
         status = null
         stale = false
         moreOptions = false
+    }
+
+    fun hostChanged() {
+        val target = replacementTarget() ?: return
+        if ((task != null || consentOrigin != null) && !isCurrentTarget(target)) {
+            cancelTask()
+            consentOrigin = null
+            status = "Draft changed. Reopen this tool to use the current draft."
+            refresh()
+        }
+    }
+
+    private fun cancelTask() {
+        requestVersion++
+        task?.cancel()
+        task = null
     }
 
     fun type(text: String) { replaceTail("", text) }
@@ -115,6 +135,7 @@ internal class AiPanel(
     fun render(parent: LinearLayout, views: KeyboardViews) {
         val box = views.vertical().apply { setPadding(views.dp(5), views.dp(2), views.dp(5), views.dp(5)) }
         when {
+            consentOrigin != null -> renderConsent(box, views)
             task != null -> renderLoading(box, views)
             suggestion != null -> renderPreview(box, views)
             else -> renderRequest(box, views)
@@ -123,7 +144,41 @@ internal class AiPanel(
         parent.addView(views.scrollPanel(box))
     }
 
+    private fun renderConsent(box: LinearLayout, views: KeyboardViews) {
+        val origin = checkNotNull(consentOrigin)
+        box.addView(views.label("Allow quick AI actions?", 17f, strong = true))
+        box.addView(views.label("Grammar and tone choices send the displayed text and your writing preferences to the configured AI service."))
+        box.addView(views.label(resolvedInput(), 14f).apply {
+            maxLines = 2
+            ellipsize = TextUtils.TruncateAt.END
+            setPadding(views.dp(4), views.dp(4), views.dp(4), views.dp(4))
+        })
+        box.addView(views.horizontal().apply {
+            views.equal(this, views.action("Allow and continue", accent = true) {
+                consentOrigin = null
+                if (client.configuredBackend() == origin) settings.allowQuickAi(origin)
+                generate()
+            }, 1.5f)
+            views.equal(this, views.action("Not now") {
+                consentOrigin = null
+                status = null
+                refresh()
+            })
+        })
+    }
+
+    private fun renderToneChoices(box: LinearLayout, views: KeyboardViews) {
+        if (feature != ContentMode.Tone) return
+        box.addView(views.chips(tones, style) { tone ->
+            if (style == tone && (task != null || suggestion != null)) return@chips
+            style = tone
+            suggestion = null
+            generate()
+        })
+    }
+
     private fun renderLoading(box: LinearLayout, views: KeyboardViews) {
+        renderToneChoices(box, views)
         val message = when (feature) {
             ContentMode.Grammar -> "Checking grammar…"
             ContentMode.Translation -> "Translating…"
@@ -142,8 +197,7 @@ internal class AiPanel(
         })
         box.addView(views.label("Your draft stays in the message field."))
         box.addView(views.action("Cancel generation") {
-            task?.cancel()
-            task = null
+            cancelTask()
             status = "Generation canceled."
             refresh()
         })
@@ -158,9 +212,7 @@ internal class AiPanel(
                 refresh()
             })
         }
-        if (feature == ContentMode.Tone) {
-            box.addView(views.chips(tones, style) { style = it; refresh() })
-        }
+        renderToneChoices(box, views)
         if (feature == ContentMode.Translation) renderLanguages(box, views)
 
         val input = resolvedInput()
@@ -247,6 +299,7 @@ internal class AiPanel(
     }
 
     private fun renderPreview(box: LinearLayout, views: KeyboardViews) {
+        renderToneChoices(box, views)
         val text = suggestion ?: return
         box.addView(views.label(text.ifEmpty { "Your suggestion is empty." }, 17f).apply {
             id = R.id.ai_suggestion
@@ -315,8 +368,22 @@ internal class AiPanel(
             refresh()
             return
         }
+        if (replacementTarget()?.let { !isCurrentTarget(it) } == true) {
+            status = "Draft changed. Reopen this tool to use the current draft."
+            refresh()
+            return
+        }
+        cancelTask()
         status = null
         stale = false
+        if (feature == ContentMode.Grammar || feature == ContentMode.Tone) {
+            val origin = client.configuredBackend()
+            if (origin.isNotEmpty() && !settings.quickAiConsentFor(origin)) {
+                consentOrigin = origin
+                refresh()
+                return
+            }
+        }
         val preferences = settings.requestPreferences()
         val additions = when {
             feature == ContentMode.Translation -> "Source language: ${Communication.languages.getValue(translationSource)}."
@@ -329,11 +396,14 @@ internal class AiPanel(
         }
         val language = if (feature == ContentMode.Translation) translationTarget else settings.aiLanguage
         val request = GenerationRequest(mode, input, style, intensity, relationship, language, preferences)
+        val version = requestVersion
+        val requestedFeature = feature
         task = client.generate(request) { result ->
+            if (version != requestVersion) return@generate
             task = null
             result.onSuccess {
                 suggestion = it.suggestion
-                if (feature == ContentMode.Tone && it.suggestion !in alternatives) {
+                if (requestedFeature == ContentMode.Tone && it.suggestion !in alternatives) {
                     if (alternatives.size == 3) alternatives.removeAt(0)
                     alternatives.add(it.suggestion)
                 }

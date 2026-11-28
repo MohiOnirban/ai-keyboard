@@ -9,6 +9,22 @@ enum Settings {
     "Mature", "Emotional", "Respectful", "Professional", "Savage", "Comforting", "Apologetic",
     "Culturally inspired", "Custom instructions",
   ]
+  static var aiConsent: Bool { prefs.bool(forKey: "aiConsent") }
+  static var autocorrect: Bool { prefs.bool(forKey: "autocorrect") }
+  static var predictiveSuggestions: Bool { prefs.object(forKey: "predictiveSuggestions") as? Bool ?? true }
+  static var nextWordPrediction: Bool { prefs.object(forKey: "nextWordPrediction") as? Bool ?? true }
+  static var automaticCapitalization: Bool { prefs.bool(forKey: "automaticCapitalization") }
+  static var learning: Bool { prefs.bool(forKey: "typingLearning") }
+  private static let historyKey = "typingHistory"
+  static var typingHistory: TypingHistory {
+    guard learning, let data = prefs.data(forKey: historyKey) else { return TypingHistory() }
+    return (try? JSONDecoder().decode(TypingHistory.self, from: data)) ?? TypingHistory()
+  }
+  static func saveTypingHistory(_ history: TypingHistory) {
+    if learning, let data = try? JSONEncoder().encode(history) { prefs.set(data, forKey: historyKey) }
+  }
+  static func clearTypingHistory() { prefs.removeObject(forKey: historyKey) }
+  static var personalWords: [String] { prefs.stringArray(forKey: "personalWords") ?? [] }
   static var favorites: [String] {
     prefs.stringArray(forKey: "favorites") ?? ["Funny", "Respectful", "Romantic"]
   }
@@ -113,18 +129,33 @@ actor Service {
       req.httpBody = try JSONSerialization.data(withJSONObject: body)
       req.setValue("application/json", forHTTPHeaderField: "Content-Type")
     }
-    let (data, response) = try await net.data(for: req)
-    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+    let (data, reply) = try await net.data(for: req)
+    let response = reply as? HTTPURLResponse
+    let status = response?.statusCode ?? 0
     if status == 401 {
       if path == "v1/session" && method == "DELETE" { return data }
       if let credential { try remove(credential) }
     }
     guard (200..<300).contains(status) else {
-      throw Problem(
-        [
-          401: "Session expired. Try again.", 409: "This request was already processed.",
-          429: "Usage or rate limit reached.",
-        ][status] ?? "Generation service unavailable (\(status)).")
+      let diagnostic = response?.value(forHTTPHeaderField: "kotha-error-code") ?? ""
+      let diagnostics = [
+        "budget": "The AI service has reached its spending limit.",
+        "provider_restricted": "The configured AI model or provider is unavailable.",
+        "provider_quota": "The AI provider has reached its spending limit.",
+        "provider_rate": "The AI provider is busy. Try again shortly.",
+        "provider_auth": "The AI provider could not authenticate the service.",
+        "provider_timeout": "The AI provider took too long to respond.",
+        "provider_dns": "The service could not resolve the AI provider address.",
+        "provider_tls": "The service could not establish a secure connection to the AI provider.",
+        "provider_http": "The AI provider is temporarily unavailable.",
+        "provider_response": "The AI provider returned an unusable response.",
+        "quota": "The daily AI allowance has been reached.",
+      ]
+      let statusMessage = [
+        401: "Session expired. Try again.", 409: "This request was already processed.",
+        429: "Usage or rate limit reached.",
+      ][status]
+      throw Problem(diagnostics[diagnostic] ?? statusMessage ?? "Generation service unavailable (\(status)).")
     }
     return data
   }

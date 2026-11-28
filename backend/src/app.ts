@@ -5,7 +5,7 @@ import type { Config } from "./config.ts";
 import { connect } from "./database.ts";
 import { Ledger } from "./ledger.ts";
 import { makeProvider, prepare } from "./provider.ts";
-import type { Generate, Result } from "./provider.ts";
+import type { Generate, ProviderFailure, Result } from "./provider.ts";
 
 const EMPTY_OBJECT = { type: "object", properties: {}, additionalProperties: false } as const;
 const option = { type: "string", maxLength: 80 } as const;
@@ -45,10 +45,12 @@ const publicErrors = {
   unavailable: [503, "AI is temporarily unavailable."],
 } as const;
 
-function respond(reply: FastifyReply, error: keyof typeof publicErrors) {
+type PublicError = keyof typeof publicErrors;
+
+function respond(reply: FastifyReply, error: PublicError, diagnostic: PublicError | ProviderFailure | "budget" = error) {
   const [code, message] = publicErrors[error];
   if (error === "rate") reply.header("retry-after", "60");
-  return reply.code(code).send({ error: message });
+  return reply.header("kotha-error-code", diagnostic).code(code).send({ error: message });
 }
 
 const bearerPattern = /^Bearer ([A-Za-z0-9_-]{43})$/i;
@@ -133,6 +135,7 @@ export async function buildApp(config: Config, generate: Generate = makeProvider
     reply.raw.once("close", close);
     try {
       const admission = await ledger.reserve(token, header.toLowerCase(), request.ip);
+      if (admission.status === "unavailable" && admission.budget) return respond(reply, "unavailable", "budget");
       if (admission.status !== "accepted") return respond(reply, admission.status);
 
       const started = performance.now();
@@ -150,17 +153,22 @@ export async function buildApp(config: Config, generate: Generate = makeProvider
         && (result.billedMicros ?? 0) <= config.reserveMicros;
       if (!withinLimits) console.error("Provider-reported usage exceeded the reserved bound.");
 
+      const latencyMs = Math.round(performance.now() - started);
+      if (result.kind === "error" && result.reason) {
+        console.warn(`stage=provider code=${result.reason} duration_ms=${latencyMs}`);
+      }
       const outcome = await ledger.finish(admission.reservation, {
         successful: result.kind === "suggestion" && !disconnected && withinLimits,
         billedMicros: result.billedMicros,
         inputTokens: result.inputTokens,
         outputTokens: result.outputTokens,
-        latencyMs: Math.round(performance.now() - started),
+        latencyMs,
       });
 
       if (disconnected) return;
       if (!outcome.authorized) return respond(reply, "unauthorized");
       if (result.kind === "refusal") return respond(reply, "refusal");
+      if (result.kind === "error" && result.reason) return respond(reply, "unavailable", result.reason);
       if (result.kind !== "suggestion" || !outcome.successful) return respond(reply, "unavailable");
       return { suggestion: result.text, used: outcome.used, limit: config.dailyLimit };
     } finally {

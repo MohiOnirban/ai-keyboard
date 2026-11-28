@@ -68,8 +68,21 @@ test("unsuccessful Responses outputs retain known spend without exposing provide
     [{ error_type: "content_policy_violation", usage }, "refusal", 400],
   ] as const) {
     const result = await makeProvider(live, async () => Response.json(body, { status }))(request, prepared);
-    assert.deepEqual(result, { kind: expectedKind, billedMicros: 30, inputTokens: 149, outputTokens: 33 });
+    const reason = expectedKind === "refusal" ? {} : { reason: status === 500 ? "provider_http" : "provider_response" };
+    assert.deepEqual(result, { kind: expectedKind, ...reason, billedMicros: 30, inputTokens: 149, outputTokens: 33 });
   }
   const unknown = await makeProvider(live, async () => { throw new Error("private error"); })(request, prepared);
-  assert.deepEqual(unknown, { kind: "error", billedMicros: null, inputTokens: null, outputTokens: null });
+  assert.deepEqual(unknown, { kind: "error", reason: "provider_http", billedMicros: null, inputTokens: null, outputTokens: null });
+});
+
+test("diagnostics classify failed HTTP responses without copying private provider content", async () => {
+  const prepared = prepare(request, live);
+  assert.ok(prepared);
+  for (const [status, reason] of [
+    [401, "provider_auth"], [402, "provider_quota"], [404, "provider_restricted"],
+    [408, "provider_timeout"], [429, "provider_rate"],
+  ] as const) {
+    const result = await makeProvider(live, async () => new Response("private malformed body", { status }))(request, prepared);
+    assert.deepEqual(result, { kind: "error", reason, billedMicros: null, inputTokens: null, outputTokens: null });
+  }
 });

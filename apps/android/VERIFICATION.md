@@ -1,5 +1,38 @@
 # Android verification
 
+## Phase 2
+
+Version 0.2.0 (code 3) was built with Android SDK 36, minimum API 24. The signed debug APK was installed and its SHA-256 matched the staged download. The release APK is unsigned. The package includes both shared language files, the frequency data notices and license, and the Avro data and notices. [Debug APK](../../artifacts/phase2/KothaKey-android-debug.apk) · [Unsigned release APK](../../artifacts/phase2/KothaKey-android-release-unsigned.apk) · [Checksums](../../artifacts/phase2/checks/android/SHA256SUMS.txt) · [Signature](../../artifacts/phase2/checks/android/signature.txt) · [Packaged assets](../../artifacts/phase2/checks/android/packaged-language-assets.txt)
+
+The final Gradle build passed 23 JVM tests. Lint reported 0 errors, 27 warnings, 1 hint. The API 35 run completed in 146.549 seconds with 15 passing tests and 2 opt-in skips. The emulator used a local mock service for all four AI workflows. A separate 320 dp run passed both tools navigation and URL geometry checks. [Build transcript](../../artifacts/phase2/checks/android/build-final-verified.log) · [Final instrumentation](../../artifacts/phase2/checks/android/ordinary-api35-final.log) · [320 dp run](../../artifacts/phase2/checks/android/android-320dp-final.log)
+
+The emulator tests exercised the fixed-height tools dashboard, layout restoration, both symbol pages, numeric text entry, long-press numbers, cursor movement, clipboard paste, theme changes, the companion settings shortcut, and the host's contextual Done action. Offline tests exercised the requested English contraction, next-word suggestions, disabling and clearing learning, secure fields, URLs, the personal dictionary, Bangla phonetic conversion and grapheme deletion. Android's active Google voice service opened after tapping Start voice input. Physical haptics and English, Bangla and mixed-speech transcription remain unverified. [Contraction suggestion](../../artifacts/phase2/after/android/33-contraction-suggestion.png) · [Provider handoff](../../artifacts/phase2/after/android/32-android-voice-provider.png)
+
+Gboard and KothaKey captures used the same 1,080 × 2,400 API 35 emulator at 420 dpi. KothaKey keeps 153 px row pitch across the four layouts, compared with 154–155 px on the installed Gboard. Dedicated numeric upper faces measure 137 px, compared with 139–140 px on Gboard. The previous KothaKey symbols and numeric layouts used 179 px row pitch. [Alphabet](../../artifacts/phase2/comparison/android/alphabet.png) · [Symbols](../../artifacts/phase2/comparison/android/symbols.png) · [Secondary symbols](../../artifacts/phase2/comparison/android/secondary-symbols.png) · [Numeric keypad](../../artifacts/phase2/comparison/android/numeric-keypad.png) · [Tools](../../artifacts/phase2/comparison/android/tools.png) · [Measurements](../../artifacts/phase2/checks/android/layout-measurements.txt)
+
+| API 35 emulator measurement | Phase 1.1 geometry APK | Phase 2 APK |
+| --- | ---: | ---: |
+| Debug APK bytes | 9,788,167 | 10,006,885 |
+| Companion cold start median, 3 force-stopped launches | 2,186 ms | 2,291 ms |
+| Proportional set size after keyboard opens | 82,171 KiB | 120,751 KiB |
+| Proportional set size after 54 verified synthetic taps | 96,499 KiB | 108,017 KiB |
+| Process user and system CPU ticks for those taps | 798 | 730 |
+| ADB tap sequence elapsed time | 9.51 s | 8.64 s |
+
+The whole-app sample includes software emulator rendering, the companion app and the ADB tap driver. It measures a small synthetic sequence, and its elapsed time includes ADB command overhead. In-process prediction timings were measured separately. Physical-device latency, CPU and battery impact remain open. [Whole-app transcript](../../artifacts/phase2/checks/android/whole-app-benchmark.log) · [Before samples](../../artifacts/phase2/checks/android/compared-before-companion-three-cold-starts.txt) · [After samples](../../artifacts/phase2/checks/android/compared-after-companion-three-cold-starts.txt) · [Prediction measurements](../../docs/phase2.md)
+
+## Phase 1.1
+
+The signed debug APK is version 0.1.1 (version code 2). The isolated API 35 emulator upgraded in place from Phase 1 and ran the final APK. The Android debug signing certificate matches Phase 1. Its SHA-256 is `2b55cb12570676e72744a335ccc834091bce250e774bdb916fa69be259f27d1a`. The compiled release APK is unsigned. [Download the debug APK](../../artifacts/phase11/KothaKey-android-debug.apk) · [Signature](../../artifacts/phase11/checks/android/signature.log)
+
+The Gradle run built the debug, release and instrumentation APKs. All 15 JVM tests passed, and Android lint reported zero errors and 22 warnings. The debug package contains the shared prediction corpus and existing Avro assets. [Build transcript](../../artifacts/phase11/checks/android/build-final.log)
+
+The final API 35 instrumentation run completed in 98.096 seconds with 11 passing ordinary tests, two opt-in skips and zero failures. It used the local mock backend and a 1,080 × 2,400 display. [Instrumentation results](../../artifacts/phase11/checks/android/ordinary-api35-verified.log)
+
+The offline keyboard checks cover the persistent toolbar and separate candidate row, English correction and both undo actions, disabling autocorrection, next-word selection, personal dictionary updates, the phonetic Bangla phrase, Bengali and emoji graphemes, and suggestions and AI suppression in a password field. The microphone opened Android’s voice input panel. Physical handset dictation remains unverified. [Suggestion row](../../artifacts/phase11/after/android/25-suggestions-toolbar.png) · [Voice panel](../../artifacts/phase11/after/android/26-voice.png) · [Password field](../../artifacts/phase11/after/android/27-private-field.png)
+
+Grammar displayed first-use consent, accepted a decline without replacing the draft, generated after approval and opened directly for another eligible draft. Selecting a tone generated without a second button. Ask AI and Translation used their explicit buttons. The tests checked draft preservation through preview, explicit replacement and safe handling of changed selections. [Grammar consent](../../artifacts/phase11/after/android/14-fix-grammar-consent.png) · [Grammar preview](../../artifacts/phase11/after/android/15-fix-grammar-preview.png) · [Tone preview](../../artifacts/phase11/after/android/17-improve-tone-preview.png)
+
 ## Phase 1 keyboard redesign
 
 The Phase 1 Android debug package is signed with the SDK development key and targets the emulator host mock at `10.0.2.2:4000`. Its SHA-256 is `12b1655517a439458eb1f25a806b3a68955777d703cca5dbd4076a09bfcdf0de`. The unsigned release APK built with SHA-256 `2e95a085535d739955289e0dcfda50f91a3f63fc62638d2650d47c46618af0dc`. [Debug APK](../../artifacts/phase1/KothaKey-android-debug.apk)

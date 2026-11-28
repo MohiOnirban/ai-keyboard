@@ -12,11 +12,18 @@ enum Deck {
   static let background = color(0xF0F2EF, 0x121816), key = color(0xFFFFFF, 0x29312E)
   static let function = color(0xDCE9E2, 0x354B42), brand = color(0x006B58, 0x006B58)
   static let ink = color(0x192923, 0xF5F7F6), muted = color(0x75847D, 0xA4B3AC)
-  static let gap: CGFloat = 3, rowGap: CGFloat = 5, radius: CGFloat = 6, specialRadius: CGFloat = 13
+  static let separator = color(0xBECBC3, 0x4A5A53)
+  static let gap: CGFloat = 4.5, rowGap: CGFloat = 5, specialRadius: CGFloat = 13
   static let toolbar: CGFloat = 44, letter: CGFloat = 22, utility: CGFloat = 15
-  static func height(compact: Bool, preference: String) -> CGFloat {
+  static let keyboardEdge: CGFloat = 1
+  static func suggestionHeight(compact: Bool) -> CGFloat { compact ? 27 : 45 }
+  static func height(compact: Bool, preference: String, width: CGFloat) -> CGFloat {
     let offset: CGFloat = ["Compact": -18, "Tall": 22][preference] ?? 0
-    return (compact ? 206 : 262) + offset
+    let fittedWidth = min(460, max(320, width > 0 ? width : 390))
+    // The reference is 1,170 px wide with a 162 px row pitch and a 129 px face.
+    let pitch = compact ? 36 : (fittedWidth * 162 / 1170).rounded()
+    let chrome = (compact ? 35 : toolbar) + suggestionHeight(compact: compact) + 8 + 2 * rowGap
+    return chrome + pitch * 4 + offset
   }
 }
 
@@ -45,14 +52,20 @@ final class KeyLane: UIView {
 final class DeckKey: UIButton {
   let face = UIView(), hint = UILabel()
   var alternate: (() -> Void)?
+  var isTypingKey = false
+  private let kind: Kind
+  private weak var previewHost: UIView?
+  private var previewText: String?
+  private var preview: UILabel?
   init(_ title: String, kind: Kind = .letter) {
+    self.kind = kind
     super.init(frame: .zero)
     face.isUserInteractionEnabled = false
     insertSubview(face, at: 0)
     face.backgroundColor =
       kind == .transparent
-      ? .clear : kind == .accent ? Deck.brand : kind == .function ? Deck.function : Deck.key
-    face.layer.cornerRadius = kind == .letter ? Deck.radius : Deck.specialRadius
+      ? .clear : kind == .accent ? Deck.brand : (kind == .function || kind == .pill) ? Deck.function : Deck.key
+    face.layer.cornerRadius = Deck.specialRadius
     face.layer.cornerCurve = .continuous
     setTitle(title, for: .normal)
     setTitleColor(kind == .accent ? .white : Deck.ink, for: .normal)
@@ -68,17 +81,65 @@ final class DeckKey: UIButton {
     addSubview(hint)
     accessibilityLabel = title
   }
-  enum Kind { case letter, function, accent, transparent }
+  enum Kind { case letter, function, pill, accent, transparent }
   required init?(coder: NSCoder) { fatalError() }
   override var isHighlighted: Bool { didSet { face.alpha = isHighlighted ? 0.55 : 1 } }
   override func layoutSubviews() {
     super.layoutSubviews()
-    face.frame = bounds.insetBy(dx: Deck.gap / 2, dy: 0.5)
+    let verticalGap = isTypingKey ? (bounds.height * 0.10).rounded() : 0.5
+    face.frame = bounds.insetBy(dx: isTypingKey ? 3 : Deck.gap / 2, dy: verticalGap)
+    face.layer.cornerRadius = isTypingKey ? 5 : Deck.specialRadius
+    if isTypingKey { face.layer.cornerCurve = .circular }
     sendSubviewToBack(face)
-    hint.frame = CGRect(x: 1, y: 2, width: bounds.width - 7, height: 12)
+    hint.frame = CGRect(x: 1, y: verticalGap + 2, width: bounds.width - 7, height: 12)
   }
+  func installPreview(in host: UIView, text: String) {
+    previewHost = host
+    previewText = text
+    addTarget(self, action: #selector(showPreview), for: .touchDown)
+    addTarget(self, action: #selector(hidePreview), for: [.touchUpInside, .touchUpOutside, .touchCancel, .touchDragExit])
+  }
+
+  func setPreviewText(_ text: String) { previewText = text }
+
+  @objc private func showPreview() {
+    guard let host = previewHost, let text = previewText, preview == nil else { return }
+    let keyRect = convert(face.frame, to: host)
+    let available = host.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 2, dy: 0)
+    let width = min(available.width, max(42, keyRect.width + 14))
+    guard width > 0 else { return }
+    let height = max(42, keyRect.height + 12)
+    let edge = min(max(keyRect.midX - width / 2, available.minX), available.maxX - width)
+    let bubble = UILabel(frame: CGRect(x: edge, y: max(available.minY, keyRect.minY - height + 6),
+      width: width, height: height))
+    bubble.text = text
+    bubble.font = .systemFont(ofSize: 30, weight: .regular)
+    bubble.textAlignment = .center
+    bubble.textColor = Deck.ink
+    bubble.backgroundColor = Deck.key
+    bubble.layer.cornerRadius = 7
+    bubble.layer.masksToBounds = true
+    bubble.isUserInteractionEnabled = false
+    bubble.isAccessibilityElement = false
+    host.addSubview(bubble)
+    preview = bubble
+  }
+
+  @objc private func hidePreview() {
+    preview?.removeFromSuperview()
+    preview = nil
+  }
+
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    if window == nil { hidePreview() }
+  }
+
   @objc func held(_ recognizer: UILongPressGestureRecognizer) {
-    if recognizer.state == .began { alternate?() }
+    if recognizer.state == .began {
+      hidePreview()
+      alternate?()
+    }
   }
 }
 
@@ -90,10 +151,24 @@ enum Tool: String, CaseIterable {
   case translate = "Translation"
   case emoji = "Emoji"
   case clipboard = "Clipboard"
-  case more = "More options"
+  case more = "Tools"
   case voice = "Voice input"
+  case theme = "Theme"
+  case language = "Typing language"
+  case editing = "Text editing"
+  case layout = "Keyboard layout"
+  case settings = "Settings"
   var ai: Bool { [.grammar, .tone, .ask, .translate].contains(self) }
-  private static let icons = Dictionary(uniqueKeysWithValues: allCases.map { ($0, $0.drawIcon()) })
+  private static let symbols: [Self: String] = [
+    .theme: "paintpalette", .language: "globe", .editing: "cursorarrow.rays",
+    .layout: "keyboard", .settings: "gearshape",
+  ]
+  private static let icons = Dictionary(uniqueKeysWithValues: allCases.map { tool in
+    let symbol = symbols[tool].flatMap {
+      UIImage(systemName: $0, withConfiguration: UIImage.SymbolConfiguration(pointSize: 19, weight: .medium))
+    }
+    return (tool, symbol ?? tool.drawIcon())
+  })
   func icon() -> UIImage { Self.icons[self]! }
   private func drawIcon() -> UIImage {
     let image = UIGraphicsImageRenderer(size: CGSize(width: 24, height: 24)).image { _ in
@@ -151,12 +226,15 @@ enum Tool: String, CaseIterable {
         line([(9, 11), (15, 11)])
         line([(9, 15), (13, 15)])
       case .more:
-        for x in [4, 10, 16] { round(CGRect(x: x, y: 10, width: 3, height: 3), 1.5) }
+        for y in [4, 13] {
+          for x in [4, 13] { round(CGRect(x: x, y: y, width: 7, height: 7), 1.7) }
+        }
       case .voice:
         round(CGRect(x: 9, y: 3, width: 6, height: 12), 3)
         line([(5, 12), (6, 16), (9, 18), (15, 18), (18, 16), (19, 12)])
         line([(12, 18), (12, 21)])
         line([(9, 21), (15, 21)])
+      default: break
       }
     }
     return image.withRenderingMode(.alwaysTemplate)
@@ -172,16 +250,18 @@ enum KeyMaps {
     "ািীুূৃেৈোৌ".unicodeScalars.map(String.init),
     ["্", "ং", "ঃ", "ঁ", "ড়", "ঢ়", "য়", "ৎ"], "০১২৩৪৫৬৭৮৯".map(String.init),
   ]
-  static let symbols = ["1234567890", "@#$_&-+()/", "!?\"':;/"].map { $0.map(String.init) }
-  static let secondary = ["~`|•√π÷×¶∆", "£€¥¢^°={}", "\\©®™℅[]"].map { $0.map(String.init) }
+  static let symbols = [
+    "1234567890".map(String.init),
+    ["-", "/", ":", ";", "(", ")", "£", "&", "@", "\""],
+    [".", ",", "?", "!", "'"],
+  ]
+  static let secondary = [
+    ["[", "]", "{", "}", "#", "%", "^", "*", "+", "="],
+    ["_", "\\", "|", "~", "<", ">", "€", "$", "¥", "•"],
+    symbols[2],
+  ]
   static let emoji = [
     "🙂", "😄", "😂", "🥹", "😍", "🤔", "😅", "🙃", "🥲", "😎", "🤍", "❤️", "🙏", "👍", "✨", "🎉", "🌸", "🔥", "🙌",
     "💚", "😴", "🥳", "👏", "💬",
   ]
-  static let english =
-    "about after again almost already always because before better between coming could early evening family friend friends good great happy hello helpful later lunch meeting message morning night please really reply right should sorry thank thanks their there these thing think today together tomorrow tonight would your you're"
-    .split(separator: " ").map(String.init)
-  static let banglish =
-    "abar ache achho achi ajke amar amake amader ami apnar apni aschi bhalo bhalobasha bhai bon bondhu cholo dhonnobad ekhane hobe khabar kemon korbo korte kotha kothay onek porer shomoy tomar tomake tumi"
-    .split(separator: " ").map(String.init)
 }

@@ -49,7 +49,9 @@ test("mock API covers session lifecycle, validation, privacy and quota", async (
   assert.equal(typeof response.json().suggestion, "string");
   assert.deepEqual((await usage()).json(), { used: 1, limit: 1 });
   assert.equal((await app.inject(generation(token, undefined, id.toUpperCase()))).statusCode, 409);
-  assert.equal((await app.inject(generation(token))).statusCode, 429);
+  const quota = await app.inject(generation(token));
+  assert.equal(quota.statusCode, 429);
+  assert.equal(quota.headers["kotha-error-code"], "quota");
   assert.equal((await app.inject({ method: "DELETE", url: "/v1/session", headers: authorization })).statusCode, 204);
   assert.equal((await usage()).statusCode, 401);
   assert.equal((await app.inject(generation(token))).statusCode, 401);
@@ -142,4 +144,16 @@ test("a disconnected client keeps its allowance and can explicitly generate afte
   assert.equal(next.json().used, 1);
   assert.equal((await app.inject(original)).statusCode, 409);
   assert.equal(calls, 2);
+});
+
+test("provider failures preserve the API error shape and add a fixed diagnostic code", async (t) => {
+  const app = await buildApp(readConfig({}), async () => ({
+    kind: "error", reason: "provider_restricted", inputTokens: null, outputTokens: null, billedMicros: null,
+  }));
+  t.after(() => app.close());
+  const session = await app.inject({ method: "POST", url: "/v1/sessions", payload: {} });
+  const failed = await app.inject(generation(session.json().token));
+  assert.equal(failed.statusCode, 503);
+  assert.equal(failed.headers["kotha-error-code"], "provider_restricted");
+  assert.deepEqual(failed.json(), { error: "AI is temporarily unavailable." });
 });

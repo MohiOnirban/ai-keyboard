@@ -14,9 +14,15 @@ POST /v1/generate with bearer and Idempotency-Key UUID, JSON {mode:"rewrite"|"re
 | Text | #192923 | #F5F7F6 |
 | Secondary | #75847D | #A4B3AC |
 
-Use ten equal letter positions, half a position of inset on either side of the home row, and wider Shift and Backspace around the seven third-row letters. The spacebar identifies the active language. Typing, AI, clipboard and emoji share one height for a given device, orientation and user preference. System insets are measured separately. Use local candidates during composition. Each toolbar action has an accessible name.
+Use ten equal letter positions, half a position of inset on either side of the home row, and wider Shift and Backspace around the seven third-row letters. The spacebar identifies the active language. Typing, AI, clipboard and emoji share one height for a given device, orientation and user preference. System insets are measured separately. Keep the toolbar visible above a dedicated row of up to three local candidates. Suppress suggestions for protected fields. Each toolbar action has an accessible name.
 
-The four AI tools share the generation endpoint. Grammar and translation use rewrite with the fixed styles `fix grammar` and `translation`. Translation sends the target via `language`. Tone sends the selected style. Ask AI uses the existing Rewrite, Reply and Express modes. Opening a tool is local. Each generation requires an explicit action. Verify the saved target before applying, and keep drafts local until Generate.
+The four AI tools share the generation endpoint. Grammar and translation use rewrite with the fixed styles `fix grammar` and `translation`. Translation sends the target via `language`. Tone sends the selected style. Ask AI uses the existing Rewrite, Reply and Express modes. Persist explicit permission for direct AI actions. Once granted, opening Grammar on a valid draft and choosing a tone can initiate a request. Other generation actions use their own explicit controls. Verify the original target before applying any result.
+
+## Phase 2 typing behavior
+
+The tools grid opens from the leftmost toolbar action and uses the typing area. Voice anchors the trailing side of the toolbar. Keep the alphabet’s ten-column width and its existing outer padding. The symbol layer has two pages. The dedicated keypad aligns three standard digit columns with stacked utility controls and uses text input actions for arithmetic characters.
+
+Use the bundled language-tagged sentence corpus and lexical frequency data to predict offline. A loaded model can show typed text and ranked alternatives in three equal slots. Typo ranking may surface an option even where automatic correction is inappropriate. Keep the automatic edit policy conservative and the undo range anchored to the current editor. Preserve recognized dialect forms, names and sensitive editor content. The user can independently control next-word prediction, capitalization, correction, suggestions and local learning. Native implementations retain existing host input restrictions and platform dictation behavior.
 
 ## Acceptance
 

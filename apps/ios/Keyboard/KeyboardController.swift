@@ -23,72 +23,90 @@ private struct Anchor: Equatable {
   }
 }
 
-// Both toolbar states stay mounted. A candidate transition only changes titles, visibility
-// and frames inside this view; it cannot invalidate the outer five-row keyboard layout.
-private final class TypingToolbar: UIView {
-  private let actions: UIView
-  private let tools: UIButton
-  private let choices: [UIButton]
-  private(set) var candidates: [String] = []
+private enum Candidate: Equatable {
+  case word(String)
+  case undo(String)
 
-  init(actions: UIView, tools: UIButton, choices: [UIButton]) {
-    self.actions = actions
-    self.tools = tools
-    self.choices = choices
-    super.init(frame: .zero)
-    addSubview(actions)
-    addSubview(tools)
-    tools.isHidden = true
-    for key in choices {
-      addSubview(key)
-      key.isHidden = true
-    }
-  }
-
-  required init?(coder: NSCoder) { fatalError() }
-
-  func show(_ words: [String]) {
-    guard candidates != words else { return }
-    let previousCount = candidates.count
-    candidates = words
-    for (index, key) in choices.enumerated() {
-      let word = index < words.count ? words[index] : nil
-      if key.currentTitle != word {
-        if key.isTracking { key.cancelTracking(with: nil) }
-        key.setTitle(word, for: .normal)
-        key.accessibilityLabel = word
-      }
-      if key.isHidden != (word == nil) { key.isHidden = word == nil }
-    }
-    if (previousCount == 0) != words.isEmpty {
-      actions.isHidden = !words.isEmpty
-      tools.isHidden = words.isEmpty
-    }
-    if previousCount != words.count { setNeedsLayout() }
-  }
-
-  override func layoutSubviews() {
-    super.layoutSubviews()
-    actions.frame = bounds
-    guard !candidates.isEmpty else { return }
-    let toolsWidth = min(44, bounds.width)
-    tools.frame = CGRect(x: 0, y: 0, width: toolsWidth, height: bounds.height)
-    let spacing: CGFloat = 2
-    let count = candidates.count
-    let width = max(0, bounds.width - toolsWidth - spacing * CGFloat(count - 1)) / CGFloat(count)
-    for index in 0..<count {
-      choices[index].frame = CGRect(
-        x: toolsWidth + CGFloat(index) * (width + spacing),
-        y: 0, width: width, height: bounds.height)
+  var title: String {
+    switch self {
+    case .word(let word): return word
+    case .undo(let word): return "Undo · " + word
     }
   }
 }
 
-final class KeyboardController: UIInputViewController {
+private final class ClickInputView: UIInputView, UIInputViewAudioFeedback {
+  var enableInputClicksWhenVisible: Bool { true }
+}
+
+private final class CandidateRow: UIStackView {
+  private(set) var candidates: [Candidate] = []
+  private let buttons: [DeckKey]
+  private let dividers = [UIView(), UIView()]
+
+  init(_ buttons: [DeckKey]) {
+    self.buttons = buttons
+    super.init(frame: .zero)
+    axis = .horizontal
+    distribution = .fillEqually
+    buttons.forEach(addArrangedSubview)
+    for divider in dividers {
+      divider.backgroundColor = Deck.separator
+      divider.isUserInteractionEnabled = false
+      divider.isAccessibilityElement = false
+      addSubview(divider)
+    }
+    show([])
+  }
+
+  required init(coder: NSCoder) { fatalError() }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    let scale = max(1, traitCollection.displayScale)
+    for (index, divider) in dividers.enumerated() {
+      let x = (bounds.width * CGFloat(index + 1) * scale / 3).rounded() / scale
+      let inset = (bounds.height * 0.24).rounded()
+      divider.frame = CGRect(x: x, y: inset, width: 1 / scale, height: max(0, bounds.height - inset * 2))
+    }
+  }
+
+  func show(_ words: [Candidate]) {
+    candidates = words
+    dividers.forEach { $0.isHidden = words.isEmpty }
+    for (index, button) in buttons.enumerated() {
+      let candidate = index < words.count ? words[index] : nil
+      if button.currentTitle != candidate?.title {
+        if button.isTracking { button.cancelTracking(with: nil) }
+        button.setTitle(candidate?.title, for: .normal)
+        button.accessibilityLabel = candidate?.title
+      }
+      button.isEnabled = candidate != nil
+      button.isAccessibilityElement = candidate != nil
+    }
+  }
+}
+
+final class KeyboardController: UIInputViewController, UIGestureRecognizerDelegate {
   private let rows = UIStackView()
   private let rules = Phonetic.bundled()
-  private lazy var banglaWords = Array(Set(rules?.words.values.map { $0 } ?? [])).sorted()
-  private weak var typingToolbar: TypingToolbar?
+  private static let predictions = DispatchQueue(label: "dev.kothakeys.prediction", qos: .userInitiated)
+  private static let bundledPredictor = Predictor.bundled()
+  private var predictor: Predictor?
+  private var predictionWork: DispatchWorkItem?
+  private var predictionRevision = 0
+  private var prefixWasAutomaticallyCapitalized = false
+  private var autoShiftSuppressed = false
+  private var renderedAutomaticShift = false
+  private var cursorDrag: (document: UUID, x: CGFloat)?
+  private weak var returnControl: DeckKey?
+  private weak var shiftControl: DeckKey?
+  private var latinKeys: [(key: DeckKey, letter: String, alternate: String?)] = []
+  private var showsVoiceToolbar: Bool { needsInputModeSwitchKey }
+  private weak var candidateRow: CandidateRow?
+  private var candidateAnchor: Anchor?
+  private var typingAnchor: Anchor?
+  private var correction: (original: String, replacement: String, anchor: Anchor)?
   private let layouts = ["English", "বাংলা", "Phonetic", "Banglish"]
   private var layout = 0, page = 0, shift = 0
   private var raw = "", loading = false, editingPreview = false
@@ -131,8 +149,8 @@ final class KeyboardController: UIInputViewController {
     .oneTimeCode, .password, .newPassword, .creditCardNumber, .creditCardExpiration,
     .creditCardExpirationMonth, .creditCardExpirationYear, .creditCardSecurityCode, .creditCardType,
     .creditCardName, .creditCardGivenName, .creditCardMiddleName, .creditCardFamilyName,
+    .username, .emailAddress, .telephoneNumber, .URL,
   ]
-  private static let wordScalars = CharacterSet.letters.union(.nonBaseCharacters)
 
   private var sensitive: Bool {
     let input = proxy
@@ -140,33 +158,110 @@ final class KeyboardController: UIInputViewController {
     guard let type = input.textContentType ?? nil else { return false }
     return Self.protectedTypes.contains(type)
   }
+  private var canPredictHere: Bool {
+    guard !sensitive, !hasEditor, !numericPage, !numericHost else { return false }
+    return ![.emailAddress, .URL, .webSearch, .twitter, .namePhonePad].contains(
+      proxy.keyboardType ?? .default)
+  }
+  private var allowsPrediction: Bool { page == 0 && canPredictHere }
+  private var showsSymbolPredictions: Bool {
+    page > 0 && canPredictHere && Settings.predictiveSuggestions && Settings.nextWordPrediction
+  }
+  private var allowsPhonetic: Bool {
+    !sensitive && layout == 2 && page == 0 && !numericPage && !numericHost
+  }
+  private var typingLanguage: TypingLanguage {
+    switch layout {
+    case 1, 2: return .bangla
+    case 3: return .banglish
+    default: return .english
+    }
+  }
+  private var personalWords: [String] { Settings.personalWords }
+  private var automaticShift: Bool {
+    guard shift == 0, layout == 0, allowsPrediction, Settings.automaticCapitalization,
+      !autoShiftSuppressed else { return false }
+    let before = proxy.documentContextBeforeInput ?? ""
+    switch proxy.autocapitalizationType ?? .sentences {
+    case .none: return false
+    case .allCharacters: return true
+    case .words: return before.last?.isWhitespace != false
+    case .sentences:
+      let isEmpty = before.allSatisfy(\.isWhitespace)
+      return isEmpty || before.last == "\n"
+        || before.last?.isWhitespace == true
+          && before.reversed().first(where: { !$0.isWhitespace }).map { ".!?।".contains($0) } == true
+    @unknown default: return false
+    }
+  }
+
+  private var learningAllowed: Bool {
+    hasFullAccess && tool == nil && allowsPrediction && Settings.learning
+      && proxy.autocorrectionType != .no
+  }
+
+  private func learn(_ value: String, as event: TypingHistory.Event) {
+    guard learningAllowed else { return }
+    var history = Settings.typingHistory
+    history.record(value, in: typingLanguage, as: event)
+    Settings.saveTypingHistory(history)
+  }
+
+  private func resetTyping() {
+    prefix = ""
+    typingAnchor = nil
+    candidateAnchor = nil
+    correction = nil
+    prefixWasAutomaticallyCapitalized = false
+    predictionWork?.cancel()
+    predictionRevision += 1
+  }
+
+  override func loadView() {
+    view = ClickInputView(frame: .zero, inputViewStyle: .keyboard)
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
     rows.axis = .vertical
     rows.spacing = Deck.rowGap
     rows.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(rows)
+    let doubleShift = UITapGestureRecognizer(target: self, action: #selector(lockShift(_:)))
+    doubleShift.numberOfTapsRequired = 2
+    doubleShift.delaysTouchesEnded = false
+    doubleShift.delegate = self
+    rows.addGestureRecognizer(doubleShift)
     height = view.heightAnchor.constraint(equalToConstant: 260)
     height.priority = .defaultHigh
     NSLayoutConstraint.activate([
       height, rows.topAnchor.constraint(equalTo: view.topAnchor, constant: 4),
-      rows.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 3),
+      rows.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Deck.keyboardEdge),
       rows.trailingAnchor.constraint(
-        equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -3),
+        equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Deck.keyboardEdge),
       rows.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -4),
     ])
     style = Settings.favorites.first ?? "Respectful"
+    Self.predictions.async { [weak self] in
+      let predictor = Self.bundledPredictor
+      DispatchQueue.main.async {
+        self?.predictor = predictor
+        self?.updateCandidates()
+      }
+    }
     render()
   }
   override func viewWillDisappear(_ animated: Bool) {
     super.viewWillDisappear(animated)
     isInputVisible = false
+    cursorDrag = nil
     delayedTraits?.cancel()
     close()
     deleteTimer?.invalidate()
     deleteTimer = nil
     finishWord()
-    prefix = ""
+    resetTyping()
+    latinKeys.removeAll()
     for row in rows.arrangedSubviews { row.removeFromSuperview() }
   }
   override func viewWillAppear(_ animated: Bool) {
@@ -206,7 +301,6 @@ final class KeyboardController: UIInputViewController {
   }
   private func refreshInput() {
     guard isInputVisible else { return }
-    let wasComposing = !raw.isEmpty
     let wasPanelOpen = panel
     let activeDocument = documentID(proxy)
     let changed =
@@ -216,28 +310,38 @@ final class KeyboardController: UIInputViewController {
     traits = proxy.keyboardType
     wasSensitive = sensitive
     if changed || activeDocument == nil {
+      cursorDrag = nil
       if changed { checkLateTraits() }
       close()
-      prefix = ""
+      resetTyping()
       numericPage = numericHost
       raw = ""
       composition = nil
+      autoShiftSuppressed = false
     } else {
       checkComposition()
-      if !prefix.isEmpty, proxy.documentContextBeforeInput?.hasSuffix(prefix) == false {
-        prefix = ""
-        if tool == nil { updateToolbar() }
+      if allowsPrediction {
+        let anchor = Anchor(proxy)
+        if typingAnchor != anchor {
+          prefix = ""
+          typingAnchor = nil
+          prefixWasAutomaticallyCapitalized = false
+        }
+        if correction?.anchor != anchor { correction = nil }
+      } else {
+        resetTyping()
       }
       if let origin, !targetChanged, origin != Anchor(proxy) {
         invalidateTarget()
         return
       }
     }
-    guard isViewLoaded else { return }
-    if changed || (wasPanelOpen && !panel) {
+    guard isViewLoaded, cursorDrag == nil else { return }
+    updateReturnKey()
+    if changed || (wasPanelOpen && !panel) || (!panel && renderedAutomaticShift != automaticShift) {
       render()
-    } else if wasComposing && raw.isEmpty {
-      updateToolbar()
+    } else {
+      updateCandidates()
     }
   }
   private func invalidateTarget() {
@@ -316,33 +420,132 @@ final class KeyboardController: UIInputViewController {
       render()
       return
     }
-    let allowSuggestions = !sensitive
-    if allowSuggestions, layout == 2, page == 0, s.count == 1,
+    let wasAutomatic = automaticShift
+    if allowsPhonetic, s.count == 1,
       s.utf8.allSatisfy({ (65...90).contains($0) || (97...122).contains($0) })
     {
+      correction = nil
       checkComposition()
       if raw.count >= 96 { finishWord() }
       if raw.isEmpty { composition = Anchor(proxy) }
       if composition != nil { raw += s } else { proxy.insertText(s) }
-    } else {
-      proxy.insertText(takeWord() + s)
-    }
-    if allowSuggestions, layout != 2, s.unicodeScalars.count == 1,
-      let scalar = s.unicodeScalars.first, Self.wordScalars.contains(scalar)
-    {
-      prefix = String((prefix + s).suffix(32))
-    } else {
+    } else if s == " ", applyAutomaticCorrection() {
       prefix = ""
+      typingAnchor = nil
+      prefixWasAutomaticallyCapitalized = false
+    } else {
+      correction = nil
+      let before = allowsPrediction ? Anchor(proxy) : nil
+      let previousPrefix = before != nil && before == typingAnchor ? prefix : ""
+      let previousCapital = prefixWasAutomaticallyCapitalized
+      let composed = takeWord()
+      if s == " " || s == "\n", let before {
+        if !composed.isEmpty && before.selected?.isEmpty != false { learn(composed, as: .typed) }
+        if let typed = activePrefix(in: before), !typed.isEmpty { learn(typed, as: .typed) }
+      }
+      proxy.insertText(composed + s)
+      if allowsPrediction, layout != 2, Predictor.isWordKey(s),
+        previousPrefix.unicodeScalars.count + s.unicodeScalars.count <= 40
+      {
+        prefix = previousPrefix + s
+        typingAnchor = Anchor(proxy)
+        prefixWasAutomaticallyCapitalized = previousPrefix.isEmpty ? wasAutomatic : previousCapital
+      } else {
+        prefix = ""
+        typingAnchor = nil
+        prefixWasAutomaticallyCapitalized = false
+      }
     }
-    forceTools = false
-    if shift == 1 {
-      shift = 0
-      render()
-    } else if tool == nil {
-      updateToolbar()
+    autoShiftSuppressed = false
+    updateReturnKey()
+    if shift == 1 || wasAutomatic != automaticShift {
+      if shift == 1 { shift = 0 }
+      if layout == 1 {
+        render()
+        return
+      }
+      refreshLatinShift()
     }
+    updateCandidates()
   }
+
+  private func activePrefix(in anchor: Anchor) -> String? {
+    guard anchor.selected?.isEmpty != false,
+      anchor.after?.first.map({ !Predictor.isWordKey(String($0)) }) != false
+    else { return nil }
+    let before = anchor.before ?? ""
+    let typed = typingAnchor == anchor ? prefix : ""
+    let scalars = before.unicodeScalars
+    guard scalars.suffix(typed.unicodeScalars.count).elementsEqual(typed.unicodeScalars)
+    else { return nil }
+    let earlier = String(scalars.dropLast(typed.unicodeScalars.count))
+    guard earlier.last.map({ !Predictor.isWordKey(String($0)) && !"@/._#%+-".contains($0) }) != false,
+      anchor.after?.first.map({ !"@/_#%+-".contains($0) }) != false
+    else { return nil }
+    return typed
+  }
+
+  private func earlierText(in anchor: Anchor, excluding word: String) -> String {
+    String((anchor.before ?? "").unicodeScalars.dropLast(word.unicodeScalars.count))
+  }
+
+  private func applyAutomaticCorrection() -> Bool {
+    guard allowsPrediction, Settings.autocorrect, layout != 2,
+      proxy.autocorrectionType != .no, let anchor = Anchor(proxy),
+      let typed = activePrefix(in: anchor), !typed.isEmpty,
+      let word = predictor?.correction(
+        for: typed, after: Predictor.context(in: earlierText(in: anchor, excluding: typed)),
+        language: typingLanguage, personal: personalWords,
+        history: learningAllowed ? Settings.typingHistory.words(in: typingLanguage) : [:],
+        allowInitialCapital: prefixWasAutomaticallyCapitalized)
+    else { return false }
+    guard replaceLocalSuffix(typed, with: word + " ", at: anchor) else { return false }
+    correction = Anchor(proxy).map { (typed, word, $0) }
+    return true
+  }
+
+  // Verify the exact caret and suffix before changing a token. A Bengali cluster may
+  // be removed in several delete operations, depending on the host.
+  private func replaceLocalSuffix(_ old: String, with new: String, at anchor: Anchor) -> Bool {
+    guard allowsPrediction, Anchor(proxy) == anchor, anchor.selected?.isEmpty != false,
+      let before = anchor.before,
+      before.unicodeScalars.suffix(old.unicodeScalars.count).elementsEqual(old.unicodeScalars)
+    else { return false }
+    let earlier = earlierText(in: anchor, excluding: old)
+    if new.unicodeScalars.starts(with: old.unicodeScalars) {
+      proxy.insertText(String(new.unicodeScalars.dropFirst(old.unicodeScalars.count)))
+      return true
+    }
+    var remaining = old.unicodeScalars.count
+    for _ in old.unicodeScalars {
+      proxy.deleteBackward()
+      let current = proxy.documentContextBeforeInput ?? ""
+      guard let next = (0..<remaining).reversed().first(where: { count in
+        let expected = earlier + String(old.unicodeScalars.prefix(count))
+        return current == expected || (!earlier.isEmpty && current.hasSuffix(expected))
+      }) else { return false }
+      remaining = next
+      if remaining == 0 {
+        proxy.insertText(new)
+        return true
+      }
+    }
+    return false
+  }
+
+  private func undoCorrection() -> Bool {
+    guard let correction,
+      replaceLocalSuffix(correction.replacement + " ", with: correction.original + " ",
+        at: correction.anchor)
+    else { return false }
+    learn(correction.replacement, as: .rejected)
+    learn(correction.original, as: .typed)
+    resetTyping()
+    return true
+  }
+
   @objc private func erase() {
+    let wasAutomatic = automaticShift
     checkComposition()
     if hasEditor && !editorRaw.isEmpty {
       editorRaw.removeLast()
@@ -353,17 +556,35 @@ final class KeyboardController: UIInputViewController {
     } else if !raw.isEmpty {
       raw.removeLast()
       if raw.isEmpty { composition = nil }
-    } else {
-      if !prefix.isEmpty { prefix.removeLast() }
+    } else if deleteTimer != nil || !undoCorrection() {
+      correction = nil
+      let previous = allowsPrediction ? Anchor(proxy) : nil
+      var typed = previous != nil && previous == typingAnchor ? prefix : ""
       proxy.deleteBackward()
+      let updated = allowsPrediction ? Anchor(proxy) : nil
+      while !typed.isEmpty,
+        updated?.before?.unicodeScalars.suffix(typed.unicodeScalars.count)
+          .elementsEqual(typed.unicodeScalars) != true
+      {
+        typed = String(typed.unicodeScalars.dropLast())
+      }
+      prefix = typed
+      typingAnchor = typed.isEmpty ? nil : updated
+      if typed.isEmpty { prefixWasAutomaticallyCapitalized = false }
     }
-    if deleteTimer == nil { if hasEditor { render() } else if tool == nil { updateToolbar() } }
+    updateReturnKey()
+    if deleteTimer == nil {
+      if hasEditor || wasAutomatic != automaticShift { render() } else { updateCandidates() }
+    }
   }
   @objc private func heldDelete(_ g: UILongPressGestureRecognizer) {
     if g.state == .began {
-      deleteTimer = Timer.scheduledTimer(withTimeInterval: 0.085, repeats: true) { [weak self] _ in
+      let timer = Timer(timeInterval: 0.085, repeats: true) { [weak self] _ in
         self?.erase()
       }
+      deleteTimer = timer
+      erase()
+      RunLoop.main.add(timer, forMode: .common)
     }
     if [.ended, .cancelled, .failed].contains(g.state) {
       deleteTimer?.invalidate()
@@ -373,7 +594,7 @@ final class KeyboardController: UIInputViewController {
   }
   private func start(_ input: String, at anchor: Anchor, replace: Bool) {
     guard hasFullAccess, !sensitive else {
-      message = "Enable Allow Full Access for AI."
+      message = "Allow Full Access to use AI."
       render()
       return
     }
@@ -426,6 +647,7 @@ final class KeyboardController: UIInputViewController {
       } catch { if id == generation { message = error.localizedDescription } }
       if id == generation {
         loading = false
+        request = nil
         render()
       }
     }
@@ -450,7 +672,7 @@ final class KeyboardController: UIInputViewController {
     } else {
       proxy.insertText(preview)
     }
-    prefix = ""
+    resetTyping()
     close()
     render()
   }
@@ -469,8 +691,9 @@ final class KeyboardController: UIInputViewController {
   ) -> DeckKey {
     let key = DeckKey(title, kind: kind)
     key.addAction(
-      UIAction { [weak self] _ in
+      UIAction { [weak self, weak key] _ in
         guard self != nil else { return }
+        if key?.isTypingKey == true { UIDevice.current.playInputClick() }
         if Settings.prefs.bool(forKey: "haptics") {
           UISelectionFeedbackGenerator().selectionChanged()
         }
@@ -503,30 +726,44 @@ final class KeyboardController: UIInputViewController {
   }
   private func chooseLayout(_ index: Int) {
     if hasEditor { finishEditorWord() } else { finishWord() }
-    prefix = ""
+    resetTyping()
     layout = index
+    autoShiftSuppressed = false
     shift = 0
     page = 0
     numericPage = false
     render()
   }
-  private func languageKey() -> DeckKey {
-    let key = menu("◉", choices: layouts.enumerated().map { (String($0.offset), $0.element) }) {
+  private func editorLanguageKey() -> DeckKey {
+    let key = menu("", choices: layouts.enumerated().map { (String($0.offset), $0.element) }) {
       self.chooseLayout(Int($0) ?? 0)
     }
-    key.setTitle("", for: .normal)
-    key.setImage(UIImage(systemName: "character.bubble"), for: .normal)
+    key.setImage(UIImage(systemName: "character"), for: .normal)
     key.tintColor = Deck.ink
     key.accessibilityLabel = "Typing language"
+    key.accessibilityValue = layouts[layout]
     return key
   }
-  private func switchKey() -> DeckKey {
-    guard needsInputModeSwitchKey, !hasEditor else { return languageKey() }
+
+  private func systemSwitchKey() -> DeckKey {
     let key = glyph("globe", "Next keyboard") {}
     key.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
     return key
   }
-  private func lane(_ entries: [(UIView, CGFloat)], in stack: UIStackView) {
+
+  private func emojiKey() -> DeckKey {
+    let key = button("") { self.open(.emoji) }
+    key.setImage(Tool.emoji.icon(), for: .normal)
+    key.tintColor = Deck.ink
+    key.accessibilityLabel = "Emoji"
+    key.accessibilityIdentifier = "emoji-key"
+    return key
+  }
+
+  private func lane(_ entries: [(UIView, CGFloat)], in stack: UIStackView, typing: Bool = false) {
+    if typing {
+      for (view, _) in entries { (view as? DeckKey)?.isTypingKey = true }
+    }
     stack.addArrangedSubview(KeyLane(entries))
   }
   private func stack(_ axis: NSLayoutConstraint.Axis, gap: CGFloat = Deck.rowGap) -> UIStackView {
@@ -535,66 +772,46 @@ final class KeyboardController: UIInputViewController {
     s.spacing = gap
     return s
   }
-  private func words() -> [String] {
-    guard !sensitive, !hasEditor else { return [] }
-    if !raw.isEmpty {
-      var options = rules?.candidates(raw) ?? [raw]
-      if let rules,
-        let best = rules.words.keys.filter({ $0.hasPrefix(raw) && $0 != raw }).min(by: {
-          ($0.count, $0) < ($1.count, $1)
-        }),
-        let word = rules.words[best], !options.contains(word)
-      {
-        options.insert(word, at: min(1, options.count))
+  private func choose(_ candidate: Candidate) {
+    guard allowsPrediction || allowsPhonetic && !raw.isEmpty || showsSymbolPredictions,
+      let anchor = candidateAnchor, anchor == Anchor(proxy)
+    else {
+      updateCandidates()
+      return
+    }
+    switch candidate {
+    case .undo:
+      _ = undoCorrection()
+    case .word(let word):
+      var inserted = false
+      if !raw.isEmpty {
+        guard !takeWord().isEmpty else { updateCandidates(); return }
+        proxy.insertText(word + " ")
+        inserted = true
+      } else if let typed = activePrefix(in: anchor) {
+        if typed.isEmpty {
+          proxy.insertText(word + " ")
+          inserted = true
+        } else {
+          inserted = replaceLocalSuffix(typed, with: word + " ", at: anchor)
+        }
+        if inserted, word == typed, !typed.isEmpty { learn(typed, as: .typed) }
       }
-      return Array(options.prefix(3))
+      if inserted { learn(word, as: .accepted) }
+      resetTyping()
     }
-    guard prefix.count >= 2 else { return [] }
-    let dict: [String]
-    switch layout {
-    case 0: dict = KeyMaps.english
-    case 1: dict = banglaWords
-    case 3: dict = KeyMaps.banglish
-    default: return []
-    }
-    let typed = prefix.lowercased()
-    let length = prefix.count
-    return Array(
-      dict.lazy.filter { $0.lowercased().hasPrefix(typed) && $0.count > length }.prefix(3))
+    if automaticShift { render() } else { updateCandidates() }
   }
-  private func choose(_ word: String) {
-    guard !sensitive else { return }
-    if !raw.isEmpty {
-      guard !takeWord().isEmpty else {
-        updateToolbar()
-        return
-      }
-      proxy.insertText(word + " ")
-    } else {
-      guard !prefix.isEmpty, proxy.selectedText?.isEmpty != false,
-        proxy.documentContextBeforeInput?.hasSuffix(prefix) == true
-      else {
-        prefix = ""
-        updateToolbar()
-        return
-      }
-      proxy.insertText(String(word.dropFirst(prefix.count)) + " ")
-    }
-    prefix = ""
-    updateToolbar()
-  }
-  private func makeToolbar() -> TypingToolbar {
+
+  private func makeToolbar() -> UIStackView {
     let bar = stack(.horizontal, gap: 0)
     bar.distribution = .fillEqually
     let available = lastWidth > 0 ? lastWidth : view.bounds.width
-    let capacity = max(2, Int((available - 6) / 44))
-    let order = Tool.allCases
-    let visible: [Tool]
-    if capacity >= order.count {
-      visible = order
-    } else {
-      visible = Array(order.filter { $0 != .more }.prefix(capacity - 1)) + [.more]
-    }
+    let capacity = max(6, Int((available - Deck.keyboardEdge * 2) / 44))
+    let primary: [Tool] = [.grammar, .tone, .ask, .translate, .emoji, .clipboard]
+    // Face ID iPhones supply the system Dictation control below the extension.
+    let voice: [Tool] = showsVoiceToolbar ? [.voice] : []
+    let visible: [Tool] = [.more] + primary.prefix(capacity - 1 - voice.count) + voice
     for tool in visible {
       let b = button("", tool.ai ? .accent : .transparent) { self.open(tool) }
       b.setImage(tool.icon(), for: .normal)
@@ -607,32 +824,71 @@ final class KeyboardController: UIInputViewController {
         b.configuration?.baseForegroundColor = Deck.color(0x006B58, 0x8ADAC1)
       }
       b.accessibilityLabel = tool.rawValue
+      b.accessibilityIdentifier = "toolbar-" + tool.rawValue
       b.isEnabled = !sensitive || [.more, .voice].contains(tool)
       b.alpha = b.isEnabled ? 1 : 0.35
       bar.addArrangedSubview(b)
     }
-    let grid = glyph("square.grid.2x2", "Show keyboard tools", .transparent) { [weak self] in
-      // Keep phonetic composition pending while exposing the tools.
-      self?.forceTools = true
-      self?.updateToolbar()
-    }
-    let choices = (0..<3).map { index in
-      button("", .transparent) { [weak self] in
-        guard let self, let toolbar = self.typingToolbar, toolbar.candidates.indices.contains(index)
+    return bar
+  }
+
+  private func makeCandidateRow() -> CandidateRow {
+    CandidateRow((0..<3).map { index in
+      let key = button("", .transparent) { [weak self] in
+        guard let self, let candidateRow, candidateRow.candidates.indices.contains(index)
         else { return }
-        self.choose(toolbar.candidates[index])
+        choose(candidateRow.candidates[index])
+      }
+      key.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
+      key.accessibilityIdentifier = "candidate-\(index)"
+      return key
+    })
+  }
+
+  private var alternatives: [(style: String, text: String)] = []
+  private func updateCandidates() {
+    guard tool == nil, cursorDrag == nil, let candidateRow else { return }
+    predictionWork?.cancel()
+    predictionRevision += 1
+    candidateAnchor = nil
+    let showWords = Settings.predictiveSuggestions && allowsPrediction || showsSymbolPredictions
+    guard showWords || !raw.isEmpty && allowsPhonetic || correction != nil,
+      let anchor = Anchor(proxy)
+    else { candidateRow.show([]); return }
+
+    let undo = correction.map { [Candidate.undo($0.original)] } ?? []
+    let phonetic = raw.isEmpty ? [] : rules?.candidates(raw) ?? [raw]
+    let query = phonetic.first ?? activePrefix(in: anchor)
+    let context = Predictor.context(in: earlierText(in: anchor, excluding: phonetic.isEmpty ? query ?? "" : ""))
+    guard showWords, let query, !query.isEmpty || Settings.nextWordPrediction,
+      let predictor
+    else {
+      candidateAnchor = anchor
+      candidateRow.show(Array((undo + phonetic.map(Candidate.word)).prefix(3)))
+      return
+    }
+
+    let revision = predictionRevision
+    let language = typingLanguage
+    let personal = personalWords
+    let local = learningAllowed ? Settings.typingHistory.words(in: language) : [:]
+    let work = DispatchWorkItem { [weak self, weak candidateRow] in
+      let matches = predictor.suggestions(
+        for: query, after: context, language: language, personal: personal, history: local)
+      var seen = Set<String>()
+      let ordered = phonetic.isEmpty ? matches
+        : Array(phonetic.prefix(1)) + matches.prefix(1) + phonetic.dropFirst() + matches.dropFirst()
+      let words = ordered.filter { seen.insert($0).inserted }.map(Candidate.word)
+      DispatchQueue.main.async {
+        guard let self, let candidateRow, revision == self.predictionRevision,
+          self.tool == nil, candidateRow === self.candidateRow, anchor == Anchor(self.proxy)
+        else { return }
+        self.candidateAnchor = anchor
+        candidateRow.show(Array((undo + words).prefix(3)))
       }
     }
-    let toolbar = TypingToolbar(actions: bar, tools: grid, choices: choices)
-    typingToolbar = toolbar
-    toolbar.show(forceTools ? [] : words())
-    return toolbar
-  }
-  private var alternatives: [(style: String, text: String)] = []
-  private var forceTools = false
-  private func updateToolbar() {
-    guard tool == nil, let typingToolbar else { return }
-    typingToolbar.show(forceTools ? [] : words())
+    predictionWork = work
+    Self.predictions.async(execute: work)
   }
   private var toolbarHeight: CGFloat {
     traitCollection.verticalSizeClass == .compact ? 35 : Deck.toolbar
@@ -640,24 +896,33 @@ final class KeyboardController: UIInputViewController {
   private func open(_ next: Tool) {
     guard !sensitive || [.more, .voice].contains(next) else { return }
     close()
+    predictionWork?.cancel()
+    predictionRevision += 1
     tool = next
     mode = next == .ask ? "express" : "rewrite"
     style = next == .tone ? "My Style" : (Settings.favorites.first ?? "Respectful")
     if next.ai && !hasFullAccess { message = "Allow Full Access to use AI." }
-    render()
+    if next == .grammar, hasFullAccess, Settings.aiConsent, !userSource().isEmpty {
+      generate()
+    } else {
+      render()
+    }
   }
   private func render() {
-    guard deleteTimer == nil, isViewLoaded else { return }
+    guard deleteTimer == nil, cursorDrag == nil, isViewLoaded else { return }
     overrideUserInterfaceStyle =
       ["Light": UIUserInterfaceStyle.light, "Dark": .dark][Settings.get("theme")] ?? .unspecified
     view.backgroundColor = Deck.background
+    latinKeys.removeAll(keepingCapacity: true)
+    shiftControl = nil
+    returnControl = nil
     rows.arrangedSubviews.forEach {
       rows.removeArrangedSubview($0)
       $0.removeFromSuperview()
     }
     height.constant = Deck.height(
       compact: traitCollection.verticalSizeClass == .compact,
-      preference: Settings.get("height", "Standard"))
+      preference: Settings.get("height", "Standard"), width: lastWidth)
     rows.distribution = .fill
     if hasEditor {
       renderEditor()
@@ -667,22 +932,97 @@ final class KeyboardController: UIInputViewController {
       if tool.ai { renderAI(tool) } else { renderUtility(tool) }
       return
     }
+    renderedAutomaticShift = automaticShift
     let bar = makeToolbar()
     rows.addArrangedSubview(bar)
     bar.heightAnchor.constraint(equalToConstant: toolbarHeight).isActive = true
+    let candidates = makeCandidateRow()
+    rows.addArrangedSubview(candidates)
+    candidates.heightAnchor.constraint(equalToConstant:
+      Deck.suggestionHeight(compact: traitCollection.verticalSizeClass == .compact)).isActive = true
+    candidateRow = candidates
+    updateCandidates()
     renderKeys()
   }
-  private func character(_ text: String, alternate: String? = nil) -> DeckKey {
-    let key = button(text, .letter) { self.insert(text) }
-    if let alternate {
-      key.hint.text = alternate
-      key.alternate = { [weak self] in self?.insert(alternate) }
-      key.accessibilityHint = "Hold for " + alternate
-      key.addGestureRecognizer(
-        UILongPressGestureRecognizer(target: key, action: #selector(DeckKey.held(_:))))
+  private static let alternates: [String: [String]] = [
+    "a": ["à", "á", "â", "ä", "æ", "ã", "å", "ā"],
+    "c": ["ç", "ć", "č"], "e": ["è", "é", "ê", "ë", "ē"],
+    "i": ["ì", "í", "î", "ï", "ī"], "n": ["ñ", "ń"],
+    "o": ["ò", "ó", "ô", "ö", "œ", "õ", "ø", "ō"],
+    "s": ["ß", "ś", "š"], "u": ["ù", "ú", "û", "ü", "ū"],
+    "y": ["ÿ", "ý"], "z": ["ź", "ż", "ž"],
+    "£": ["$", "€", "৳", "¥", "¢"], "$": ["£", "€", "৳", "¥", "¢"],
+    "-": ["–", "—"], ".": ["…"], "'": ["’", "‘"],
+    "\"": ["“", "”", "«", "»"], "?": ["¿"], "!": ["¡"],
+  ]
+
+  private var uppercasesLatinKeys: Bool { shift != 0 || automaticShift }
+
+  private func character(_ text: String, alternate: String? = nil, uppercase: Bool? = nil) -> DeckKey {
+    let followsShift = uppercase != nil
+    let displayed = uppercase == true ? text.uppercased() : text
+    let key = button(displayed, .letter) { [weak self] in
+      guard let self else { return }
+      self.insert(followsShift && self.uppercasesLatinKeys ? text.uppercased() : text)
     }
+    if !sensitive { key.installPreview(in: view, text: displayed) }
+    configureAlternates(of: key, displayed, additional: alternate, installGesture: true)
+    if followsShift { latinKeys.append((key, text, alternate)) }
     return key
   }
+
+  private func configureAlternates(
+    of key: DeckKey, _ text: String, additional: String?, installGesture: Bool
+  ) {
+    let letter = text.lowercased()
+    var options = Self.alternates[letter] ?? []
+    if text != letter { options = options.map { $0.uppercased() } }
+    if let additional { options.append(additional) }
+    if options.count == 1, let only = options.first {
+      key.alternate = { [weak self] in
+        UIDevice.current.playInputClick()
+        self?.insert(only)
+      }
+      key.accessibilityHint = "Hold for " + only
+      if installGesture {
+        key.addGestureRecognizer(
+          UILongPressGestureRecognizer(target: key, action: #selector(DeckKey.held(_:))))
+      }
+    } else if !options.isEmpty {
+      key.menu = UIMenu(children: options.map { option in
+        UIAction(title: option) { [weak self] _ in
+          UIDevice.current.playInputClick()
+          self?.insert(option)
+        }
+      })
+      key.accessibilityHint = "Hold for alternate characters"
+    }
+  }
+
+  private var shiftSymbol: String {
+    shift == 2 ? "capslock.fill" : uppercasesLatinKeys ? "shift.fill" : "shift"
+  }
+
+  private var shiftLabel: String {
+    shift == 2 ? "Caps Lock" : uppercasesLatinKeys ? "On" : "Off"
+  }
+
+  private func refreshLatinShift() {
+    renderedAutomaticShift = automaticShift
+    let uppercase = uppercasesLatinKeys
+    for (key, letter, alternate) in latinKeys {
+      let displayed = uppercase ? letter.uppercased() : letter
+      key.setTitle(displayed, for: .normal)
+      key.accessibilityLabel = displayed
+      key.setPreviewText(displayed)
+      configureAlternates(of: key, displayed, additional: alternate, installGesture: false)
+    }
+    shiftControl?.setImage(
+      UIImage(systemName: shiftSymbol,
+        withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)), for: .normal)
+    shiftControl?.accessibilityValue = shiftLabel
+  }
+
   private func deleteKey() -> DeckKey {
     let b = glyph("delete.left", "Backspace") { self.erase() }
     b.addGestureRecognizer(
@@ -690,128 +1030,228 @@ final class KeyboardController: UIInputViewController {
     return b
   }
   private func shiftKey() -> DeckKey {
-    glyph(shift == 2 ? "capslock.fill" : shift == 1 ? "shift.fill" : "shift", "Shift") {
+    let key = glyph(shiftSymbol, "Shift") {
       let t = Date.timeIntervalSinceReferenceDate
-      self.shift = self.shift == 1 && t - self.typedAt < 0.55 ? 2 : self.shift == 0 ? 1 : 0
+      if self.automaticShift {
+        self.autoShiftSuppressed = true
+      } else {
+        self.shift = self.shift == 1 && t - self.typedAt < 0.55 ? 2 : self.shift == 0 ? 1 : 0
+      }
       self.typedAt = t
-      self.render()
+      if self.layout == 1 {
+        self.render()
+      } else {
+        self.refreshLatinShift()
+      }
     }
+    key.accessibilityValue = shiftLabel
+    shiftControl = key
+    return key
   }
+
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+    guard let shiftControl, layout != 1, page == 0, !numericPage, !numericHost
+    else { return false }
+    return shiftControl.bounds.contains(touch.location(in: shiftControl))
+  }
+
+  @objc private func lockShift(_ gesture: UITapGestureRecognizer) {
+    guard gesture.state == .recognized, layout != 1, page == 0, !numericPage, !numericHost
+    else { return }
+    shift = 2
+    autoShiftSuppressed = false
+    refreshLatinShift()
+  }
+
   private func setPage(_ value: Int, numeric: Bool = false) {
     if hasEditor { finishEditorWord() } else { finishWord() }
-    prefix = ""
+    resetTyping()
     page = value
     numericPage = numeric
     render()
   }
+  private func updateReturnKey() {
+    guard let returnControl else { return }
+    let enabled = hasEditor || proxy.enablesReturnKeyAutomatically != true
+      || proxy.hasText || !raw.isEmpty
+    returnControl.isEnabled = enabled
+    returnControl.alpha = enabled ? 1 : 0.54
+  }
+
   private func enterKey() -> DeckKey {
     let label: String
-    switch proxy.returnKeyType {
+    switch hasEditor ? .default : proxy.returnKeyType {
     case .search, .google, .yahoo: label = "Search"
     case .next: label = "Next"
     case .done: label = "Done"
     case .send: label = "Send"
     case .go: label = "Go"
     case .join: label = "Join"
+    case .route: label = "Route"
+    case .emergencyCall: label = "Emergency call"
+    case .continue: label = "Continue"
     default: label = "Return"
     }
-    if hasEditor || label == "Return" {
-      return glyph("return", "Return", .accent) { self.insert("\n") }
+    let key: DeckKey
+    if label == "Return" {
+      key = glyph("return", label) { self.insert("\n") }
+    } else {
+      key = button(label.lowercased(), .accent) { self.insert("\n") }
+      key.titleLabel?.font = .systemFont(ofSize: 16, weight: .regular)
+      key.accessibilityLabel = label
     }
-    return button(label, .accent) { self.insert("\n") }
+    returnControl = key
+    updateReturnKey()
+    return key
   }
+
+  private func renderNumericKeys(in keys: UIStackView) {
+    for group in ["123", "456", "789"] {
+      lane(group.map {
+        let key = character(String($0))
+        key.titleLabel?.font = .systemFont(ofSize: 26)
+        return (key, 10.0 / 3)
+      }, in: keys, typing: true)
+    }
+    let third: CGFloat = 10 / 3
+    let decimal = Locale.current.decimalSeparator ?? "."
+    let globe = needsInputModeSwitchKey && !hasEditor
+    let leading: [(UIView, CGFloat)]
+    if !numericHost {
+      let width = third / (globe ? 3 : 2)
+      leading = [
+        (button("ABC") { self.setPage(0) }, width),
+        (button(decimal) { self.insert(decimal) }, width),
+      ]
+    } else if proxy.keyboardType == .decimalPad {
+      leading = [(button(decimal) { self.insert(decimal) }, globe ? third / 2 : third)]
+    } else {
+      leading = globe ? [] : [(UIView(), third)]
+    }
+    var bottom = leading
+    if globe { bottom.append((systemSwitchKey(), third - leading.reduce(0) { $0 + $1.1 })) }
+    let zero = character("0")
+    zero.titleLabel?.font = .systemFont(ofSize: 26)
+    bottom += [(zero, third), (deleteKey(), third)]
+    lane(bottom, in: keys, typing: true)
+  }
+
+  private func spaceKey() -> DeckKey {
+    let title = hasEditor || layout == 0 ? "space" : layouts[layout]
+    let space = button(title, .letter) { self.insert(" ") }
+    space.titleLabel?.font = .systemFont(ofSize: 16)
+    space.accessibilityLabel = "Space"
+    space.accessibilityValue = layouts[layout]
+    if !hasEditor && !sensitive {
+      space.accessibilityHint = "Hold and slide to move the cursor"
+      let cursor = UILongPressGestureRecognizer(target: self, action: #selector(dragSpace(_:)))
+      cursor.minimumPressDuration = 0.4
+      space.addGestureRecognizer(cursor)
+      space.accessibilityCustomActions = [
+        UIAccessibilityCustomAction(name: "Typing language") { [weak self] _ in
+          self?.open(.language)
+          return self != nil
+        }
+      ]
+    }
+    return space
+  }
+
+  @objc private func dragSpace(_ gesture: UILongPressGestureRecognizer) {
+    let x = gesture.location(in: view).x
+    switch gesture.state {
+    case .began:
+      guard !sensitive, !hasEditor, let id = documentID(proxy) else { return }
+      cursorDrag = (id, x)
+      finishWord()
+      resetTyping()
+      candidateRow?.show([])
+    case .changed:
+      guard let drag = cursorDrag, drag.document == documentID(proxy), !sensitive else { return }
+      let distance = x - drag.x
+      let step = Int(distance / 11)
+      guard step != 0 else { return }
+      proxy.adjustTextPosition(byCharacterOffset: step)
+      cursorDrag?.x = drag.x + CGFloat(step) * 11
+    case .ended, .cancelled, .failed:
+      guard cursorDrag != nil else { return }
+      cursorDrag = nil
+      render()
+    default: break
+    }
+  }
+
   private func renderKeys() {
-    let keys = stack(.vertical)
+    let keys = stack(.vertical, gap: 0)
     keys.distribution = .fillEqually
     rows.addArrangedSubview(keys)
     if numericPage {
-      for (i, group) in [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]].enumerated() {
-        let op = ["+", "−", "×"][i]
-        let left = button(op) { self.insert(op) }
-        var items: [(UIView, CGFloat)] = [(left, 1.5)]
-        items += group.map { (character($0), 7.0 / 3) }
-        let side =
-          i == 0
-          ? deleteKey()
-          : i == 1 ? button("%") { self.insert("%") } : button("=") { self.insert("=") }
-        items.append((side, 1.5))
-        lane(items, in: keys)
-      }
-      let decimal = Locale.current.decimalSeparator ?? "."
-      lane(
-        [
-          (button("÷") { self.insert("÷") }, 1.5), (button("ABC") { self.setPage(0) }, 3.5 / 3),
-          (button("?123") { self.setPage(1) }, 3.5 / 3), (character("0"), 7.0 / 3),
-          (character(decimal), 7.0 / 3), (enterKey(), 1.5),
-        ], in: keys)
-      if proxy.keyboardType == .phonePad {
-        lane(["+", "*", "#", ",", ";"].map { (character($0), 2) }, in: keys)
-      }
+      renderNumericKeys(in: keys)
       return
     }
     if page > 0 {
       let map = page == 1 ? KeyMaps.symbols : KeyMaps.secondary
-      lane(map[0].map { (character($0), 1) }, in: keys)
-      lane(map[1].map { (character($0), 1) }, in: keys)
+      lane(map[0].map { (character($0), 1) }, in: keys, typing: true)
+      lane(map[1].map { (character($0), 1) }, in: keys, typing: true)
       var last: [(UIView, CGFloat)] = [
-        (button(page == 1 ? "=\\<" : "?123") { self.setPage(self.page == 1 ? 2 : 1) }, 1.5)
+        (button(page == 1 ? "#+=" : "123") { self.setPage(self.page == 1 ? 2 : 1) }, 1.3),
+        (UIView(), 0.2),
       ]
-      last += map[2].map { (character($0), 1) }
-      last.append((deleteKey(), 1.5))
-      lane(last, in: keys)
+      last += map[2].map { (character($0), 1.4) }
+      last += [(UIView(), 0.2), (deleteKey(), 1.3)]
+      lane(last, in: keys, typing: true)
     } else if layout == 1 {
-      if shift == 0 {
-        for group in KeyMaps.bangla {
-          lane(group.map { (character($0), 10 / CGFloat(group.count)) }, in: keys)
-        }
-      } else {
-        for group in KeyMaps.signs {
-          lane(group.map { (character($0), 10 / CGFloat(group.count)) }, in: keys)
-        }
+      let map = shift == 0 ? KeyMaps.bangla : KeyMaps.signs
+      for group in map {
+        lane(group.map { (character($0), 10 / CGFloat(group.count)) }, in: keys, typing: true)
       }
     } else {
+      let uppercase = uppercasesLatinKeys
       for (i, group) in KeyMaps.latin.enumerated() {
-        var items: [(UIView, CGFloat)] = i == 2 ? [(shiftKey(), 1.5)] : []
+        var items: [(UIView, CGFloat)] = i == 2 ? [(shiftKey(), 1.3), (UIView(), 0.2)] : []
         for (j, ch) in group.enumerated() {
-          let text = shift == 0 ? ch : ch.uppercased()
-          items.append((character(text, alternate: i == 0 ? String((j + 1) % 10) : nil), 1))
+          let number = i == 0 ? String((j + 1) % 10) : nil
+          items.append((character(ch, alternate: number, uppercase: uppercase), 1))
         }
-        if i == 2 { items.append((deleteKey(), 1.5)) }
-        lane(items, in: keys)
+        if i == 2 { items += [(UIView(), 0.2), (deleteKey(), 1.3)] }
+        lane(items, in: keys, typing: true)
       }
     }
-    let space = button(hasEditor ? "Space" : layouts[layout], .letter) { self.insert(" ") }
-    space.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
-    space.accessibilityLabel = "Space"
-    space.accessibilityValue = layouts[layout]
-    space.accessibilityHint = "Hold to choose a typing language"
-    space.menu = UIMenu(
-      children: layouts.enumerated().map { i, name in
-        UIAction(title: name) { _ in self.chooseLayout(i) }
-      })
-    let sym = button(page > 0 ? "ABC" : "?123") { self.setPage(self.page == 0 ? 1 : 0) }
-    let dot = proxy.keyboardType == .URL ? "/" : "."
-    let comma = proxy.keyboardType == .emailAddress ? "@" : ","
-    if layout == 1 && page == 0 {
-      lane(
-        [
-          (sym, 1.2), (shiftKey(), 1.1), (switchKey(), 1.1), (space, 3.3), (character("।"), 0.9),
-          (deleteKey(), 1.15), (enterKey(), 1.25),
-        ], in: keys)
+
+    let space = spaceKey()
+    let mode = button(page > 0 ? "ABC" : "123") { self.setPage(self.page == 0 ? 1 : 0) }
+    let extraGlobe = !hasEditor && needsInputModeSwitchKey
+    let emojiOrLanguage = hasEditor ? editorLanguageKey() : emojiKey()
+    var bottom: [(UIView, CGFloat)]
+    if page == 0 && layout == 1 {
+      bottom = [(mode, 1.2), (shiftKey(), 1.15), (emojiOrLanguage, 1.15)]
+      if extraGlobe { bottom.append((systemSwitchKey(), 1.15)) }
+      bottom += [
+        (space, extraGlobe ? 2.1 : 3.25), (character("।"), 0.8),
+        (deleteKey(), 1.2), (enterKey(), 1.25),
+      ]
+    } else if [.URL, .emailAddress, .webSearch].contains(proxy.keyboardType ?? .default),
+      page == 0, !hasEditor {
+      let punctuation = proxy.keyboardType == .emailAddress ? "@" : "/"
+      bottom = [(mode, 1.2), (emojiOrLanguage, 1.1)]
+      if extraGlobe { bottom.append((systemSwitchKey(), 1.1)) }
+      bottom += [
+        (space, extraGlobe ? 2.4 : 3.5), (character(punctuation), 0.9),
+        (character("."), 0.8), (enterKey(), 2.5),
+      ]
     } else {
-      let shortcut: UIView =
-        page > 0 ? button("123") { self.setPage(0, numeric: true) } : switchKey()
-      lane(
-        [
-          (sym, 1.35), (character(comma), 1), (shortcut, 1.12), (space, 4.05),
-          (character(dot), 0.98), (enterKey(), 1.5),
-        ], in: keys)
+      bottom = [(mode, 1.25), (emojiOrLanguage, 1.25)]
+      if extraGlobe { bottom.append((systemSwitchKey(), 1.1)) }
+      bottom += [(space, extraGlobe ? 3.9 : 5), (enterKey(), 2.5)]
     }
+    lane(bottom, in: keys, typing: true)
   }
 
   private func header(_ title: String) {
     let h = stack(.horizontal, gap: 6)
-    let back = glyph("chevron.backward", "Return to keyboard", .transparent) {
+    let closeDashboard = tool == .more
+    let back = glyph(closeDashboard ? "xmark" : "chevron.backward",
+      closeDashboard ? "Close tools" : "Return to keyboard", .transparent) {
       self.close()
       self.render()
     }
@@ -894,19 +1334,33 @@ final class KeyboardController: UIInputViewController {
     let pending = raw.isEmpty ? "" : rules?.render(raw) ?? raw
     return String((proxy.documentContextBeforeInput ?? "").suffix(400)) + pending
   }
-  private func generate() {
+  private func generate(consenting: Bool = false) {
+    guard hasFullAccess else {
+      message = "Allow Full Access to use AI."
+      render()
+      return
+    }
     guard let anchor = Anchor(proxy), !sensitive else {
       message = "Focus a text field to use AI."
       render()
       return
     }
-    if mode == "reply" && userSource().isEmpty {
+    let draft = userSource()
+    if mode == "reply" && draft.isEmpty {
       message = "Paste or select the incoming message first."
       render()
       return
     }
-    start(
-      userSource(), at: anchor,
+    guard Settings.aiConsent || consenting else {
+      render()
+      return
+    }
+    if consenting, !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+      draft.utf16.count <= 1600
+    {
+      Settings.prefs.set(true, forKey: "aiConsent")
+    }
+    start(draft, at: anchor,
       replace: pasted == nil && mode != "reply" && anchor.selected?.isEmpty == false)
   }
   private func loadPaste(forAI: Bool) {
@@ -931,7 +1385,7 @@ final class KeyboardController: UIInputViewController {
   }
   private func renderAI(_ t: Tool) {
     header(t.rawValue)
-    if !loading && (preview.isEmpty || t == .tone) {
+    if t == .tone || (!loading && preview.isEmpty) {
       if t == .tone {
         let options =
           tones
@@ -939,11 +1393,16 @@ final class KeyboardController: UIInputViewController {
             if !tones.contains(v) && !list.contains(v) { list.append(v) }
           }
         chips(options, selected: style) { value in
+          guard value != self.style || (!self.loading && self.preview.isEmpty) else { return }
           self.style = value
-          if !self.preview.isEmpty, !self.targetChanged, let anchor = self.origin,
-            anchor == Anchor(self.proxy)
-          {
-            self.start(self.source, at: anchor, replace: self.replaceSelection)
+          if Settings.aiConsent, self.hasFullAccess {
+            if (self.loading || !self.preview.isEmpty), !self.targetChanged,
+              let anchor = self.origin, anchor == Anchor(self.proxy)
+            {
+              self.start(self.source, at: anchor, replace: self.replaceSelection)
+            } else {
+              self.generate()
+            }
           } else {
             self.render()
           }
@@ -1056,8 +1515,20 @@ final class KeyboardController: UIInputViewController {
       actions(list)
       return
     }
-    let draft = userSource()
-    let selection = proxy.selectedText?.isEmpty == false
+    let draft = hasFullAccess ? userSource() : ""
+    let selection = hasFullAccess && proxy.selectedText?.isEmpty == false
+    let needsConsent = hasFullAccess && !Settings.aiConsent
+      && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    if needsConsent {
+      let disclosure = UILabel()
+      disclosure.text = "AI sends the draft below and your writing preferences to the service. Future Grammar and tone shortcuts can send directly. You review every suggestion."
+      disclosure.textColor = Deck.ink
+      disclosure.font = .preferredFont(forTextStyle: .footnote)
+      disclosure.adjustsFontForContentSizeCategory = true
+      disclosure.numberOfLines = 0
+      disclosure.setContentCompressionResistancePriority(.required, for: .vertical)
+      rows.addArrangedSubview(disclosure)
+    }
     let detail: String
     if !message.isEmpty {
       detail = message
@@ -1081,7 +1552,9 @@ final class KeyboardController: UIInputViewController {
         button("Instructions") { self.beginEditor(result: false, instructions: true) })
     }
     inputActions.append(button("Paste") { self.loadPaste(forAI: true) })
-    inputActions.append(button("Generate", .accent) { self.generate() })
+    inputActions.append(button(needsConsent ? "Allow & Generate" : "Generate", .accent) {
+      self.generate(consenting: needsConsent)
+    })
     actions(inputActions)
   }
   private func beginEditor(result: Bool, instructions: Bool = false) {
@@ -1159,6 +1632,14 @@ final class KeyboardController: UIInputViewController {
           KeyMaps.emoji[i..<(i + 8)].map { e in (button(e, .letter) { self.insert(e) }, 1.25) },
           in: grid)
       }
+      let letters = button("ABC") {
+        self.close()
+        self.render()
+      }
+      var controls: [UIView] = [letters]
+      if needsInputModeSwitchKey { controls.append(systemSwitchKey()) }
+      controls.append(deleteKey())
+      actions(controls)
     case .clipboard:
       rows.addArrangedSubview(
         scroller(
@@ -1169,6 +1650,7 @@ final class KeyboardController: UIInputViewController {
           button("Insert", .accent) {
             guard !self.sensitive else { return }
             self.insert(pasted)
+            self.resetTyping()
             self.close()
             self.render()
           })
@@ -1177,45 +1659,132 @@ final class KeyboardController: UIInputViewController {
     case .voice:
       rows.addArrangedSubview(
         scroller(
-          "Use the iOS microphone below the keyboard when available. You can also switch to the Apple keyboard and tap its microphone with Dictation enabled."
+          "Tap the iOS microphone below the keyboard when it’s available. You can also switch to the Apple keyboard and use its Dictation."
         ))
       actions([button("Switch keyboard", .accent) { self.advanceToNextInputMode() }])
     case .more:
-      let content = stack(.vertical, gap: 2)
-      content.distribution = .fillEqually
-      rows.addArrangedSubview(content)
-      let options = Tool.allCases.filter { $0 != .more && (!sensitive || $0 == .voice) }
-      for i in stride(from: 0, to: options.count, by: 3) {
-        let line = stack(.horizontal, gap: 2)
-        line.distribution = .fillEqually
-        options[i..<min(i + 3, options.count)].forEach { t in
-          line.addArrangedSubview(button(t.rawValue) { self.open(t) })
-        }
-        content.addArrangedSubview(line)
+      let choices: [Tool] = [.theme, .clipboard, .emoji, .language, .editing, .layout, .voice, .settings]
+      toolGrid(choices.map { entry in
+        let b = utilityTile(entry.rawValue, icon: entry.icon()) { self.open(entry) }
+        b.isEnabled = !sensitive || entry == .voice
+        if entry == .settings { b.accessibilityIdentifier = "dashboard-settings" }
+        return b
+      })
+    case .theme:
+      utilityChoices(["System", "Light", "Dark"], selected: Settings.get("theme", "System")) {
+        Settings.prefs.set($0, forKey: "theme")
+        self.render()
       }
-      let globe = glyph("globe", "Next keyboard") {}
-      globe.addTarget(
-        self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
-      var items: [UIView] = [
-        languageKey(),
-        glyph("arrow.left", "Move cursor left") {
+    case .language:
+      utilityChoices(layouts, selected: layouts[layout]) { name in
+        guard let index = self.layouts.firstIndex(of: name) else { return }
+        self.close()
+        self.chooseLayout(index)
+      }
+    case .editing:
+      toolGrid([
+        utilityTile("Move cursor left", symbol: "arrow.left") { self.moveCursor(by: -1) },
+        utilityTile("Move cursor right", symbol: "arrow.right") { self.moveCursor(by: 1) },
+        utilityTile("Backspace", symbol: "delete.left") {
           self.finishWord()
-          self.prefix = ""
-          self.proxy.adjustTextPosition(byCharacterOffset: -1)
-          self.close()
+          self.resetTyping()
+          self.proxy.deleteBackward()
+        },
+        utilityTile("Switch keyboard", symbol: "globe") { self.advanceToNextInputMode() },
+      ])
+    case .layout:
+      toolGrid([
+        utilityTile("Letters", symbol: "character") { self.showKeyPage(0) },
+        utilityTile("Symbols", symbol: "number") { self.showKeyPage(1) },
+        utilityTile("Numbers", symbol: "123.rectangle") { self.showKeyPage(0, numeric: true) },
+        menu("Keyboard height", choices: ["Standard", "Compact", "Tall"].map { ($0, $0) }) {
+          Settings.prefs.set($0, forKey: "height")
           self.render()
         },
-        glyph("arrow.right", "Move cursor right") {
-          self.finishWord()
-          self.prefix = ""
-          self.proxy.adjustTextPosition(byCharacterOffset: 1)
-          self.close()
-          self.render()
-        },
+      ])
+    case .settings:
+      let choices: [(String, String, Bool)] = [
+        ("Predictive suggestions", "predictiveSuggestions", Settings.predictiveSuggestions),
+        ("Next-word prediction", "nextWordPrediction", Settings.nextWordPrediction),
+        ("Autocorrect", "autocorrect", Settings.autocorrect),
+        ("Auto-capitalization", "automaticCapitalization", Settings.automaticCapitalization),
+        ("Haptics", "haptics", Settings.prefs.bool(forKey: "haptics")),
       ]
-      if needsInputModeSwitchKey { items.append(globe) }
-      actions(items)
+      let tools = choices.map { title, key, enabled in
+        let b = utilityTile(title, symbol: enabled ? "checkmark.circle.fill" : "circle") {
+          Settings.prefs.set(!enabled, forKey: key)
+          self.render()
+        }
+        b.accessibilityValue = enabled ? "On" : "Off"
+        return b
+      }
+      toolGrid(tools)
     default: break
     }
   }
+
+  private func utilityTile(
+    _ title: String, icon: UIImage? = nil, symbol: String? = nil, action: @escaping () -> Void
+  ) -> DeckKey {
+    let tile = button("", .pill, action: action)
+    var config = UIButton.Configuration.plain()
+    config.image = icon ?? symbol.flatMap {
+      UIImage(systemName: $0, withConfiguration: UIImage.SymbolConfiguration(pointSize: 17, weight: .medium))
+    }
+    config.title = title
+    config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { style in
+      var style = style
+      style.font = .systemFont(ofSize: 14, weight: .medium)
+      return style
+    }
+    config.imagePadding = 9
+    config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 13, bottom: 0, trailing: 8)
+    config.baseForegroundColor = Deck.ink
+    tile.configuration = config
+    tile.contentHorizontalAlignment = .leading
+    tile.accessibilityLabel = title
+    return tile
+  }
+
+  private func toolGrid(_ buttons: [DeckKey]) {
+    let grid = stack(.vertical, gap: 6)
+    grid.distribution = .fillEqually
+    grid.isLayoutMarginsRelativeArrangement = true
+    grid.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 4, leading: 9, bottom: 8, trailing: 9)
+    for start in stride(from: 0, to: buttons.count, by: 2) {
+      let line = stack(.horizontal, gap: 7)
+      line.distribution = .fillEqually
+      for b in buttons[start..<min(start + 2, buttons.count)] { line.addArrangedSubview(b) }
+      if line.arrangedSubviews.count == 1 { line.addArrangedSubview(UIView()) }
+      grid.addArrangedSubview(line)
+    }
+    rows.addArrangedSubview(grid)
+    // Keep small utility groups at the top with the same cap heights as the tools grid.
+    if buttons.count < 7 {
+      grid.heightAnchor.constraint(equalToConstant: CGFloat((buttons.count + 1) / 2) * 42 + 12).isActive = true
+      rows.addArrangedSubview(UIView())
+    }
+  }
+
+  private func utilityChoices(_ choices: [String], selected: String, pick: @escaping (String) -> Void) {
+    toolGrid(choices.map { name in
+      let tile = utilityTile(name, symbol: selected == name ? "checkmark.circle.fill" : "circle") {
+        pick(name)
+      }
+      if selected == name { tile.accessibilityTraits.insert(.selected) }
+      return tile
+    })
+  }
+
+  private func moveCursor(by offset: Int) {
+    finishWord()
+    resetTyping()
+    proxy.adjustTextPosition(byCharacterOffset: offset)
+  }
+
+  private func showKeyPage(_ value: Int, numeric: Bool = false) {
+    close()
+    setPage(value, numeric: numeric)
+  }
+
 }

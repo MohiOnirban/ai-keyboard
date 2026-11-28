@@ -16,7 +16,7 @@ curl -fsS http://127.0.0.1:4000/health
 curl -fsS http://127.0.0.1:4000/v1/sessions -H 'Content-Type: application/json' -d '{}'
 ```
 
-The paths and request formats are in the [shared contract](../shared/contract.md). Port 4000 is reachable as `10.0.2.2:4000` from a standard Android emulator and `localhost:4000` from an iOS simulator. For a physical device on a trusted local network, `HOST=0.0.0.0` enables access to the Mac's private LAN address. Use synthetic text on local HTTP. The compiled server runs with `npm start` after `npm run build`.
+The paths and request formats are in the [shared contract](../shared/contract.md). Port 4000 is reachable as `10.0.2.2:4000` from a standard Android emulator and `localhost:4000` from an iOS simulator. Physical Android devices use a trusted HTTPS ingress or a USB reverse port with the loopback development address. Use synthetic text on local HTTP. The compiled server runs with `npm start` after `npm run build`.
 
 The usage allowance defaults to 20 successful generations. Usage resets at 00:00 UTC. Generation attempts and provider spend count toward the UTC day and month in which the server admits the request. Failures release the success slot. One idempotency UUID represents one user action. Every retry with that UUID receives 409 after the request is reserved, so the server never has to retain a draft or suggestion to replay it. A new action uses a new UUID.
 
@@ -32,7 +32,7 @@ The service sends a single non-streaming Responses request with reasoning effort
 
 ## Usage and privacy
 
-The database records only opaque session identifiers, bearer digests, expiry and revocation times, short-lived rate counters, idempotency UUIDs, generation status, budget reservations, reported token usage, reported or estimated cost and latency. Fastify request logging is disabled, and errors expose fixed messages. Keep request bodies, authorization headers and provider content out of proxy and deployment telemetry.
+The database records only opaque session identifiers, bearer digests, expiry and revocation times, short-lived rate counters, idempotency UUIDs, generation status, budget reservations, reported token usage, reported or estimated cost and latency. Fastify request logging is disabled. Errors expose fixed messages and an allowlisted `Kotha-Error-Code` response header for connection, allowance and provider troubleshooting. Provider failures log only a fixed stage, a diagnostic code and elapsed milliseconds. Provider error bodies and exception messages are never forwarded. Keep request bodies, authorization headers and provider content out of proxy and deployment telemetry.
 
 Anonymous installations can reset credentials, reinstall or change network addresses. Session issuance limits, installation and address rate limits, concurrency and global spending caps limit the effect without device fingerprinting. Address rate keys are HMACs scoped to a single minute. Session credentials expire after 90 days and can be revoked at any time.
 
@@ -56,6 +56,6 @@ For an authorized live benchmark, use a dedicated environment configuration for 
 
 Use a private build workspace with Node 22.18+ and the repository layout intact. From backend/, run `npm ci`, `npm run build` and `npm test`. Deploy the resulting dist directory together with package.json and package-lock.json. Run `npm ci --omit=dev` beside those files on the runtime host.
 
-Set NODE_ENV=production, DATABASE_URL, DATABASE_TLS=true, DATABASE_CA_FILE when needed, RATE_LIMIT_SECRET, HOST and PORT in the server environment. Start with AI_PROVIDER=mock for the installation check. Put TLS termination in front of the API, restrict direct access to its internal listener, and set TRUST_PROXY_CIDRS only for the actual ingress addresses. Run `npm start` under the host's process supervisor. A GET to /health should return HTTP 200 and an ok status from the compiled service and its database.
+Set NODE_ENV=production, DATABASE_URL, DATABASE_TLS=true, DATABASE_CA_FILE when needed, RATE_LIMIT_SECRET, HOST and PORT in the server environment. Start with AI_PROVIDER=mock for the installation check. Put TLS termination in front of the API, restrict direct access to its internal listener, and set TRUST_PROXY_CIDRS only for the actual ingress addresses. Run `npm start` under the host's process supervisor. A GET to `/health` should return HTTP 200 and an ok status from the compiled service and its database. It requires no credentials and does not call the provider.
 
 Use the HTTPS origin when building the device clients. Once the account, model, eligible route, retention settings and spending caps are configured, the same mobile builds can use the live provider by changing the server environment and restarting the service. Changing AI_ENABLED to false and restarting disables generation while offline typing remains available. To roll back a service version, redeploy the previous compatible server artifact using the same ledger.

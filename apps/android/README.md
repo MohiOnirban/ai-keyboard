@@ -1,6 +1,6 @@
 # KothaKey for Android
 
-This Android project contains a native Kotlin input method and a Jetpack Compose companion. Four layouts work offline: English QWERTY, Bangla characters, Avro-style Bangla phonetic, and raw Banglish. KothaKey displays up to three offline phonetic, raw Banglish or English candidates when available. The keyboard also supports grapheme deletion, two symbol pages, a dedicated keypad, emoji, clipboard tools, system appearance, and three height preferences.
+This Android project contains a native Kotlin input method and a Jetpack Compose companion. Four layouts work offline: English QWERTY, Bangla characters, Avro-style Bangla phonetic, and raw Banglish. KothaKey displays up to three offline completions, spelling suggestions or next words beneath the toolbar. The keyboard also supports grapheme deletion, two symbol pages, a dedicated keypad, emoji, clipboard tools, system appearance, and three height preferences.
 
 ## Build and install
 
@@ -13,7 +13,7 @@ From this directory, build the APK and run the JVM tests.
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Start KothaKey. Use **Enable keyboard** to open Android's input method settings, allow KothaKey, and return to the app. Use **Choose keyboard** to select it. Tap **Try typing here**. Tap **文** to cycle layouts or hold it to choose a layout. Open **More options → Switch system keyboard** for Android's input method picker. In phonetic mode try `ami bhalo achi`. Use Shift in Bangla character mode to reveal additional letters.
+Start KothaKey. Use **Enable keyboard** to open Android's input method settings, allow KothaKey, and return to the app. Use **Choose keyboard** to select it. Tap **Try typing here**. Hold the spacebar on the Latin letter layout or open **More options → Typing language** to choose a layout. Open **More options → Switch system keyboard** for Android's input method picker. In phonetic mode try `ami bhalo achi`. Use Shift in Bangla character mode to reveal additional letters.
 
 The debug APK defaults to `http://10.0.2.2:4000`, the emulator alias for the host. Start the repository backend in mock mode from the monorepo root.
 
@@ -22,25 +22,24 @@ cd backend
 AI_PROVIDER=mock npm run dev
 ```
 
-For a USB-connected Android device, enable USB debugging, authorize the Mac on the phone, and confirm the device appears in `adb devices`. Build against device loopback, run the backend in mock mode on the Mac, and reverse the port.
+### Connect a physical Android phone
 
-```sh
-./gradlew :app:assembleDebug -PkothaBackendUrl=http://127.0.0.1:4000
-adb reverse tcp:4000 tcp:4000
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
+- **Untethered phone.** Use the HTTPS origin of a KothaKey backend you control or trust. Its certificate must be trusted by Android and the phone must be able to reach it. In a debug APK, open **Settings → AI connection**, enter the origin in **HTTPS service address** and choose **Save address**. For a release APK, build with the same HTTPS origin using the property in [Release build](#release-build).
+- **USB development.** Enable USB debugging, authorize this computer and check `adb devices`. With the mock backend running and the normal debug APK installed, run `adb reverse tcp:4000 tcp:4000`. Open **Settings → AI connection** and choose **Use USB development address**. Use synthetic text with the local development service.
 
-The emulator APK uses the emulator-only host alias. Install the loopback APK on a USB-connected phone. For an untethered phone, build against a reachable HTTPS endpoint and enable KothaKey in Android keyboard settings.
+Choose **Check connection** to reach the health route without a draft, credential or generation. **Refresh allowance** checks the anonymous session. **Use build address** clears a debug override. The default emulator address is unavailable on physical phones. If the matching HTTPS origin or USB development service is unreachable, offline typing still works. Failures may be inspected on the device through the `KothaKeyAI` logcat tag, which records only the stage, fixed diagnostic code, HTTP status and elapsed milliseconds.
 
 ## AI and editor compatibility
 
-The toolbar opens **Fix Grammar**, **Improve & Tone**, **Ask AI** and **Translation**. On a narrow screen, **More options** makes hidden toolbar actions available. When typing candidates occupy the toolbar slot, tap **Show keyboard toolbar** to reach AI without changing the draft.
+The toolbar opens **Fix Grammar**, **Improve & Tone**, **Ask AI** and **Translation**. On a narrow screen, **More options** makes hidden toolbar actions available. The toolbar stays visible above the suggestion row, with a microphone for Android voice input.
 
-The four AI panels share the typing area and retain the selected keyboard height. Grammar checks a selection or a short draft. Improve & Tone provides tone presets and keeps recent alternatives from explicit generation. Ask AI supports Rewrite, Reply and Express with optional writing preferences and custom instructions. Translation has separate source and target choices for Bangla, Banglish and English. Offline phonetic typing still converts typed Banglish into Bangla without sending it to AI.
+The four AI panels share the typing area and retain the selected keyboard height. Grammar checks a selection or a short draft. Improve & Tone runs the selected preset and keeps recent alternatives for the same input. Ask AI supports Rewrite, Reply and Express with optional writing preferences and custom instructions. Translation has separate source and target choices for Bangla, Banglish and English. Offline phonetic typing still converts typed Banglish into Bangla without sending it to AI.
 
-Rewrite-style actions use an active selection or, on Android 14 and newer, a short draft ending at the cursor in a compatible editor. You can paste or type input explicitly when draft context is unavailable. A result becomes host text only after **Replace Text** or **Insert**. If the editor changes, you can copy the result or insert it without replacing existing text. Password, address and numeric fields suppress the AI actions. Android apps can withhold context or decline edits.
+Rewrite-style actions use an active selection or, on Android 14 and newer, a short draft ending at the cursor in a compatible editor. You can paste or type input explicitly when draft context is unavailable. A result becomes host text only after **Replace Text** or **Insert**. If the editor changes, you can copy the result or insert it without replacing existing text. Password, address and numeric fields suppress AI actions and suggestions. Android apps can withhold context or decline edits.
 
-Selecting a toolbar action opens the panel immediately. Only **Generate**, **Check grammar**, **Translate** and **Regenerate** send text to the service. Closing the keyboard or changing focused fields invalidates the preview and cancels the client request. A provider request already dispatched may still finish for billing. Session credentials are encrypted with an Android Keystore AES-GCM key and bound to the backend scheme, host, and effective port. Changing to a different backend origin starts a new installation session. Upgrading discards the former credential entry whose origin was unspecified. The companion can revoke the current session and clear local preferences separately.
+Grammar and tone choices ask for consent before their first request to the configured service. With consent, opening Grammar on an eligible draft or choosing a tone sends the displayed draft and writing preferences. Ask AI and Translation use their own generation buttons. The keyboard cancels the active client request when the user closes it, changes the input target or chooses another tone. A provider request already dispatched may still finish for billing. Session credentials are encrypted with an Android Keystore AES-GCM key and bound to the backend scheme, host, and effective port. Changing to a different backend origin starts a new installation session. Upgrading discards the former credential entry whose origin was unspecified. The companion can revoke the current session and clear local preferences separately.
+
+Tap a word to choose it. When automatic English correction changes a word, tap **Undo** or press Backspace immediately to restore the original. Set English autocorrection or edit your personal dictionary in Settings. The corpus, dictionary and predictions are available offline.
 
 Voice input uses an enabled Android voice input subtype where the system exposes one. If there is no voice subtype, the toolbar explains how to enable one and opens the Android keyboard picker.
 
